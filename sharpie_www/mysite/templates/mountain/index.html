@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <section class="text-center">
+    <div class="container">
+      <br>
+      <h1>Mountain car example</h1>
+    </div>
+  </section>
+
+  <br>
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col">
+        <ul>
+          <li>Test: loading GYM is a <b>{{ gym_load }}</b></li>
+          <li>Test: running mountain car with <b>{{ steps }}</b> steps</li>
+          <li>Test: here is a small video of the run</li>
+        </ul>
+      </div>
+      <div class="col">
+          {% load static %}
+          <video src="{% static 'mountain/mountain_car-episode-0.mp4' %}" class="object-fit-contain" autoplay>It did not work</video>
+      </div>
+    </div>
+  </div>
+{% endblock %}

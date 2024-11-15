@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <section class="text-center">
+    <div class="container">
+      <br>
+      <h1>AMaze example</h1>
+    </div>
+  </section>
+
+  <br>
+  <div class="container">
+    <div class="row align-middle">
+      <div class="col align-middle">
+        <form action="/AMaze/Qlearning" method="post">
+          {% csrf_token %}
+          <fieldset>
+              {% if not iteration %}<legend><h4>Do you want to start the experiment with Q-learning?</h4></legend>{% endif %}
+              {% if iteration %}
+                <p>Target reached: <strong>{{ success }}</strong></p>
+                <p>Raw reward: <strong>{{ cumulative_reward }}</strong></p>
+                <p>Normalized reward: <strong>{{ normalized_reward }}</strong></p><br>
+
+                <p>This the <strong>{{ iteration }}</strong> episode of training</p>
+
+                <label for="stepsize">Stepsize (between 1 and 500):</label>
+                <input type="number" name="stepsize" min="1" max="500" value="{{ stepsize }}">
+              {% endif %}
+          </fieldset><br>
+          {% if not iteration %}
+            <input class="btn btn-primary" type="submit" name="start" value="Start">
+          {% else %}
+            <input class="btn btn-primary" type="submit" name="reset" value="Restart">
+            <input class="btn btn-primary" type="submit" name="continue" value="Continue training">
+            <input class="btn btn-primary" type="submit" name="evaluate" value="Evaluate">
+          {% endif %}
+        </form>
+      </div>
+      <div class="col align-middle">
+          {% load static %}
+          {% if iteration %}<img class="img-fluid" src="/static/AMaze/visualization/Qlearning_{{ maze_str }}.png" alt="Maze with trajectory">{% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
