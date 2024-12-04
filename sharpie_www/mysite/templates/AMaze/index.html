@@ -9,43 +9,26 @@
   </section>
 
   <br>
-  <div class="container">
+  <div class="container text-center">
     <div class="row align-middle">
       <div class="col align-middle">
-        <form action="/AMaze/" method="post">
-          {% csrf_token %}
-          <fieldset>
-              {% if not iteration %}<legend><h4>Do you want to start the experiment with a saved policy?</h4></legend>{% endif %}
-              {% if iteration %}
-                <p>Target reached: <strong>{{ success }}</strong></p>
-                <p>Raw reward: <strong>{{ cumulative_reward }}</strong></p>
-                <p>Normalized reward: <strong>{{ normalized_reward }}</strong></p><br>
+        <div class="row justify-content-md-center">
+          <div class="col-lg-7">
+            <div class="card mb-4 box-shadow text-center">
+              <div class="card-body">
+                <p class="card-text"><b>AMaze is primarily a maze generator: its goal is to provide an easy way to generate arbitrarily complex (or simple) mazes for agents to navigate in. You can find more information <a href="https://amaze.readthedocs.io/en/latest/">here</a>.</b></p>
+              </div>
+              <div class="card-body">
+                <img
+                  src="/static/AMaze/visualization/example.png"
+                  class="d-block w-100"
+                />
+              </div>
+            </div>
+          </div>
 
-                <p>This is your <strong>{{ iteration }}</strong> session</p>
-              {% endif %}
-          </fieldset>
-          {% if not iteration %}
-            <input class="btn btn-primary" type="submit" value="Start">
-          {% else %}
-            <input class="btn btn-primary" type="submit" value="Restart">
-          {% endif %}
-        </form>
-
-        <br>
-
-        {% if not iteration %}
-        <form action="/AMaze/Qlearning" method="post">
-          {% csrf_token %}
-          <fieldset>
-              <legend><h4>Do you want to start the interaction experiment with Q-learning?</h4></legend>
-          </fieldset>
-          <input class="btn btn-primary" type="submit" name="reset" value="Start">
-        </form>
-        {% endif %}
-      </div>
-      <div class="col align-middle">
-          {% load static %}
-          {% if iteration %}<img class="img-fluid" src="/static/AMaze/visualization/{{ agent_name }}_{{ maze_str }}.png" alt="Maze with trajectory">{% endif %}
+        <h4>Do you want to start the experiment with a saved policy? <a class="btn btn-primary" href="/AMaze/stored_policy">Start</a></h4>
+        <h4>Do you want to start the interaction experiment with Q-learning? <a class="btn btn-primary" href="/AMaze/restart">Start</a></h4>
       </div>
     </div>
   </div>

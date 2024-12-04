@@ -9,7 +9,7 @@ def index(request):
 
     # Reset the environment to generate the first observation
     observation, info = env.reset(seed=42)
-    for _ in range(1000):
+    for _ in range(100):
         # this is where you would insert your policy
         action = env.action_space.sample()
 
@@ -19,7 +19,7 @@ def index(request):
 
         # If the episode has ended then we can reset to start a new episode
         if terminated or truncated:
-            observation, info = env.reset()
+            break
     env.close()
 
-    return render(request, "mountain/index.html", {"gym_load": "success", "steps": 1000})
+    return render(request, "mountain/index.html", {"gym_load": "success", "steps": 100})

@@ -21,6 +21,5 @@ urlpatterns = [
     path("home/", include("home.urls")),
     path("mountain/", include("mountain.urls")),
     path("AMaze/", include("AMaze.urls")),
-    path("polls/", include("polls.urls")),
     path('admin/', admin.site.urls),
 ]

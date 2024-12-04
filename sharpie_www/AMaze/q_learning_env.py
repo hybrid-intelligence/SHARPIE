@@ -4,17 +4,18 @@ import random
 import shutil
 import time
 import random
+import pickle
 
 from amaze.simu.controllers.tabular import TabularController
 from amaze import Maze, Robot, Simulation, InputType, OutputType, StartLocation, MazeWidget, qt_application
 
 ALPHA, GAMMA = 0.1, 0.5
-MAZE_STR = "20x20_C1"
+MAZE_STR = "5x5_C1"
 FOLDER = "./static/AMaze/visualization"
 ROBOT = Robot.BuildData(inputs=InputType.DISCRETE, outputs=OutputType.DISCRETE)
 
 
-def train(n, policy_file=None):
+def train(render=False, policy_file=None):
     start_time = time.time()
 
     if(policy_file):
@@ -24,15 +25,15 @@ def train(n, policy_file=None):
 
     steps = [0, 0]
 
-    for i in range(n):
-        maze = Maze.from_string(MAZE_STR)
-        simulation = Simulation(maze, ROBOT)
+    maze = Maze.from_string(MAZE_STR)
+    simulation = Simulation(maze, ROBOT, save_trajectory=render)
         
-        q_train(simulation, policy)
-
-        steps[0] += simulation.timestep
+    ras = q_train(simulation, policy, render)
+    steps[0] += simulation.timestep
     
     policy.save("./static/AMaze/policy")
+    with open('./static/AMaze/reward.pkl', 'wb') as f:
+        pickle.dump(ras, f)
 
     print(
         f"Training took {time.time() - start_time:.2g} seconds for:\n"
@@ -40,7 +41,21 @@ def train(n, policy_file=None):
         f" > {steps[1]} evaluating steps"
     )
 
-    return "./static/AMaze/policy.zip"
+    return (simulation, MAZE_STR, ras, './static/AMaze/reward.pkl', "./static/AMaze/policy.zip")
+
+
+
+
+def learn(policy_file, ras):
+    policy = TabularController(robot_data=ROBOT, epsilon=0.1*random.random(), seed=0).load(policy_file)
+    for state, action, reward, state_, action_ in ras:
+        policy.q_learning(
+            state, action, reward, state_, action_, alpha=ALPHA, gamma=GAMMA
+        )
+    policy.save("./static/AMaze/policy")
+
+
+
 
 def eval(policy_file):
     policy = TabularController(robot_data=ROBOT, epsilon=0.1*random.random(), seed=0).load(policy_file)
@@ -48,45 +63,69 @@ def eval(policy_file):
     maze = Maze.from_string(MAZE_STR)
     simulation = Simulation(maze, ROBOT, save_trajectory=True)
 
-    q_eval(simulation, policy)
+    ras = q_eval(simulation, policy)
 
-    app = qt_application()
-    maze_img = f"{FOLDER}/{MAZE_STR}.png"
-    MazeWidget.static_render_to_file(maze=maze, path=maze_img, size=500, robot=False, solution=True, dark=True)
-
-    trajectory_img = f"{FOLDER}/Qlearning_{MAZE_STR}.png"
-    MazeWidget.plot_trajectory(
-        simulation=simulation,
-        size=500,
-        path=trajectory_img,
-    )
-
-    return (simulation, MAZE_STR)
+    return (simulation, MAZE_STR, ras)
 
 
-def q_train(simulation, policy):
+
+def q_train(simulation, policy, render):
+    ras = []
+    i = 0
+
     state = simulation.generate_inputs().copy()
     action = policy(state)
-
     while not simulation.done():
         reward = simulation.step(action)
         state_ = simulation.observations.copy()
         action_ = policy(state)
-        policy.q_learning(
-            state, action, reward, state_, action_, alpha=ALPHA, gamma=GAMMA
-        )
-        state, action = state_, action_
+        ras.append([state, action, reward, state_, action_])
 
-    return simulation.robot.reward
+        if render:
+            app = qt_application()
+            maze = Maze.from_string(MAZE_STR)
+            maze_img = f"{FOLDER}/{MAZE_STR}.png"
+            MazeWidget.static_render_to_file(maze=maze, path=maze_img, size=1000, robot=False, solution=True, dark=True)
+
+            trajectory_img = f"{FOLDER}/{MAZE_STR}/{i}.png"
+            MazeWidget.plot_trajectory(
+                simulation=simulation,
+                size=1000,
+                path=trajectory_img,
+            )
+
+        state, action = state_, action_
+        i += 1
+
+    return ras
 
 
 def q_eval(simulation, policy):
+    ras = []
+    i = 0
+
+    state = simulation.generate_inputs().copy()
     action = policy.greedy_action(simulation.observations)
     while not simulation.done():
-        simulation.step(action)
+        reward = simulation.step(action)
+        ras.append([state, action, reward, None, None])
         action = policy.greedy_action(simulation.observations)
+        state = simulation.observations.copy()
 
-    return simulation.robot.reward
+        app = qt_application()
+        maze = Maze.from_string(MAZE_STR)
+        maze_img = f"{FOLDER}/{MAZE_STR}.png"
+        MazeWidget.static_render_to_file(maze=maze, path=maze_img, size=1000, robot=False, solution=True, dark=True)
+
+        trajectory_img = f"{FOLDER}/{MAZE_STR}/{i}.png"
+        MazeWidget.plot_trajectory(
+            simulation=simulation,
+            size=1000,
+            path=trajectory_img,
+        )
+        i += 1
+
+    return ras
 
 
 def evaluate_generalization(policy):
