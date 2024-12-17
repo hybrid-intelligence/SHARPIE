@@ -1,6 +1,42 @@
 {% extends "base.html" %}
 
 {% block content %}
+{% load static %}
+  <script>
+    var left = 0;
+    var right = 0;
+    var exploitation = 0;
+    document.addEventListener('keydown', (event)=> {
+        if(event.key == 'ArrowLeft'){
+          left = 1;
+          right = 0;
+        } else if(event.key == 'ArrowRight') {
+          left = 0;
+          right = 1;
+        } else if(event.key == 'ArrowDown') {
+          left = 0;
+          right = 0;
+        }
+    });
+
+
+    function myCallback() {
+      fetch("http://localhost:8000/mountain/continue?left=" + left + "&right=" + right + "&exploitation=" + exploitation)
+      .then(function(response) {
+           document.getElementById("image").src = "{% static 'mountain/step.png' %}?"+new Date().getTime();
+           json = response.json()
+           .then(function(j) {
+              console.log(j);
+              if(j.is_terminated == 0){
+                myCallback();
+               }
+            });
+        });
+    };
+
+    myCallback();
+  </script>
+
   <section class="text-center">
     <div class="container">
       <br>
@@ -12,15 +48,10 @@
   <div class="container">
     <div class="row align-items-center">
       <div class="col">
-        <ul>
-          <li>Test: loading GYM is a <b>{{ gym_load }}</b></li>
-          <li>Test: running mountain car with <b>{{ steps }}</b> steps</li>
-          <li>Test: here is a small video of the run</li>
-        </ul>
+        <p>Change exploitation policy <button class="btn btn-primary" onclick="exploitation = !exploitation;">change</button></p>
       </div>
       <div class="col">
-          {% load static %}
-          <video src="{% static 'mountain/mountain_car-episode-0.mp4' %}" class="object-fit-contain" autoplay>It did not work</video>
+          <img id="image" src="{% static 'mountain/step.png' %}">
       </div>
     </div>
   </div>
