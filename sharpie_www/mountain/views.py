@@ -1,6 +1,7 @@
 
 from django import shortcuts
 
+import cv2
 from PIL import Image
 import ezpickle
 import os
@@ -8,6 +9,8 @@ import gymnasium as gym
 import numpy as np
 
 from .q_table import *
+
+import time
 
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -27,7 +30,7 @@ def restart_(request):
     if not os.path.isfile('./static/mountain/q_table.pkl'):
         q_table = np.random.uniform(low=-2, high=0, size=(DISCRETE_OBSERVATION_SPACE_SIZE + [env.action_space.n]))
         ezpickle.pickle_data(q_table, './static/mountain/q_table.pkl', overwrite=True)
-    env.close()
+    #env.close()
 
     continue_(request)
     return shortcuts.render(request, "mountain/index.html")
@@ -35,6 +38,7 @@ def restart_(request):
 
 @api_view(('GET',))
 def continue_(request):
+    print('Entering: ', time.time())
     env = ezpickle.unpickle_data('./static/mountain/env.pkl')
     discrete_observation = ezpickle.unpickle_data('./static/mountain/last_obs.pkl')
     q_table = ezpickle.unpickle_data('./static/mountain/q_table.pkl')
@@ -49,10 +53,14 @@ def continue_(request):
         else:
             action = np.random.randint(0, env.action_space.n)
 
+
+    print('unzipping: ', time.time())
     observation, reward, terminated, truncated, info = env.step(action)
+    print('step: ', time.time())
     discrete_observation = get_discrete_state(observation)
     ezpickle.pickle_data(env, './static/mountain/env.pkl', overwrite=True)
     ezpickle.pickle_data(discrete_observation, './static/mountain/last_obs.pkl', overwrite=True)
+    print('zipping env-obs: ', time.time())
 
     if not (terminated or truncated or observation[0] > 0.55):
         # max q value for the next state calculated above
@@ -72,11 +80,17 @@ def continue_(request):
         q_table[discrete_observation + (action,)] = 100
 
     ezpickle.pickle_data(q_table, './static/mountain/q_table.pkl', overwrite=True)
+    print('zipping agent: ', time.time())
 
-    img = env.render()
-    im = Image.fromarray(img)
-    im.save('./static/mountain/step.png')
+    #img = env.render()
+    print('rendering: ', time.time())
+    #im = Image.fromarray(img)
+    #print(time.time())
+    #im.save('./static/mountain/step.png')
+    #cv2.imwrite('./static/mountain/step.png', img)
+    print('saving: ', time.time())
 
-    env.close()
+    if terminated or truncated or observation[0] > 0.55:
+        env.close()
     data = {"is_terminated" : (1 if (terminated or truncated or observation[0] > 0.55) else 0)}
     return Response(data)
