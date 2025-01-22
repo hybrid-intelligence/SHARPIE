@@ -19,15 +19,18 @@
         }
     });
 
-
     function myCallback() {
       fetch("http://localhost:8000/mountain/continue?left=" + left + "&right=" + right + "&exploitation=" + exploitation)
       .then(function(response) {
-           document.getElementById("image").src = "{% static 'mountain/step.png' %}?"+new Date().getTime();
            json = response.json()
            .then(function(j) {
-              console.log(j);
+              console.log("Fetching image: " + new Date().getTime());
+              document.getElementById("image").src = "{% static 'mountain/step.png' %}?"+new Date().getTime();
+              console.log("Image updated: " + new Date().getTime());
+              
+              console.log("Is terminated? " + j.is_terminated);
               if(j.is_terminated == 0){
+                console.log("Fetching step: " + new Date().getTime());
                 myCallback();
                }
             });
