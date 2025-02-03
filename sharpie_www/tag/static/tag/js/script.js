@@ -53,11 +53,6 @@ refreshRate = 150;
 interval = setInterval(queryLoop, refreshRate);
 // Asking the server to perform a step and sending the user's inputs
 function queryLoop() {
-    // If we already asked the server but it still did not reply, we skip and wait another round
-    if(isInUse){
-        return;
-    }
-
     try {
         // Send the user's inputs and set isInUse
         chatSocket.send(JSON.stringify({
@@ -97,7 +92,10 @@ chatSocket.onmessage = function(e) {
         clearInterval(interval);
         console.log("Game over");
         document.getElementById("sub-title").innerHTML = document.getElementById("sub-title").innerText + " (game over) " + restart_button;
-    } 
+    } else {
+        clearInterval(interval);
+	interval = setInterval(queryLoop, refreshRate);
+    }
     // Unset isInUse 
     isInUse = false;
 };
