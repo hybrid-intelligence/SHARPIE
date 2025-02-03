@@ -1,0 +1,13 @@
+# Needed for SHARPIE
+django
+channels[daphne]
+django-crispy-forms
+django-crispy-forms
+opencv-python
+# Needed by most of apps
+gymnasium
+tensorflow
+# Needed for AMaze app
+amaze-benchmarker
+# Needed for Simple Spread and Simple Tag apps
+pettingzoo[mpe]

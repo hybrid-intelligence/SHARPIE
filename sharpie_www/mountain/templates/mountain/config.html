@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% load crispy_forms_tags %}
+
+{% block content %}
+  {% load static %}
+  <section class="text-center">
+    <div class="container">
+      <br>      
+      {% if saved %}
+        <h2 class="text-end"><a href="run" class="btn btn-info">Play <i class="bi bi-arrow-right"></i></a></h2>
+      {% endif %}
+      <h1>Mountain Car experiment</h1>
+    </div>
+  </section>
+  
+  <br>
+
+  <div class="container">
+    <div class="row align-items-center">
+        <form method="post">
+          {% csrf_token %}
+          {{ form|crispy }}      
+          <br>    
+          <button type="submit" class="btn {% if saved %}btn-success{% else %}btn-primary{% endif %}">{% if saved %}Saved{% else %}Save{% endif %}</button>
+        </form>
+    </div>
+  </div>
+{% endblock %}

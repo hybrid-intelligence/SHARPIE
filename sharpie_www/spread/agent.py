@@ -1,5 +1,9 @@
 import numpy as np 
-from tensorflow.keras.layers import Dense
+
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.layers import Input,Dense
+from tensorflow.keras.models import Model
+from tensorflow.keras.losses import MeanSquaredError
 
 class ActionValueNetwork:
     def __init__(self, network_config):
@@ -7,18 +11,22 @@ class ActionValueNetwork:
         self.num_actions = network_config.get("num_actions")
         self.step_size=network_config.get('step_size')
     def create_model(self):
-        i = Input(shape=self.state_dim)
+        i = Input(shape=(self.state_dim,))
         x = Dense(256, activation='relu')(i)
         x = Dense(128, activation='relu')(x)
         x = Dense(self.num_actions, activation='linear')(x)
         model = Model(i, x)
-        model.compile(optimizer=Adam(lr=self.step_size),loss='mse')
+        model.compile(optimizer=Adam(learning_rate=self.step_size),loss=MeanSquaredError())
         return model
     
 
 epsilon = 1  
 EPSILON_DECAY = 0.998 
 MIN_EPSILON = 0.01
+
+a = np.array([0,1,2])
+b = np.zeros((a.size, a.max()+1))
+b[np.arange(a.size),a] = 1
 
 agent_info = {
              'network_config': {
@@ -57,7 +65,7 @@ class ReplayBuffer:
 
     
 class Agent:
-    def __init__(self, agent_config):
+    def __init__(self, agent_config, env):
         self.replay_buffer = ReplayBuffer(agent_config['replay_buffer_size'], 
                                           agent_config['minibatch_sz'], agent_config.get("seed"))
         self.network = ActionValueNetwork(agent_config['network_config'])
@@ -77,14 +85,23 @@ class Agent:
         self.epsilon = epsilon
         self.sum_rewards = {'agent_0':0,'agent_1':0,'agent_2':0}
         self.episode_steps = 0
+        self.env = env
+
+    def policy(self,agent,state):
+        action_values =self.model.predict(state)
+        if (np.random.uniform() < self.epsilon):
+            action = np.random.randint(0, self.env.action_spaces[agent].n)
+        else:
+            action=np.argmax(action_values)
+        return int(action)
    
     def agent_start(self):
         self.sum_rewards = {'agent_0':0,'agent_1':0,'agent_2':0}
         self.episode_steps=0
-        self.last_states=env.reset()
+        self.last_states, _ = self.env.reset()
         for i,m in enumerate(self.last_states.keys()):
             self.last_states[m]=np.array([np.append(self.last_states[m],b[i])])
-        self.actions = {agent: self.policy(agent,self.last_states[agent]) for agent in env.agents}
+        self.actions = {agent: self.policy(agent,self.last_states[agent]) for agent in self.env.agents}
         actions=self.actions
         return actions
     
@@ -111,7 +128,7 @@ class Agent:
         
       
         self.last_states=states
-        self.actions = {agent: self.policy(agent,self.last_states[agent]) for agent in env.agents}
+        self.actions = {agent: self.policy(agent,self.last_states[agent]) for agent in self.env.agents}
         actions=self.actions
         return actions
     

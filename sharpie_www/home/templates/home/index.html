@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main role="main">
+
+    <section class="jumbotron text-center">
+      <div class="container">
+        <br>
+        <h1 class="jumbotron-heading">SHARPIE website</h1>
+        <p class="lead text-muted">Shared Human-AI Reinforcement Learning Platform for Interactive Experiments</p>
+        <p>
+          <a href="https://openreview.net/forum?id=thCKbqlSY2&noteId=thCKbqlSY2" class="btn btn-primary my-2">Check out our paper</a>
+          <a href="https://github.com/libgoncalv/SHARPIE" class="btn btn-secondary my-2">Check out our code</a>
+        </p>
+      </div>
+    </section>
+
+    <div class="album py-5 bg-light">
+      <div class="container">
+
+        <div class="row">
+          <div class="col-md-4">
+            <div class="card mb-4 box-shadow">
+              <div class="card-body">
+                <p class="card-text">This is an example of policy overwriting with the Mountain Car environment.</p>
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="btn-group">
+                    <a href="/mountain" class="btn btn-sm btn-outline-primary">Go to experiment</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card mb-4 box-shadow">
+              <div class="card-body">
+                <p class="card-text">This is an example of reward annotation with the AMaze environment.</p>
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="btn-group">
+                    <a href="/AMaze" class="btn btn-sm btn-outline-primary">Go to experiment</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card mb-4 box-shadow">
+              <div class="card-body">
+                <p class="card-text">This is an example collaboration with the Simple Spread environment.</p>
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="btn-group">
+                    <a href="/spread" class="btn btn-sm btn-outline-primary">Go to experiment</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card mb-4 box-shadow">
+              <div class="card-body">
+                <p class="card-text">This is an example of multiplayer with the Simple Tag environment.</p>
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="btn-group">
+                    <a href="/tag" class="btn btn-sm btn-outline-primary">Go to experiment</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card mb-4 box-shadow">
+              <div class="card-body">
+                <p class="card-text">More examples to come!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+{% endblock %}
