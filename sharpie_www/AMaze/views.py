@@ -1,85 +1,51 @@
-from django.shortcuts import render
-from amaze import (
-    Maze,
-    Robot,
-    MazeWidget,
-    Simulation,
-    qt_application,
-    load,
-    amaze_main,
-)
-from . import q_learning_env
-import pickle
+from django.shortcuts import render, redirect
 
+import os
 
-
-def index_(request):
-    return render(request, "AMaze/index.html")
-
-
-
-def stored_policy_(request):
-    request.session['example_policy'] = True
-    request.session['policy_file'] = "./static/AMaze/unicursive_tabular.zip"
-    request.session['reward_file'] = None
-    request.session['iteration'] = 0
-    if not request.session.has_key('stepsize'):
-        request.session['stepsize'] = 1
-
-    return evaluate_(request)
-
-
-
-def restart_(request):
-    request.session['example_policy'] = False
-    request.session['policy_file'] = None
-    request.session['reward_file'] = None
-    request.session['iteration'] = 0
-    if not request.session.has_key('stepsize'):
-        request.session['stepsize'] = 1
-
-    return continue_(request)
-
-
-
-def continue_(request):
-    request.session['example_policy'] = False
-    if request.method =='POST':
-        request.session['stepsize'] = request.POST.get("stepsize", request.session['stepsize'])
-
-    request.session['iteration'] += int(request.session['stepsize'])
-
-    if request.session['reward_file']:
-        with open(request.session['reward_file'], 'rb') as f:
-            ras = pickle.load(f)
-        for i, (state, action, reward, state_, action_) in enumerate(ras):
-            ras[i] = [state, action, float(request.POST.get(str(i), reward)), state_, action_]
-        q_learning_env.learn(request.session['policy_file'], ras)
-
-    for i in range(int(request.session['stepsize'])-1):
-        (_, _, ras, _, request.session['policy_file']) = q_learning_env.train(False, request.session['policy_file'])
-        q_learning_env.learn(request.session['policy_file'], ras)
-    (simulation, maze_str, ras, request.session['reward_file'], request.session['policy_file']) = q_learning_env.train(True, request.session['policy_file'])
-
-    return render(request, "AMaze/q_learning.html", {'iteration': request.session['iteration'],
-                                                     "success": simulation.success(),
-                                                     "cumulative_reward": simulation.cumulative_reward(),
-                                                     "normalized_reward": simulation.normalized_reward(),
-                                                     "agent_name": 'Q-learning', "maze_str": maze_str,
-                                                     "stepsize": request.session['stepsize'],
-                                                     'ras': ras, 'ras_max':len(ras)})
+from .forms import ConfigForm, RunForm
 
 
 
 
-def evaluate_(request):
-    (simulation, maze_str, ras) = q_learning_env.eval(request.session['policy_file'])
+def config_(request):
+    # if this is a POST request we need to process the form data
+    if request.method == "POST":
+        # create a form instance and populate it with data from the request:
+        form = ConfigForm(request.POST)
+        # check whether it's valid:
+        if form.is_valid():
+            # process the data in form.cleaned_data as required
+            for k in form.fields.keys():
+                # If the field has been filled
+                if k in form.cleaned_data.keys():
+                    request.session[k] = form.cleaned_data[k]
 
-    return render(request, "AMaze/q_learning.html", {'evaluate': request.session['example_policy'],
-                                                     'iteration': request.session['iteration'],
-                                                     "success": simulation.success(),
-                                                     "cumulative_reward": simulation.cumulative_reward(),
-                                                     "normalized_reward": simulation.normalized_reward(),
-                                                     "agent_name": 'Q-learning', "maze_str": maze_str,
-                                                     "stepsize": request.session['stepsize'],
-                                                     'ras': ras, 'ras_max': len(ras)})
+    # Create empty form
+    form = ConfigForm()
+    # Check if all the fields have been saved in the session
+    saved =  all((k in request.session.keys() or not form.fields[k].required) for k in form.fields.keys())
+    # If a config was already saved by the user, we create a prefilled form
+    if(saved):
+        form = ConfigForm(initial={k:request.session.get(k, None) for k in form.fields.keys()})
+
+    app_name  = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
+    return render(request, app_name+"/config.html", {"form": form, 'saved': saved})
+
+
+
+
+
+def run_(request):
+    app_name  = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
+    
+    # Create empty form
+    form = ConfigForm()
+    # Check if all the fields have been saved in the session
+    saved =  all((k in request.session.keys() or not form.fields[k].required) for k in form.fields.keys())
+    # If a config was already saved by the user, we create a prefilled form
+    if not saved:
+        return redirect("/"+app_name+"/config")
+
+    form = RunForm()
+    room_name = request.session['room_name']
+    return render(request, app_name+"/run.html", {"room_name": room_name, "app_name": app_name, "form": form})

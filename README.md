@@ -32,7 +32,3 @@ In this repository, each use-case described in our paper is a separate app, whic
 * Install the requirements depending on what you want to try
 * Uncomment the apps you want to try in `mysite/settings.py` and `mysite/asgi.py`
 * Run `python manage.py runserver`
-
-
-# TODO
-Recode the AMaze app to use websockets
