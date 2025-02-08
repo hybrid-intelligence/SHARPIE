@@ -41,3 +41,6 @@ In this repository, each use-case described in our paper is a separate app, whic
 * Add the folder name to the urlpatterns in mysite/urls.py
 * Add the folder name to the websocket in mysite/asgi.py
 * In your new app, (at least) modify static/js/script.js and websocket.py to suit your needs!
+
+## Run into production
+Follow the instructions on Django website and don't forget to change the secret key (otherwise you might get some surprises...).
