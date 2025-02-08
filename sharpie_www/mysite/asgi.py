@@ -26,6 +26,8 @@ from mountain import websocket as mountain_websocket
 from AMaze import websocket as AMaze_websocket
 from spread import websocket as spread_websocket
 from tag import websocket as tag_websocket
+from minecraft import websocket as minecraft_websocket
+from example import websocket as example_websocket
 
 application = ProtocolTypeRouter(
     {
@@ -33,10 +35,12 @@ application = ProtocolTypeRouter(
         "websocket": AllowedHostsOriginValidator(
             AuthMiddlewareStack(
                 URLRouter([
+                        re_path("example/run", example_websocket.Consumer.as_asgi()),
                         re_path("mountain/run", mountain_websocket.Consumer.as_asgi()),
                         re_path("AMaze/run", AMaze_websocket.Consumer.as_asgi()),
                         re_path("spread/run", spread_websocket.Consumer.as_asgi()),
                         re_path("tag/run", tag_websocket.Consumer.as_asgi()),
+                        re_path("minecraft/run", minecraft_websocket.Consumer.as_asgi()),
                     ]
                 )
             )

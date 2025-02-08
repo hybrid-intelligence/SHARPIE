@@ -34,10 +34,12 @@ INSTALLED_APPS = [
     'daphne',
 
     'home',
+    'example',
     'mountain',
     'AMaze',
     'spread',
     'tag',
+    'minecraft',
 
     'crispy_forms',
     'crispy_bootstrap4',

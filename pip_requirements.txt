@@ -1,0 +1,18 @@
+# Needed for SHARPIE
+django
+channels[daphne]
+channels_redis
+django-crispy-forms
+crispy-bootstrap4
+# Needed for AMaze app
+PyQt5
+amaze-benchmarker
+# Needed for Simple Spread and Simple Tag apps
+tensorflow
+pettingzoo[mpe]
+# Needed for Minecraft app
+git+https://github.com/minerllabs/minerl
+# Needed by most apps
+gymnasium
+ezpickle
+opencv-python-headless

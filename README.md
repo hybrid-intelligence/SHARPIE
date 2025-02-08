@@ -10,14 +10,15 @@ In this repository, each use-case described in our paper is a separate app, whic
   * `settings.py` declares all the Django libraries you are going to use, which applications are available, where the HTML templates or the static files (e.g. CSS, JS, images, etc) are located in your project, how those files are served, etc.
   * `urls.py` declares which apps are available and what is their base url on your website
   * `asgi.py` declares how the protocols are handled by the (asynchronous) server and in particular the websockets
+  * `websocket.py` declares the WebsocketTemplate that can be used by each app and takes care of syncronization
   * `templates/base.html` defines the menu as well as the footer of the pages and is included in all other templates.
 * `db.sqlite3` DB file used by the website.
 
 ### Specific files for an app
-* `templates/[app_name]/` holds the HTML templates that are served by your app.
+* `templates/[app_folder]/` holds the HTML templates that are served by your app.
   * `config.html` configuration page of the app.
   * `run.html` experiment page of the app.
-* `static/[app_name]/` holds the static files that are served by your app.
+* `static/[app_folder]/` holds the static files that are served by your app.
   * `js/script.js` JS code for the interactions on `run.html` and the connection to the websocket of the server.
   * `run/` various files needed during the experiment like the rendered environment or the saved agent policy.
 * `urls.py` declares which pages are available in your app. By default, only declares two views (i.e. pages): `config` and `run`.
@@ -26,9 +27,17 @@ In this repository, each use-case described in our paper is a separate app, whic
   * `run` loads the needed informations for displaying the experiment page.
 * `forms.py` defines the forms needed for our experiment. By default only defines `ConfigForm` that is loaded in `views.py/config`
 * `websocket.py` main component of your applications that will take care of the communication with the user. By default only defines `Consumer`. 
+* `settings.py` settings of your app and at leats app_name and app_folder
 
 ## Development installation
 * Git clone this repository
 * Install the requirements depending on what you want to try
 * Uncomment the apps you want to try in `mysite/settings.py` and `mysite/asgi.py`
 * Run `python manage.py runserver`
+
+## Create your own app
+* Run `sh create_app.sh [app_name] [app_folder]`
+* Add the folder name to INSTALLED_APPS in mysite/settings.py
+* Add the folder name to the urlpatterns in mysite/urls.py
+* Add the folder name to the websocket in mysite/asgi.py
+* In your new app, (at least) modify static/js/script.js and websocket.py to suit your needs!
