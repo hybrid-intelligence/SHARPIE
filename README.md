@@ -1,4 +1,4 @@
-![versions](https://img.shields.io/pypi/pyversions/pybadges.svg) ![motivating-paper](https://img.shields.io/badge/motivating_paper-blue)
+![versions](https://img.shields.io/pypi/pyversions/pybadges.svg) [![motivating-paper](https://img.shields.io/badge/motivating-paper-blue)](https://doi.org/10.48550/arXiv.2501.19245)
 
 # SHARPIE
 ## Shared Human-AI Reinforcement Learning Platform for Interactive Experiments
@@ -65,6 +65,7 @@ When using this project in a scientific publication please cite:
     month = {feb},
     address = {Philadelphia, Pennsylvania, USA},
     Experiments}},
+    doi={10.48550/arXiv.2501.19245},
     year = {2025}
 }
 ```
