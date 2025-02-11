@@ -1,3 +1,5 @@
+[![versions](https://img.shields.io/badge/python-3.8|3.9|3.10-blue)](#) [![motivating-paper](https://img.shields.io/badge/paper-motivation-blue)](https://doi.org/10.48550/arXiv.2501.19245)
+
 # SHARPIE
 ## Shared Human-AI Reinforcement Learning Platform for Interactive Experiments
 Our framework is relying on Django for serving files to the user browser. Therefore, it is following the architecture of Django to organize the code i.e. decomposition of the pages in apps.
@@ -44,3 +46,26 @@ In this repository, each use-case described in our paper is a separate app, whic
 
 ## Run into production
 Follow the instructions on Django website and don't forget to change the secret key (otherwise you might get some surprises...).
+
+## Acknowledgements
+This research was funded by the [Hybrid Intelligence
+Center](https://hybridintelligence-centre.nl), a 10-year programme funded by the Dutch Ministry of
+Education, Culture and Science through the Netherlands Organisation for Scientific Research, Grant
+No: 024.004.022.
+
+## Citations
+When using this project in a scientific publication please cite:
+```bibtex
+@inproceedings{sharpiecaihu25,
+    booktitle = {AAAI Bridge Program Workshop on Collaborative AI and Modeling of Humans},
+    title = {{SHARPIE: A Modular Framework for Reinforcement Learning and Human-AI Interaction
+    author = {Ayd\in, H{\"{u}}seyin and Godin-Dubois, Kevin and Braz, Libio Goncalvez and den Hengst,
+    Floris and Baraka, Kim and {\c{C}}elikok, Mustafa Mert and Sauter, Andreas and Wang, Shihan and
+    Oliehoek, Frans A},
+    month = {feb},
+    address = {Philadelphia, Pennsylvania, USA},
+    Experiments}},
+    doi={10.48550/arXiv.2501.19245},
+    year = {2025}
+}
+```
