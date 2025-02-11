@@ -1,8 +1,6 @@
 [![versions](https://img.shields.io/badge/python-3.10-blue)](#) [![motivating-paper](https://img.shields.io/badge/paper-motivation-blue)](https://doi.org/10.48550/arXiv.2501.19245)
 
 # SHARPIE
-#### This framework is under active development
-
 ## Shared Human-AI Reinforcement Learning Platform for Interactive Experiments
 Our framework is relying on Django for serving files to the user browser. Therefore, it is following the architecture of Django to organize the code i.e. decomposition of the pages in apps.
 
