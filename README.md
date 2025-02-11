@@ -1,4 +1,4 @@
-![versions](https://img.shields.io/pypi/pyversions/pybadges.svg) ![motivation-paper](https://img/shields.io/badge/motivating_paper-blue)
+![versions](https://img.shields.io/pypi/pyversions/pybadges.svg) ![motivating-paper](https://img.shields.io/badge/motivating_paper-blue)
 
 # SHARPIE
 ## Shared Human-AI Reinforcement Learning Platform for Interactive Experiments
