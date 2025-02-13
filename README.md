@@ -57,15 +57,13 @@ No: 024.004.022.
 When using this project in a scientific publication please cite:
 ```bibtex
 @inproceedings{sharpiecaihu25,
-    booktitle = {AAAI Bridge Program Workshop on Collaborative AI and Modeling of Humans},
-    title = {{SHARPIE: A Modular Framework for Reinforcement Learning and Human-AI Interaction
-    author = {Ayd\in, H{\"{u}}seyin and Godin-Dubois, Kevin and Braz, Libio Goncalvez and den Hengst,
-    Floris and Baraka, Kim and {\c{C}}elikok, Mustafa Mert and Sauter, Andreas and Wang, Shihan and
-    Oliehoek, Frans A},
-    month = {feb},
-    address = {Philadelphia, Pennsylvania, USA},
-    Experiments}},
-    doi={10.48550/arXiv.2501.19245},
-    year = {2025}
+  author    = {Hüseyin Ayd{\i}n and Kevin Godin-Dubois and Libio Goncalvez Braz and Floris den Hengst and Kim Baraka and Mustafa Mert Çelikok and Andreas Sauter and Shihan Wang and Frans A. Oliehoek},
+  title     = {SHARPIE: A Modular Framework for Reinforcement Learning and Human-AI Interaction Experiments},
+  booktitle = {AAAI Bridge Program Workshop on Collaborative AI and Modeling of Humans (CAIHU)},
+  year      = {2025},
+  doi       = {10.48550/arXiv.2501.19245},
+  url       = {https://arxiv.org/abs/2501.19245},
+  address   = {Philadelphia, Pennsylvania, USA},
+  month     = {February}
 }
 ```
