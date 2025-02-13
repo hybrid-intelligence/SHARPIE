@@ -39,7 +39,7 @@ In this repository, each use-case described in our paper is a separate app, whic
   * AMaze `pip install PyQt5 amaze-benchmarker`
   * Simple Spread and Simple Tag `pip install tensorflow pettingzoo[mpe]`
   * MineRL `pip install git+https://github.com/minerllabs/minerl`
-* Install Sharpie requirements `pip install django channels[daphne] channels_redis django-crispy-forms crispy-bootstrap4 opencv-python-headless`
+* Install SHARPIE requirements `pip install django channels[daphne] channels_redis django-crispy-forms crispy-bootstrap4 opencv-python-headless`
 * Uncomment the apps you want to try in `sharpie/settings.py`, `sharpie/urls.py` and `sharpie/asgi.py`
 * Run `python manage.py runserver`
 
@@ -56,6 +56,8 @@ Follow the instructions on Django website and don't forget to change the secret 
 ## TODO
 - [ ] Add agent in Minecraft
 - [ ] Add text area to be able to specify tasks in Minecraft
+- [ ] Add use-case with utility elicitation in Deep Sea Treasure
+- [ ] Add use-case with shared decision support in Water-reservoir
 
 ## Acknowledgements
 This research was funded by the [Hybrid Intelligence
@@ -69,7 +71,7 @@ When using this project in a scientific publication please cite:
 @inproceedings{sharpiecaihu25,
     booktitle = {AAAI Bridge Program Workshop on Collaborative AI and Modeling of Humans},
     title = {{SHARPIE: A Modular Framework for Reinforcement Learning and Human-AI Interaction
-    author = {Ayd\in, H{\"{u}}seyin and Godin-Dubois, Kevin and Braz, Libio Goncalvez and den Hengst,
+    author = {Ayd\in, H{\"{u}}seyin and Godin-Dubois, Kevin and Goncalves Braz, Libio and den Hengst,
     Floris and Baraka, Kim and {\c{C}}elikok, Mustafa Mert and Sauter, Andreas and Wang, Shihan and
     Oliehoek, Frans A},
     month = {feb},
