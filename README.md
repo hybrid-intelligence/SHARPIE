@@ -1,6 +1,8 @@
 [![versions](https://img.shields.io/badge/python-3.10-blue)](#) [![motivating-paper](https://img.shields.io/badge/paper-motivation-blue)](https://doi.org/10.48550/arXiv.2501.19245)
 
 # SHARPIE
+[![Demo](https://github.com/libgoncalv/SHARPIE/blob/main/home/static/home/logo.png)](https://ia600609.us.archive.org/21/items/sharpie_demo_1_noaudio_captions/sharpie_demo_1_noaudio_captions.mp4)
+
 ## Shared Human-AI Reinforcement Learning Platform for Interactive Experiments
 Our framework is relying on Django for serving files to the user browser. Therefore, it is following the architecture of Django to organize the code i.e. decomposition of the pages in apps.
 
@@ -39,7 +41,7 @@ In this repository, each use-case described in our paper is a separate app, whic
   * AMaze `pip install PyQt5 amaze-benchmarker`
   * Simple Spread and Simple Tag `pip install tensorflow pettingzoo[mpe]`
   * MineRL `pip install git+https://github.com/minerllabs/minerl`
-* Install SHARPIE requirements `pip install django channels[daphne] channels_redis django-crispy-forms crispy-bootstrap4 opencv-python-headless`
+* Install SHARPIE requirements `pip install django channels[daphne] channels_redis django-crispy-forms crispy-bootstrap4 ezpickle opencv-python-headless`
 * Uncomment the apps you want to try in `sharpie/settings.py`, `sharpie/urls.py` and `sharpie/asgi.py`
 * Run `python manage.py runserver`
 
