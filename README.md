@@ -1,9 +1,9 @@
 [![versions](https://img.shields.io/badge/python-3.10-blue)](#) [![motivating-paper](https://img.shields.io/badge/paper-motivation-blue)](https://doi.org/10.48550/arXiv.2501.19245)
 
 # SHARPIE
+## Shared Human-AI Reinforcement Learning Platform for Interactive Experiments
 [![Demo](https://github.com/libgoncalv/SHARPIE/blob/main/home/static/home/logo.png)](https://ia600609.us.archive.org/21/items/sharpie_demo_1_noaudio_captions/sharpie_demo_1_noaudio_captions.mp4)
 
-## Shared Human-AI Reinforcement Learning Platform for Interactive Experiments
 Our framework is relying on Django for serving files to the user browser. Therefore, it is following the architecture of Django to organize the code i.e. decomposition of the pages in apps.
 
 In this repository, each use-case described in our paper is a separate app, which translates to a different folder. For clarity we will detail briefly here the important files in our project but we highly recommend to look at the Django documentation for a better understanding.
