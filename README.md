@@ -1,14 +1,16 @@
-[![versions](https://img.shields.io/badge/python-3.8|3.9|3.10-blue)](#) [![motivating-paper](https://img.shields.io/badge/paper-motivation-blue)](https://doi.org/10.48550/arXiv.2501.19245)
+[![versions](https://img.shields.io/badge/python-3.10-blue)](#) [![motivating-paper](https://img.shields.io/badge/paper-motivation-blue)](https://doi.org/10.48550/arXiv.2501.19245)
 
 # SHARPIE
 ## Shared Human-AI Reinforcement Learning Platform for Interactive Experiments
+[![Demo](https://github.com/libgoncalv/SHARPIE/blob/main/home/static/home/preview_image_1.png)](https://archive.org/embed/sharpie_demo_1_noaudio_captions)
+
 Our framework is relying on Django for serving files to the user browser. Therefore, it is following the architecture of Django to organize the code i.e. decomposition of the pages in apps.
 
 In this repository, each use-case described in our paper is a separate app, which translates to a different folder. For clarity we will detail briefly here the important files in our project but we highly recommend to look at the Django documentation for a better understanding.
 
 ### Common files for all apps
 * `manage.py` is the framework manager, it allows you to easily launch your website and refreshes automatically to perform live testing.
-* `mysite/` is the folder holding the configuration of your website.
+* `sharpie/` is the folder holding the configuration of your website.
   * `settings.py` declares all the Django libraries you are going to use, which applications are available, where the HTML templates or the static files (e.g. CSS, JS, images, etc) are located in your project, how those files are served, etc.
   * `urls.py` declares which apps are available and what is their base url on your website
   * `asgi.py` declares how the protocols are handled by the (asynchronous) server and in particular the websockets
@@ -29,23 +31,35 @@ In this repository, each use-case described in our paper is a separate app, whic
   * `run` loads the needed informations for displaying the experiment page.
 * `forms.py` defines the forms needed for our experiment. By default only defines `ConfigForm` that is loaded in `views.py/config`
 * `websocket.py` main component of your applications that will take care of the communication with the user. By default only defines `Consumer`. 
-* `settings.py` settings of your app and at leats app_name and app_folder
+* `settings.py` settings of your app (at least app_name and app_folder)
 
 ## Development installation
+* We highly recommend to use a virtual environment such as Anaconda. This code has been tested on Python 3.10.
 * Git clone this repository
-* Install the requirements depending on what you want to try
-* Uncomment the apps you want to try in `mysite/settings.py` and `mysite/asgi.py`
+* Install Redis server `apt install redis-server`
+* Install apps requirements (depending on what you what to try)
+  * AMaze `pip install PyQt5 amaze-benchmarker`
+  * Simple Spread and Simple Tag `pip install tensorflow pettingzoo[mpe]`
+  * MineRL `pip install git+https://github.com/minerllabs/minerl`
+* Install SHARPIE requirements `pip install django channels[daphne] channels_redis django-crispy-forms crispy-bootstrap4 ezpickle opencv-python-headless`
+* Uncomment the apps you want to try in `sharpie/settings.py`, `sharpie/urls.py` and `sharpie/asgi.py`
 * Run `python manage.py runserver`
 
 ## Create your own app
 * Run `sh create_app.sh [app_name] [app_folder]`
-* Add the folder name to INSTALLED_APPS in mysite/settings.py
-* Add the folder name to the urlpatterns in mysite/urls.py
-* Add the folder name to the websocket in mysite/asgi.py
+* Add the folder name to INSTALLED_APPS in sharpie/settings.py
+* Add the folder name to the urlpatterns in sharpie/urls.py
+* Add the folder name to the websocket in sharpie/asgi.py
 * In your new app, (at least) modify static/js/script.js and websocket.py to suit your needs!
 
 ## Run into production
 Follow the instructions on Django website and don't forget to change the secret key (otherwise you might get some surprises...).
+
+## TODO
+- [ ] Add agent in Minecraft
+- [ ] Add text area to be able to specify tasks in Minecraft
+- [ ] Add use-case with utility elicitation in Deep Sea Treasure
+- [ ] Add use-case with shared decision support in Water-reservoir
 
 ## Acknowledgements
 This research was funded by the [Hybrid Intelligence
@@ -57,13 +71,15 @@ No: 024.004.022.
 When using this project in a scientific publication please cite:
 ```bibtex
 @inproceedings{sharpiecaihu25,
-  author    = {Hüseyin Ayd{\i}n and Kevin Godin-Dubois and Libio Goncalvez Braz and Floris den Hengst and Kim Baraka and Mustafa Mert Çelikok and Andreas Sauter and Shihan Wang and Frans A. Oliehoek},
-  title     = {SHARPIE: A Modular Framework for Reinforcement Learning and Human-AI Interaction Experiments},
-  booktitle = {AAAI Bridge Program Workshop on Collaborative AI and Modeling of Humans (CAIHU)},
-  year      = {2025},
-  doi       = {10.48550/arXiv.2501.19245},
-  url       = {https://arxiv.org/abs/2501.19245},
-  address   = {Philadelphia, Pennsylvania, USA},
-  month     = {February}
+    booktitle = {AAAI Bridge Program Workshop on Collaborative AI and Modeling of Humans},
+    title = {{SHARPIE: A Modular Framework for Reinforcement Learning and Human-AI Interaction
+    author = {Ayd\in, H{\"{u}}seyin and Godin-Dubois, Kevin and Goncalves Braz, Libio and den Hengst,
+    Floris and Baraka, Kim and {\c{C}}elikok, Mustafa Mert and Sauter, Andreas and Wang, Shihan and
+    Oliehoek, Frans A},
+    month = {feb},
+    address = {Philadelphia, Pennsylvania, USA},
+    Experiments}},
+    doi={10.48550/arXiv.2501.19245},
+    year = {2025}
 }
 ```
