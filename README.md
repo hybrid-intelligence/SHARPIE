@@ -69,15 +69,15 @@ center](https://www.hybrid-intelligence-centre.nl/) in 2029.
 
 **Q**: *Can SHARPIE integrate with environmnet X?*  
 A: SHARPIE integrates with any environment that implements the
-[Gymnasium ``env``](https://gymnasium.farama.org/api/env/) API: SHARPIE needs access to a
+[Gymnasium ``env``](https://gymnasium.farama.org/api/env/) API: SHARPIE needs access to 
 ``step()``, ``reset()`` and ``render()`` functions. Since SHARPIE runs the environment on a
-back-end rather than in the browser, it supports any environment with Python bindings to these
+back-end server rather than in the browser, it supports any environment with Python bindings to these
 functions.
 
 **Q**: *Does SHARPIE support experiments involving mixed human-AI teams?*  
 A: SHARPIE is designed to support mixed human-AI teams, involving multiple AI agents and multiple
 human participants at the same time. The SHARPIE architecture includes a back-end to manage
-synchronization and rendering for you.
+synchronization between participants, and rendering for you.
 
 **Q**: *What are the computational requirements for SHARPIE*  
 A: SHARPIE itself does not come with strict computational requirements, we suggest that you follow
