@@ -31,7 +31,8 @@ class Consumer(ConsumerTemplate):
         self.agent[self.room_name] = None
 
         # Get the first observation, render an image and save it on the server
-        self.obs[self.room_name], info = self.env[self.room_name].reset()
+        self.obs[self.room_name], info = self.env[self.room_name].reset()        
+        self.actions[self.room_name] = {agent: 0 for agent in self.env[self.room_name].agents}
 
     # This function gets the information sent by the browser and processes it
     async def process_inputs(self, text_data):
@@ -41,7 +42,6 @@ class Consumer(ConsumerTemplate):
         down_action = text_data_json["down"]
         up_action = text_data_json["up"]
 
-        self.actions[self.room_name] = {agent: 0 for agent in self.env[self.room_name].agents}
         played_agent = self.scope['session']['played_agent']
         # Overwrite the action if needed
         if left_action:

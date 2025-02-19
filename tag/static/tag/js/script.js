@@ -98,8 +98,8 @@ chatSocket.onmessage = function(e) {
     document.getElementById("sub-title").innerText = "Step " + data.step;
     // If the game is over
     if(data.message == 'done'){
-        // Stop the infinite loop
-        clearInterval(interval);
+        // Set isInUse 
+        isInUse = true;
         console.log("Game over");
         // Replace the subtitle text by adding "game over" and a restart button
         document.getElementById("sub-title").innerHTML = document.getElementById("sub-title").innerText + " (game over) " + restart_button;
@@ -113,7 +113,7 @@ chatSocket.onmessage = function(e) {
 
 // When the server closes the connection
 chatSocket.onclose = function(e) {
-    // We stop the infinite loop
-    clearInterval(interval);
+    // Set isInUse 
+    isInUse = true;
     console.log('Websocket closed by the server');
 };
