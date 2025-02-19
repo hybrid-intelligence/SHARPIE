@@ -65,30 +65,36 @@ Follow the instructions on Django website and don't forget to change the secret 
 **Q**: *How long will SHARPIE be supported?*  
 A: SHARPIE is currently under active development, a request for support budget (a.o.) for 2025
 is in preparation and we will continue do so until the end of the [HI
-center](https://www.hybrid-intelligence-centre.nl/) in 2029.  
+center](https://www.hybrid-intelligence-centre.nl/) in 2029.
+
 **Q**: *Can SHARPIE integrate with environmnet X?*  
 A: SHARPIE integrates with any environment that implements the
 [Gymnasium ``env``](https://gymnasium.farama.org/api/env/) API: SHARPIE needs access to a
 ``step()``, ``reset()`` and ``render()`` functions. Since SHARPIE runs the environment on a
 back-end rather than in the browser, it supports any environment with Python bindings to these
-functions.  
+functions.
+
 **Q**: *Does SHARPIE support experiments involving mixed human-AI teams?*  
 A: SHARPIE is designed to support mixed human-AI teams, involving multiple AI agents and multiple
 human participants at the same time. The SHARPIE architecture includes a back-end to manage
-synchronization and rendering for you.  
+synchronization and rendering for you.
+
 **Q**: *What are the computational requirements for SHARPIE*  
 A: SHARPIE itself does not come with strict computational requirements, we suggest that you follow
-the computational requirements of your environment and RL model of choice.  
+the computational requirements of your environment and RL model of choice.
+
 **Q**: *Can I use SHARPIE to run experiments involving participants from different continents?*  
 A: It depends. Having participants located in different continents in the same room is likely to
 cause latency issues that are fundamental to the nature of cross-continental networking.
 Separating participants per room may be a viable alternative if your experimental setup support
-this.  
+this.
+
 **Q**: *Why did you develop SHARPIE?*  
 A: We developed SHARPIE to facilitate experiments involving RL agents and humans. We believe that
 the study of this interaction is crucial to establishing artificial intelligence(s) that do not
 replace human intellect but instead expand it. We thereby want to put humans at the centre,
-and change the course of the ongoing AI revolution.  
+and change the course of the ongoing AI revolution.
+
 **Q**: *Can SHARPIE be used for education and outreach?*  
 A: SHARPIE can be used for educational purposes and outreach. However, it is currently still under
 active development. We plan to develop educational materials on hybrid human-AI systems and
