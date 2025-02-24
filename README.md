@@ -40,7 +40,7 @@ In this repository, each use-case described in our paper is a separate app, whic
 * Install apps requirements (depending on what you what to try)
   * AMaze `pip install PyQt5 amaze-benchmarker`
   * Simple Spread and Simple Tag `pip install tensorflow pettingzoo[mpe]`
-  * MineRL `pip install git+https://github.com/minerllabs/minerl`
+  * STEVE-1: `cd minecraft/` and follow installation instructions from https://github.com/Shalev-Lifshitz/STEVE-1
 * Install SHARPIE requirements `pip install django channels[daphne] channels_redis django-crispy-forms crispy-bootstrap4 ezpickle opencv-python-headless`
 * Uncomment the apps you want to try in `sharpie/settings.py`, `sharpie/urls.py` and `sharpie/asgi.py`
 * Run `python manage.py runserver`
@@ -56,8 +56,6 @@ In this repository, each use-case described in our paper is a separate app, whic
 Follow the instructions on Django website and don't forget to change the secret key (otherwise you might get some surprises...).
 
 ## TODO
-- [ ] Add agent in Minecraft
-- [ ] Add text area to be able to specify tasks in Minecraft
 - [ ] Add use-case with utility elicitation in Deep Sea Treasure
 - [ ] Add use-case with shared decision support in Water-reservoir
 

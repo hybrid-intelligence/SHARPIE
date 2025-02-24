@@ -1,3 +1,11 @@
+function updatePrompt(){
+    prompt = document.getElementById("id_prompt").value;
+}
+
+
+
+
+
 // Connecting to the server's websocket
 const chatSocket = new WebSocket(
     'ws://'
@@ -9,8 +17,8 @@ const chatSocket = new WebSocket(
 
 // Flag used to avoid querying the server to fast if it did not yet reply
 isInUse = false;
-// Setting up an infinite loop to perform 'queryLoop', here every 41 milliseconds (~ 24 frames/second)
-refreshRate = 41;
+// Setting up an infinite loop to perform 'queryLoop', here every 41 milliseconds (20 frames/second)
+refreshRate = 50;
 interval = setInterval(queryLoop, refreshRate);
 // Asking the server to perform a step and sending the user's inputs
 function queryLoop() {
@@ -22,7 +30,7 @@ function queryLoop() {
     try {
         // Send the user's inputs and set isInUse
         chatSocket.send(JSON.stringify({
-            'nothing': ''
+            'prompt': prompt
         }));
         // Set isInUse 
         isInUse = true;

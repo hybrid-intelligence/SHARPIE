@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from .forms import ConfigForm
+from .forms import ConfigForm, RunForm
 
 from .settings import app_name, app_folder
 
@@ -40,5 +40,7 @@ def run_(request):
     if not saved:
         return redirect("/"+app_folder+"/config")
 
+    form = RunForm()
     room_name = request.session['room_name']
-    return render(request, app_folder+"/run.html", {"room_name": room_name, "app_name": app_name, "app_folder": app_folder})
+    initial_prompt = request.session['initial_prompt']
+    return render(request, app_folder+"/run.html", {"room_name": room_name, "app_name": app_name, "app_folder": app_folder, "form": form, "initial_prompt": initial_prompt})
