@@ -25,5 +25,6 @@ urlpatterns = [
     #path("spread/", include("spread.urls")),
     #path("tag/", include("tag.urls")),
     #path("minecraft/", include("minecraft.urls")),
+    path('accounts/', include("accounts.urls")),
     path('admin/', admin.site.urls),
 ]

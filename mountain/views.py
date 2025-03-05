@@ -1,10 +1,12 @@
 from django.shortcuts import render, redirect
 from .forms import ConfigForm
+from django.contrib.auth.decorators import login_required
 
 from .settings import app_name, app_folder
 
 
 # Configuration view that will automatically check and save the parameters into the user session variable
+@login_required
 def config_(request):
     # If this is a POST request we need to process the form data
     if request.method == "POST":
@@ -30,7 +32,7 @@ def config_(request):
 
 
 
-
+@login_required
 def run_(request):
     # Create empty config form
     form = ConfigForm()

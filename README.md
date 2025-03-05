@@ -16,6 +16,10 @@ In this repository, each use-case described in our paper is a separate app, whic
   * `asgi.py` declares how the protocols are handled by the (asynchronous) server and in particular the websockets
   * `websocket.py` declares the WebsocketTemplate that can be used by each app and takes care of syncronization
   * `templates/base.html` defines the menu as well as the footer of the pages and is included in all other templates.
+* `accounts/` is the folder holding the minimum code to log in and authenticate users.
+  * `urls.py` declares three pages: `login`, `register` and `logout`. Only `login` and `logout` are enabled by default.
+  * `views.py` defines what happens when a user needs to `login`, `register` or `logout`.
+  * `forms.py` defines the information needed to `login` and `register`.
 * `db.sqlite3` DB file used by the website.
 
 ### Specific files for an app
@@ -29,6 +33,7 @@ In this repository, each use-case described in our paper is a separate app, whic
 * `views.py` defines what happens when a user queries a given URL. By default, only defines two views (i.e. pages): `config` and `run`.
   * `config` takes care of displaying, checking and saving in the user's session all the configuration variables needed for the experiment.
   * `run` loads the needed informations for displaying the experiment page.
+  * You can easily require that the user is logged in by adding `@login_required` to those views (see Mountain Car example).
 * `forms.py` defines the forms needed for our experiment. By default only defines `ConfigForm` that is loaded in `views.py/config`
 * `websocket.py` main component of your applications that will take care of the communication with the user. By default only defines `Consumer`. 
 * `settings.py` settings of your app (at least app_name and app_folder)
@@ -38,12 +43,16 @@ In this repository, each use-case described in our paper is a separate app, whic
 * Git clone this repository
 * Install Redis server `apt install redis-server`
 * Install apps requirements (depending on what you what to try)
+  * Mountain Car `pip install gymnasium`
   * AMaze `pip install PyQt5 amaze-benchmarker`
   * Simple Spread and Simple Tag `pip install tensorflow pettingzoo[mpe]`
   * STEVE-1: `cd minecraft/` and follow installation instructions from https://github.com/Shalev-Lifshitz/STEVE-1
 * Install SHARPIE requirements `pip install django channels[daphne] channels_redis django-crispy-forms crispy-bootstrap4 ezpickle opencv-python-headless`
 * Uncomment the apps you want to try in `sharpie/settings.py`, `sharpie/urls.py` and `sharpie/asgi.py`
-* Run `python manage.py runserver`
+* Run `python manage.py makemigrations` and `python manage.py migrate` to setup your database.
+* Run `python manage.py createsuperuser` to create an admin account for you.
+* Run `python manage.py runserver` to start the server
+* You can access the website at [localhost:8000](localhost:8000), try any installed app, and manage the authorized users from [localhost:8000/admin](localhost:8000/admin)
 
 ## Create your own app
 * Run `sh create_app.sh [app_name] [app_folder]`
