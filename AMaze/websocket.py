@@ -1,7 +1,10 @@
 # We import the app_folder because it is needed by the ConsumerTemplate
 from .settings import app_folder
+from .models import Info
 
 from sharpie.websocket import ConsumerTemplate
+from django.contrib.auth.models import User
+from channels.db import database_sync_to_async
 
 import os
 import json
@@ -29,6 +32,13 @@ class Consumer(ConsumerTemplate):
     reward = {}
     obs_ = {}
     action_ = {}
+
+    changed = {}
+
+    @database_sync_to_async
+    def update_info(self):
+        new_info = Info(user=self.scope["user"], room=self.room_name, reward=self.reward[self.room_name], changed=self.changed[self.room_name])
+        new_info.save()
 
     # This function is called during the connection with the browser
     async def process_connection(self):
@@ -60,9 +70,11 @@ class Consumer(ConsumerTemplate):
 
     # This function gets the information sent by the browser and processes it
     async def process_inputs(self, text_data):
+        self.changed[self.room_name] = False
         # Decode what has been sent by the user
         text_data_json = json.loads(text_data)
         if(text_data_json["reward"]) != '':
+            self.changed[self.room_name] = True
             self.reward[self.room_name] = float(text_data_json["reward"])
 
     # This function performs a step in the experiment
@@ -101,6 +113,8 @@ class Consumer(ConsumerTemplate):
             size=500,
             path=self.static_folder[self.room_name]+'step.jpg',
         )
+        # Store the data into the DB
+        await self.update_info()
 
         # Check if the game is over
         if self.terminated[self.room_name]:

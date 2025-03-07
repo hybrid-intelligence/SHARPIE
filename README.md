@@ -35,7 +35,9 @@ In this repository, each use-case described in our paper is a separate app, whic
   * `run` loads the needed informations for displaying the experiment page.
   * You can easily require that the user is logged in by adding `@login_required` to those views (see Mountain Car example).
 * `forms.py` defines the forms needed for our experiment. By default only defines `ConfigForm` that is loaded in `views.py/config`
-* `websocket.py` main component of your applications that will take care of the communication with the user. By default only defines `Consumer`. 
+* (optional) `models.py` defines tables that will be stored in the database
+* (optional) `admin.py` defines how those tables will be displayed in the admin interface
+* `websocket.py` main component of your applications that will take care of the communication with the user (and optionnally logs their actions). By default only defines `Consumer`. 
 * `settings.py` settings of your app (at least app_name and app_folder)
 
 ## Development installation

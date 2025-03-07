@@ -1,7 +1,10 @@
 # We import the app_folder because it is needed by the ConsumerTemplate
 from .settings import app_folder
+from .models import Info
 
 from sharpie.websocket import ConsumerTemplate
+from django.contrib.auth.models import User
+from channels.db import database_sync_to_async
 
 import cv2
 import os
@@ -22,6 +25,11 @@ class Consumer(ConsumerTemplate):
     agent = {}
     action = {}
     obs = {}
+
+    @database_sync_to_async
+    def update_info(self, action, step):
+        new_info = Info(user=self.scope["user"], room=self.room_name, action=action, step=step)
+        new_info.save()
 
     # This function is called during the connection with the browser
     async def process_connection(self):
@@ -71,7 +79,8 @@ class Consumer(ConsumerTemplate):
     async def process_ouputs(self):
         # Render an image and save it on the server
         cv2.imwrite(self.static_folder[self.room_name]+'step.jpg', self.env[self.room_name].render(), [cv2.IMWRITE_JPEG_QUALITY, 80])
-
+        # Store the data into the DB
+        await self.update_info(self.action[self.room_name], self.step[self.room_name])
         # Check if the game is over
         if self.terminated[self.room_name]:
             message = 'done'
