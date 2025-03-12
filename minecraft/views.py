@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from .forms import ConfigForm
+from .forms import ConfigForm, RunForm
 
 from .settings import app_name, app_folder
 from sharpie.settings import WS_SETTING
@@ -41,5 +41,6 @@ def run_(request):
     if not saved:
         return redirect("/"+app_folder+"/config")
 
+    form = RunForm()
     room_name = request.session['room_name']
-    return render(request, app_folder+"/run.html", {"room_name": room_name, 'ws_setting': WS_SETTING, "app_name": app_name, "app_folder": app_folder})
+    return render(request, app_folder+"/run.html", {"room_name": room_name, "form": form, 'ws_setting': WS_SETTING, "app_name": app_name, "app_folder": app_folder})
