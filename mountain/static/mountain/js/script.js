@@ -20,7 +20,8 @@ document.addEventListener('keydown', (event)=> {
 
 // Connecting to the server's websocket
 const chatSocket = new WebSocket(
-    'ws://'
+    ws_setting
+    + '://'
     + window.location.host
     + window.location.pathname
 );

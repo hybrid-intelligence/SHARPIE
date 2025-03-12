@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect
-from .forms import ConfigForm
+from .forms import ConfigForm, RunForm
 from django.contrib.auth.decorators import login_required
 
 from .settings import app_name, app_folder
+from sharpie.settings import WS_SETTING
 
 
 # Configuration view that will automatically check and save the parameters into the user session variable
@@ -32,6 +33,7 @@ def config_(request):
 
 
 
+
 @login_required
 def run_(request):
     # Create empty config form
@@ -42,5 +44,6 @@ def run_(request):
     if not saved:
         return redirect("/"+app_folder+"/config")
 
+    form = RunForm()
     room_name = request.session['room_name']
-    return render(request, app_folder+"/run.html", {"room_name": room_name, "app_name": app_name, "app_folder": app_folder})
+    return render(request, app_folder+"/run.html", {"room_name": room_name, 'ws_setting': WS_SETTING, "app_name": app_name, "app_folder": app_folder, "form": form})

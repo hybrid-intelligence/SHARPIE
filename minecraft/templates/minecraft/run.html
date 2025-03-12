@@ -9,6 +9,7 @@
     image_scr = "{% static request.path %}/{{ room_name }}/step.jpg";
     restart_button = '<a href="/{{ app_folder }}/run" class="btn btn-info"><i class="bi bi-bootstrap-reboot"></i> Restart</a>';
 
+    ws_setting = "{{ ws_setting }}";
     prompt = "{{ initial_prompt }}";
   </script>
   <script src="{% static app_folder %}/js/script.js"></script>

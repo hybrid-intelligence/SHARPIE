@@ -1,6 +1,7 @@
 # chat/consumers.py
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
+from sharpie.settings import STATIC_ROOT, PROD
 
 import os
 
@@ -47,7 +48,11 @@ class ConsumerTemplate(AsyncWebsocketConsumer):
             self.terminated[self.room_name] = False
 
             # Create the run folder on the server if it does not exist  
-            self.static_folder[self.room_name] = self.app_folder+'/static/'+self.scope["path"]+'/'+self.room_name+'/'
+            # Depending on whether it is the production server or not, the files will not be stored in the same location
+            if PROD:
+                self.static_folder[self.room_name] = str(STATIC_ROOT)+self.scope["path"]+'/'+self.room_name+'/'
+            else:
+                self.static_folder[self.room_name] = self.app_folder+'/static/'+self.scope["path"]+'/'+self.room_name+'/'
             if not os.path.exists(self.static_folder[self.room_name]):
                 os.makedirs(self.static_folder[self.room_name])
 
