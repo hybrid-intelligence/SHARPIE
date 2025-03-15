@@ -120,13 +120,12 @@ When using this project in a scientific publication please cite:
 ```bibtex
 @inproceedings{sharpiecaihu25,
     booktitle = {AAAI Bridge Program Workshop on Collaborative AI and Modeling of Humans},
-    title = {{SHARPIE: A Modular Framework for Reinforcement Learning and Human-AI Interaction
-    author = {Ayd\in, H{\"{u}}seyin and Godin-Dubois, Kevin and Goncalves Braz, Libio and den Hengst,
+    title = {{SHARPIE}: A Modular Framework for Reinforcement Learning and Human-AI Interaction Experiments},
+    author = {Ayd$\i$n, H{\"{u}}seyin and Godin-Dubois, Kevin and Goncalves Braz, Libio and den Hengst,
     Floris and Baraka, Kim and {\c{C}}elikok, Mustafa Mert and Sauter, Andreas and Wang, Shihan and
     Oliehoek, Frans A},
     month = {feb},
     address = {Philadelphia, Pennsylvania, USA},
-    Experiments}},
     doi={10.48550/arXiv.2501.19245},
     year = {2025}
 }
