@@ -11,6 +11,8 @@
     ws_setting = "{{ ws_setting }}";
   </script>
   <script src="{% static app_folder %}/js/script.js"></script>
+  <script src="{% static app_folder %}/js/keyPressDisplay.js"></script>
+  <script src="{% static app_folder %}/js/keyboardKeys.js"></script>
 
   <section class="text-center">
     <div class="container">
@@ -23,11 +25,40 @@
 
   <br>
   <div class="container">
-    <div id="loading_div" class="d-flex align-items-center">
+    <div id="loading_div" class="d-flex align-items-left justify-content-center">
       <strong>Your game is loading...</strong> &nbsp;&nbsp;&nbsp;
       <div class="spinner-border ml-auto" role="status" aria-hidden="true"></div>
     </div>
 
-    <img id="image" style="visibility: hidden;" class="img-fluid rounded mx-auto d-block img-thumbnail" src="{% static request.path %}/{{ room_name }}/step.jpg">
+    <div class="row mt-3">
+      <div class="col-md-8 d-flex justify-content-center">
+        <div style="width: 78%;">
+          <img id="image" style="visibility: hidden;" class="img-fluid rounded img-thumbnail w-100" src="{% static request.path %}/{{ room_name }}/step.jpg">
+          {% include "mountain/components/key_press_display.html" %}
+        </div>
+      </div>
+      
+      <div class="col-md-4">
+        <div class="card border-secondary">
+          <div class="card-header bg-light">
+            <h5 class="card-title mb-0">Controls</h5>
+          </div>
+          <div class="card-body">
+            <p class="card-text">Use the following keys to control the car:</p>
+            <div class="d-flex justify-content-around mb-3">
+              <div class="text-center">
+                <kbd class="keyboard-key">←</kbd>
+                <div>Left</div>
+              </div>
+              <div class="text-center">
+                <kbd class="keyboard-key">→</kbd>
+                <div>Right</div>
+              </div>
+            </div>
+            <p class="card-text">These keys will override the agent's actions.</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 {% endblock %}
