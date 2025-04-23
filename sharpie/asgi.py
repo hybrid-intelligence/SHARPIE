@@ -22,7 +22,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "sharpie.settings")
 django_asgi_app = get_asgi_application()
 
 from example import websocket as example_websocket
-#from mountain import websocket as mountain_websocket
+from mountain import websocket as mountain_websocket
 #from AMaze import websocket as amaze_websocket
 #from spread import websocket as spread_websocket
 #from tag import websocket as tag_websocket
@@ -35,7 +35,7 @@ application = ProtocolTypeRouter(
             AuthMiddlewareStack(
                 URLRouter([
                         re_path("example/run", example_websocket.Consumer.as_asgi()),
-                        #re_path("mountain/run", mountain_websocket.Consumer.as_asgi()),
+                        re_path("mountain/run", mountain_websocket.Consumer.as_asgi()),
                         #re_path("AMaze/run", amaze_websocket.Consumer.as_asgi()),
                         #re_path("spread/run", spread_websocket.Consumer.as_asgi()),
                         #re_path("tag/run", tag_websocket.Consumer.as_asgi()),
