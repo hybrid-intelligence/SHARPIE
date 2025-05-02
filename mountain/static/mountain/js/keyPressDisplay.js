@@ -1,42 +1,56 @@
 class KeyPressDisplay {
     constructor() {
-      this.keyPressedBox = document.getElementById('key-pressed-box');
-      this.keyPressedText = document.getElementById('key-pressed-text');
-      this.isGameOver = false;
-      this.setupEventListeners();
+        this.keyPressedText = document.getElementById('key-pressed-text');
+        this.leftPressed = false;
+        this.rightPressed = false;
+        this.setupEventListeners();
     }
   
     setupEventListeners() {
-      document.addEventListener('keydown', (event) => this.handleKeyDown(event));
-      document.addEventListener('keyup', (event) => this.handleKeyUp(event));
+        document.addEventListener('keydown', (event) => this.handleKeyEvent(event, true));
+        document.addEventListener('keyup', (event) => this.handleKeyEvent(event, false));
     }
   
-    handleKeyDown(event) {
-      if (this.isGameOver) return;
-      if (event.key === 'ArrowLeft') {
-        this.updateDisplay('← Left');
-      } else if (event.key === 'ArrowRight') {
-        this.updateDisplay('→ Right');
-      }
+    handleKeyEvent(event, isKeyDown) {
+        if (event.key === 'ArrowLeft') {
+            this.leftPressed = isKeyDown;
+        } else if (event.key === 'ArrowRight') {
+            this.rightPressed = isKeyDown;
+        }
+        
+        this.updateDisplay();
     }
   
-    // Method to get current control state
+    updateDisplay() {
+        if (!this.keyPressedText) {
+            console.error('Key press display elements not found');
+            return;
+        }
+        if (this.leftPressed) {
+            this.keyPressedText.textContent = '← Left';
+        } else if (this.rightPressed) {
+            this.keyPressedText.textContent = '→ Right';
+        } else {
+            this.keyPressedText.textContent = 'No key pressed';
+        }
+    }
+  
     getControlState() {
-      return {
-        left: this.left,
-        right: this.right
-      };
+        return {
+            left: this.leftPressed ? 1 : 0,
+            right: this.rightPressed ? 1 : 0
+        };
     }
-  
-    // Method to set game over state
+
     setGameOver(isOver) {
-      this.isGameOver = isOver;
+        if (isOver) {
+            this.leftPressed = false;
+            this.rightPressed = false;
+            this.updateDisplay();
+        }
     }
-  }
+}
   
-  // Initialize when the DOM is loaded
-  document.addEventListener('DOMContentLoaded', () => {
-    const keyPressDisplay = new KeyPressDisplay();
-    // Make the instance available globally if needed
-    window.keyPressDisplay = keyPressDisplay;
-  }); 
+document.addEventListener('DOMContentLoaded', () => {
+    window.keyPressDisplay = new KeyPressDisplay();
+}); 
