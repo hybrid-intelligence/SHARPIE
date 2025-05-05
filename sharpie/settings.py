@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'home',
     'example',
     'mountain',
-    #'AMaze',
+    'AMaze',
     #'spread',
     #'tag',
     #'minecraft',

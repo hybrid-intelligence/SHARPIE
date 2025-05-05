@@ -21,7 +21,7 @@ urlpatterns = [
     path("", include("home.urls")),
     path("example/", include("example.urls")),
     path("mountain/", include("mountain.urls")),
-    #path("AMaze/", include("AMaze.urls")),
+    path("AMaze/", include("AMaze.urls")),
     #path("spread/", include("spread.urls")),
     #path("tag/", include("tag.urls")),
     #path("minecraft/", include("minecraft.urls")),

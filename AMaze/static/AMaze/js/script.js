@@ -6,7 +6,11 @@ const chatSocket = new WebSocket(
     + window.location.pathname
 );
 
-
+// Ensure loading div is visible on page load
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById("loading_div").style.visibility = 'visible';
+    document.getElementById("image").style.visibility = 'hidden';
+});
 
 // Flag used to avoid querying the server to fast if it did not yet reply
 isInUse = false;
@@ -37,22 +41,28 @@ function queryLoop() {
     }
 };
 
-
-
+function sendFeedback(value) {
+    if (chatSocket.readyState === WebSocket.OPEN) {
+        chatSocket.send(JSON.stringify({
+            'feedback': value
+        }));
+    }
+}
 
 // When the server finishes a step and replies
 chatSocket.onmessage = function(e) {
-    // We refresh the image on the page by taking the new one from the server
-    // "?"+new Date().getTime() is used here to force the browser to re-download the image and not use a cached version
-    document.getElementById("image").src = image_scr+"?"+new Date().getTime();
-    // We set the image visible and hide the loading icon
-    document.getElementById("image").style.visibility = 'visible';
-    document.getElementById("loading_div").style.visibility = 'hidden';
     // Parse the message from the server
     const data = JSON.parse(e.data);
+    
+    // Set the image source and make it visible only after we receive the first response
+    document.getElementById("image").src = image_scr+"?"+new Date().getTime();
+    document.getElementById("image").style.visibility = 'visible';
+    document.getElementById("loading_div").style.visibility = 'hidden';
+    
     // Replace the subtitle text by the new step number received
     document.getElementById("sub-title").innerText = "Step " + data.step;
     document.getElementById("id_reward").value = data.reward;
+    
     // If the game is over
     if(data.message == 'done'){
         // Stop the infinite loop
@@ -64,9 +74,6 @@ chatSocket.onmessage = function(e) {
     // Unset isInUse 
     isInUse = false;
 };
-
-
-
 
 // When the server closes the connection
 chatSocket.onclose = function(e) {

@@ -34,6 +34,7 @@ class Consumer(ConsumerTemplate):
     action_ = {}
 
     changed = {}
+    user_feedback = {}  # New variable to store user feedback
 
     @database_sync_to_async
     def update_info(self):
@@ -44,6 +45,7 @@ class Consumer(ConsumerTemplate):
     async def process_connection(self):
         # Initialize the number of steps
         self.step[self.room_name] = 0
+        self.user_feedback[self.room_name] = None  # Initialize user feedback
 
         rng = random.Random(0)
         # Start the environment and the agent
@@ -51,7 +53,7 @@ class Consumer(ConsumerTemplate):
             width=self.scope["session"]['width'],
             height=self.scope["session"]['height'],
             seed=self.scope["session"]['seed'],
-            unicursive=self.scope["session"]['unicursive'],
+            unicursive=self.scope["session"]['unicursive'].lower() == 'true',  # Convert string to boolean
             start=rng.choice([sl for sl in StartLocation]),
             p_lure=self.scope["session"]['lures'],
             p_trap=self.scope["session"]['traps'],
@@ -73,7 +75,15 @@ class Consumer(ConsumerTemplate):
         self.changed[self.room_name] = False
         # Decode what has been sent by the user
         text_data_json = json.loads(text_data)
-        if(text_data_json["reward"]) != '':
+        
+        # Handle user feedback
+        if "feedback" in text_data_json:
+            self.user_feedback[self.room_name] = float(text_data_json["feedback"])
+            # Use the feedback as the reward
+            self.reward[self.room_name] = self.user_feedback[self.room_name]
+            # Don't trigger step automatically - wait for user to click Next
+            self.changed[self.room_name] = True
+        elif text_data_json["reward"] != '':
             self.changed[self.room_name] = True
             self.reward[self.room_name] = float(text_data_json["reward"])
 
@@ -99,9 +109,14 @@ class Consumer(ConsumerTemplate):
             self.action[self.room_name] = self.agent[self.room_name](self.obs[self.room_name])
 
         # Perform a step in the environment
-        self.reward[self.room_name] = self.env[self.room_name].step(self.action[self.room_name])
+        env_reward = self.env[self.room_name].step(self.action[self.room_name])
+        # Only use environment reward if no user feedback is provided
+        if self.user_feedback[self.room_name] is None:
+            self.reward[self.room_name] = env_reward
         self.obs[self.room_name] = self.env[self.room_name].observations.copy()
         self.terminated[self.room_name] = self.env[self.room_name].done()
+        # Reset user feedback after using it
+        self.user_feedback[self.room_name] = None
 
     # This function generates the rendered image and returns the information sent back to the browser
     async def process_ouputs(self):
@@ -122,11 +137,6 @@ class Consumer(ConsumerTemplate):
         else:
             message = 'not done'
         # Send message to room group
-        # The returned value should be a dictionnary with the 
-        #   type, 
-        #   message, 
-        #   step, 
-        #   and anything else you would like to send
         return {"type": "websocket.message", 
                 "message": message, 
                 "step": self.step[self.room_name],
@@ -138,7 +148,6 @@ class Consumer(ConsumerTemplate):
             # Delete the variables from memory
             self.agent[self.room_name].save(self.static_folder[self.room_name]+'agent')
             del self.step[self.room_name]
-
             del self.maze[self.room_name]
             del self.env[self.room_name]
             del self.agent[self.room_name]
@@ -147,5 +156,6 @@ class Consumer(ConsumerTemplate):
             del self.action[self.room_name]
             del self.action_[self.room_name]
             del self.reward[self.room_name]
+            del self.user_feedback[self.room_name]
         else:
             self.step[self.room_name] += 1
