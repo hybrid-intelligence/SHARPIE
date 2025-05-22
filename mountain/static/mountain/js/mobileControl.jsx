@@ -22,7 +22,7 @@ const MobileControls = function({ onLeftPress, onRightPress }) {
         border-radius: 10px;
         color: white;
         border: none;
-        font-size: 18px;
+        font-size: 24px;
         font-weight: bold;
         display: flex;
         align-items: center;
@@ -31,8 +31,6 @@ const MobileControls = function({ onLeftPress, onRightPress }) {
         -webkit-tap-highlight-color: transparent;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         transition: all 0.2s ease;
-        text-transform: uppercase;
-        letter-spacing: 1px;
         user-select: none;
       }
       .control-button:active {
@@ -56,12 +54,12 @@ const MobileControls = function({ onLeftPress, onRightPress }) {
       className: 'control-button left',
       onTouchStart: onLeftPress,
       onTouchEnd: () => document.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowLeft' }))
-    }, 'Left'),
+    }, '←'),
     React.createElement('button', {
       className: 'control-button right',
       onTouchStart: onRightPress,
       onTouchEnd: () => document.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowRight' }))
-    }, 'Right')
+    }, '→')
   );
 };
 
