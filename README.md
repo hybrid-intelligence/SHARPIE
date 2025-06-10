@@ -2,7 +2,7 @@
 
 # SHARPIE
 ## Shared Human-AI Reinforcement Learning Platform for Interactive Experiments
-[![Demo](https://github.com/libgoncalv/SHARPIE/blob/main/home/static/home/preview_image_1.png)](https://archive.org/embed/sharpie_demo_1_noaudio_captions)
+[![Demo](https://github.com/libgoncalv/SHARPIE/blob/main/home/static/home/preview_image_1.png)](https://archive.org/embed/hhai-demo-1)
 
 Our framework is relying on Django for serving files to the user browser. Therefore, it is following the architecture of Django to organize the code i.e. decomposition of the pages in apps.
 
