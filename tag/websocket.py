@@ -63,7 +63,34 @@ class Consumer(ConsumerTemplate):
 
     # This function generates the rendered image and returns the information sent back to the browser
     async def process_ouputs(self):
-        cv2.imwrite(self.static_folder[self.room_name]+'step.jpg', self.env[self.room_name].render(), [cv2.IMWRITE_JPEG_QUALITY, 80])
+        # Get the rendered image
+        img = self.env[self.room_name].render()
+        
+        # Get the user-controlled agent's position from current observation
+        played_agent = self.scope['session']['played_agent']
+        # The position is in the observation at index 2 (after velocity and self position)
+        agent_pos = self.obs[self.room_name][played_agent][2:4] 
+        
+        height, width = img.shape[:2]
+        
+        # Convert position to pixel coordinates using actual image dimensions
+        x = int((agent_pos[0] + 1) * width / 2)  # Scale from [-1,1] to [0,width]
+        y = int((agent_pos[1] + 1) * height / 2)  # Scale from [-1,1] to [0,height]
+        
+        # Add position indicator
+        font_scale = min(width, height) / 1000 
+        font_thickness = max(1, int(font_scale * 2)) 
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        
+        # Format position text (2 decimal places)
+        pos_text = f"({agent_pos[0]:.2f}, {agent_pos[1]:.2f})"
+        
+        (text_width, text_height), _ = cv2.getTextSize(pos_text, font, font_scale, font_thickness)
+        text_x = x - text_width // 2
+        text_y = y - int(height * 0.05) 
+        
+        cv2.putText(img, pos_text, (text_x, text_y), font, font_scale, (255, 255, 0), font_thickness)
+        cv2.imwrite(self.static_folder[self.room_name]+'step.jpg', img, [cv2.IMWRITE_JPEG_QUALITY, 80])
 
         # Check if the game is over
         if self.terminated[self.room_name]:
@@ -71,11 +98,6 @@ class Consumer(ConsumerTemplate):
         else:
             message = 'not done'
         # Send message to room group
-        # The returned value should be a dictionnary with the 
-        #   type, 
-        #   message, 
-        #   step, 
-        #   and anything else you would like to send
         return {"type": "websocket.message", 
                 "message": message, 
                 "step": self.step[self.room_name]}

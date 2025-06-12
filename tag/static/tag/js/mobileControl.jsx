@@ -42,36 +42,36 @@ const MobileControls = function({ onUpPress, onDownPress, onLeftPress, onRightPr
         box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
       }
       .control-button.up {
-        background: rgb(237, 152, 160);
+        background: rgb(127, 222, 231);
         grid-column: 2;
         grid-row: 1;
       }
       .control-button.down {
-        background: rgb(237, 152, 160);
+        background: rgb(127, 222, 231);
         grid-column: 2;
         grid-row: 3;
       }
       .control-button.left {
-        background: rgb(158, 233, 175);
+        background: rgb(127, 222, 231);
         grid-column: 1;
         grid-row: 2;
       }
       .control-button.right {
-        background: rgb(158, 233, 175);
+        background: rgb(127, 222, 231);
         grid-column: 3;
         grid-row: 2;
       }
       .control-button.up:active {
-        background: rgb(225, 74, 92);
+        background: rgb(0, 204, 255);
       }
       .control-button.down:active {
-        background: rgb(225, 74, 92);
+        background: rgb(0, 204, 255);
       }
       .control-button.left:active {
-        background: rgb(57, 188, 88);
+        background: rgb(0, 204, 255);
       }
       .control-button.right:active {
-        background: rgb(57, 188, 88);
+        background: rgb(0, 204, 255);
       }
     `),
     React.createElement('button', {
