@@ -8,7 +8,7 @@
     <div class="container">
       <br>
       {% if saved %}
-        <h2 class="text-end"><a href="run" class="btn btn-info">Play <i class="bi bi-arrow-right"></i></a></h2>
+        <h2 class="text-end"><a href="{% url 'AMaze:run' %}" class="btn btn-info">Play <i class="bi bi-arrow-right"></i></a></h2>
       {% endif %}
       <h1>{{ app_name }} experiment</h1>
     </div>

@@ -4,6 +4,7 @@ from .forms import ConfigForm
 
 from .settings import app_name, app_folder
 from sharpie.settings import WS_SETTING
+from sharpie.task_content import TASK_CONTENT
 
 
 # Configuration view that will automatically check and save the parameters into the user session variable
@@ -29,11 +30,12 @@ def config_(request):
         initial_data = {k: request.session.get(k, None) for k in form.fields.keys() if k != 'doc_link'}
         form = ConfigForm(initial=initial_data)
 
-    return render(request, app_folder+"/config.html", {'form': form, 'app_name': app_name, 'saved': saved})
-
-
-
-
+    return render(request, app_folder+"/config.html", {
+        'form': form, 
+        'app_name': app_name, 
+        'app_folder': app_folder,
+        'saved': saved
+    })
 
 @login_required
 def run_(request):
@@ -47,3 +49,17 @@ def run_(request):
 
     room_name = request.session['room_name']
     return render(request, app_folder+"/run.html", {"room_name": room_name, 'ws_setting': WS_SETTING, "app_name": app_name, "app_folder": app_folder})
+
+# Task description view that shows the experiment overview and instructions
+@login_required
+def task_description_(request):
+    content = TASK_CONTENT[app_folder]
+    context = {
+        'app_name': app_name,
+        'app_folder': app_folder,
+        'task_description': content['task_description'],
+        'learning_objectives': content['learning_objectives'],
+        'instructions': content['instructions']
+    }
+    
+    return render(request, "task_description.html", context)
