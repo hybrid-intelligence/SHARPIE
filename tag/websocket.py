@@ -7,6 +7,7 @@ import cv2
 import os
 import json
 from pettingzoo.mpe import simple_tag_v3
+import numpy as np
 
 # Websocker consumer that inherits from the consumer template
 class Consumer(ConsumerTemplate):
@@ -63,41 +64,34 @@ class Consumer(ConsumerTemplate):
 
     # This function generates the rendered image and returns the information sent back to the browser
     async def process_ouputs(self):
-        # Get the rendered image
         img = self.env[self.room_name].render()
-        
-        # Get the user-controlled agent's position from current observation
         played_agent = self.scope['session']['played_agent']
-        # The position is in the observation at index 2 (after velocity and self position)
-        agent_pos = self.obs[self.room_name][played_agent][2:4] 
-        
+        agent_pos = self.obs[self.room_name][played_agent][2:4]
         height, width = img.shape[:2]
-        
-        # Convert position to pixel coordinates using actual image dimensions
-        x = int((agent_pos[0] + 1) * width / 2)  # Scale from [-1,1] to [0,width]
-        y = int((agent_pos[1] + 1) * height / 2)  # Scale from [-1,1] to [0,height]
-        
-        # Add position indicator
-        font_scale = min(width, height) / 1000 
-        font_thickness = max(1, int(font_scale * 2)) 
+        x = int((agent_pos[0] + 1) * width / 2)
+        y = int((1 - agent_pos[1]) * height / 2)
+
+        # Add a clear indicator that this is the user-controlled agent
+        font_scale = min(width, height) / 1000
+        font_thickness = max(1, int(font_scale * 2))
         font = cv2.FONT_HERSHEY_SIMPLEX
-        
-        # Format position text (2 decimal places)
-        pos_text = f"({agent_pos[0]:.2f}, {agent_pos[1]:.2f})"
-        
-        (text_width, text_height), _ = cv2.getTextSize(pos_text, font, font_scale, font_thickness)
+        indicator_text = "Controlled by you"
+        (text_width, text_height), _ = cv2.getTextSize(indicator_text, font, font_scale, font_thickness)
         text_x = x - text_width // 2
-        text_y = y - int(height * 0.05) 
-        
-        cv2.putText(img, pos_text, (text_x, text_y), font, font_scale, (255, 255, 0), font_thickness)
+        text_y = y - int(height * 0.05)
+        padding = 5
+        cv2.rectangle(img,
+                     (text_x - padding, text_y - text_height - padding),
+                     (text_x + text_width + padding, text_y + padding),
+                     (0, 0, 0), -1)
+        cv2.putText(img, indicator_text, (text_x, text_y), font, font_scale, (255, 255, 255), font_thickness)
+
         cv2.imwrite(self.static_folder[self.room_name]+'step.jpg', img, [cv2.IMWRITE_JPEG_QUALITY, 80])
 
-        # Check if the game is over
         if self.terminated[self.room_name]:
             message = 'done'
         else:
             message = 'not done'
-        # Send message to room group
         return {"type": "websocket.message", 
                 "message": message, 
                 "step": self.step[self.room_name]}

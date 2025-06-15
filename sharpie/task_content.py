@@ -92,7 +92,7 @@ TASK_CONTENT = {
         <ol>
             <li>Read through the task description and learning objectives carefully.</li>
             <li>Proceed to the configuration page to set up your experiment setup.</li>
-            <li>Set the number and capabilities of both adversaries (chasers) and good agents (runners).</li>
+            <li>Set the number and capabilities of both adversaries and good agents.</li>
             <li>Launch the simulation and observe how the agents interact in the environment.</li>
         </ol>
         """
