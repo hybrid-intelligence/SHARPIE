@@ -4,7 +4,7 @@ from .forms import ConfigForm
 
 from .settings import app_name, app_folder
 from sharpie.settings import WS_SETTING
-from sharpie.task_content import TASK_CONTENT
+from sharpie.markdown_utils import load_task_description
 
 
 # Configuration view that will automatically check and save the parameters into the user session variable
@@ -46,7 +46,7 @@ def run_(request):
 
 @login_required
 def task_description_(request):
-    content = TASK_CONTENT[app_folder]
+    content = load_task_description(app_folder)
     context = {
         'app_name': app_name,
         'app_folder': app_folder,

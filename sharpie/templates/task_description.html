@@ -10,21 +10,9 @@
                 </div>
                 <div class="card-body">
                     <div class="task-description">
-                        <h3 class="mb-4">Overview</h3>
-                        <div class="mb-4">
-                            {{ task_description|safe }}
-                        </div>
-                        
-                        <h3 class="mb-4">Learning Objectives</h3>
-                        <div class="mb-4">
-                            {{ learning_objectives|safe }}
-                        </div>
-
-                        <h3 class="mb-4">Instructions</h3>
-                        <div class="mb-4">
-                            {{ instructions|safe }}
-                        </div>
-
+                        {{ task_description|safe }}
+                        {{ learning_objectives|safe }}
+                        {{ instructions|safe }}
                     </div>
 
                     <div class="d-flex justify-content-between mt-4">
@@ -43,10 +31,24 @@
     line-height: 1.6;
 }
 
-.task-description h3 {
+.task-description h2 {
     color: #2c3e50;
     border-bottom: 2px solid #eee;
     padding-bottom: 0.5rem;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+.task-description h2:first-child {
+    margin-top: 0;
+}
+
+.task-description ul, .task-description ol {
+    margin-bottom: 1.5rem;
+}
+
+.task-description li {
+    margin-bottom: 0.5rem;
 }
 
 .card {

@@ -9,6 +9,10 @@ from channels.db import database_sync_to_async
 import os
 import json
 
+# Set environment variables to disable GUI for headless operation
+os.environ['QT_QPA_PLATFORM'] = 'offscreen'
+os.environ['DISPLAY'] = ':0'
+
 from amaze.simu.controllers.tabular import TabularController
 from amaze import Maze, Robot, Simulation, InputType, OutputType, StartLocation, MazeWidget, qt_application
 import random
@@ -120,8 +124,15 @@ class Consumer(ConsumerTemplate):
 
     # This function generates the rendered image and returns the information sent back to the browser
     async def process_ouputs(self):
-        # Call PyQt needed for rendering
-        app = qt_application()
+        # Call PyQt needed for rendering - use try/except to handle GUI initialization issues
+        try:
+            app = qt_application()
+        except Exception as e:
+            # If GUI initialization fails, we can still try to render without it
+            # This is a fallback for headless environments
+            print(f"Warning: Qt application initialization failed: {e}")
+            app = None
+            
         MazeWidget.static_render_to_file(maze=self.maze[self.room_name], path=self.static_folder[self.room_name]+'maze.jpg', size=1000, robot=False, solution=True, dark=True)
         MazeWidget.plot_trajectory(
             simulation=self.env[self.room_name],
