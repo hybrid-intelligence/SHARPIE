@@ -1,0 +1,34 @@
+{% comment %}
+This template provides tooltip functionality for form fields.
+{% endcomment %}
+
+<style>
+  .help-block, .form-text, .helptext, .help-block, .invalid-feedback {
+    display: none !important;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Add tooltip icons to all form labels
+    document.querySelectorAll('label').forEach(function(label) {
+      const fieldName = label.getAttribute('for');
+      const field = document.getElementById(fieldName);
+      if (field && field.getAttribute('data-help-text')) {
+        const helpText = field.getAttribute('data-help-text');
+        const icon = document.createElement('i');
+        icon.className = 'bi bi-info-circle-fill text-info ms-1';
+        icon.setAttribute('data-bs-toggle', 'tooltip');
+        icon.setAttribute('data-bs-placement', 'right');
+        icon.setAttribute('title', helpText);
+        label.appendChild(icon);
+      }
+    });
+
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+  });
+</script> 

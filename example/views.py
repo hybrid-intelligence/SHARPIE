@@ -15,16 +15,17 @@ def config_(request):
         if form.is_valid():
             # Process the data in form.cleaned_data if the field has been filled
             for k in form.fields.keys():
-                if k in form.cleaned_data.keys():
+                if k in form.cleaned_data.keys() and k != 'doc_link':  # Don't save doc_link to session
                     request.session[k] = form.cleaned_data[k]
 
     # Create empty config form
     form = ConfigForm()
     # Check if all the required fields have been saved in the user session variable
-    saved =  all((k in request.session.keys() or not form.fields[k].required) for k in form.fields.keys())
+    saved = all((k in request.session.keys() or not form.fields[k].required) for k in form.fields.keys())
     # If a config was already saved by the user, we create a prefilled form
     if(saved):
-        form = ConfigForm(initial={k:request.session.get(k, None) for k in form.fields.keys()})
+        initial_data = {k: request.session.get(k, None) for k in form.fields.keys() if k != 'doc_link'}
+        form = ConfigForm(initial=initial_data)
 
     return render(request, app_folder+"/config.html", {'form': form, 'app_name': app_name, 'saved': saved})
 
@@ -36,7 +37,7 @@ def run_(request):
     # Create empty config form
     form = ConfigForm()
     # Check if all the fields have been saved in the session
-    saved =  all((k in request.session.keys() or not form.fields[k].required) for k in form.fields.keys())
+    saved = all((k in request.session.keys() or not form.fields[k].required) for k in form.fields.keys())
     # If a config was not saved, we redirect the user to the config page
     if not saved:
         return redirect("/"+app_folder+"/config")

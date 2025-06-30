@@ -43,10 +43,10 @@ INSTALLED_APPS = [
 
     'home',
     'example',
-    #'mountain',
-    #'AMaze',
-    #'spread',
-    #'tag',
+    'mountain',
+    'AMaze',
+    'spread',
+    'tag',
     #'minecraft',
 
     'crispy_forms',

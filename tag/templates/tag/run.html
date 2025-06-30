@@ -10,7 +10,23 @@
   
     ws_setting = "{{ ws_setting }}";
   </script>
+
+  <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+  <script src="{% static app_folder %}/js/mobileControl.jsx"></script>
   <script src="{% static app_folder %}/js/script.js"></script>
+
+  <style>
+    @media (max-width: 768px) {
+      .container {
+        padding: 0;
+      }
+      .game-container {
+        width: 100% !important;
+        padding: 0 10px;
+      }
+    }
+  </style>
 
   <section class="text-center">
     <div class="container">
@@ -28,6 +44,36 @@
       <div class="spinner-border ml-auto" role="status" aria-hidden="true"></div>
     </div>
 
-    <img id="image" style="visibility: hidden;" class="img-fluid rounded mx-auto d-block img-thumbnail" src="{% static request.path %}/{{ room_name }}/step.jpg">
+    <div class="game-container">
+      <img id="image" style="visibility: hidden;" class="img-fluid rounded mx-auto d-block img-thumbnail" src="{% static request.path %}/{{ room_name }}/step.jpg">
+    </div>
   </div>
+
+  <!-- Mobile Controls Container -->
+  <div id="mobile-controls-root"></div>
+
+  <script>
+    window.addEventListener('load', function() {
+      function isMobileDevice() {
+        return (window.innerWidth <= 768) || ('ontouchstart' in window);
+      }
+
+      function MobileControlsWrapper() {
+        if (isMobileDevice()) {
+          return React.createElement(MobileControls, {
+            onUpPress: () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' })),
+            onDownPress: () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' })),
+            onLeftPress: () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' })),
+            onRightPress: () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }))
+          });
+        }
+        return null;
+      }
+
+      const rootElement = document.getElementById('mobile-controls-root');
+      if (rootElement && window.MobileControls) {
+        ReactDOM.render(React.createElement(MobileControlsWrapper), rootElement);
+      }
+    });
+  </script>
 {% endblock %}

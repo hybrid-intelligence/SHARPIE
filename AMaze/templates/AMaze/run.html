@@ -29,13 +29,94 @@
       <div class="spinner-border ml-auto" role="status" aria-hidden="true"></div>
     </div>
 
-    <img id="image" style="visibility: hidden;" class="img-fluid rounded mx-auto d-block img-thumbnail" src="{% static request.path %}/{{ room_name }}/step.jpg">
+    <img id="image" style="visibility: hidden;" class="img-fluid rounded mx-auto d-block img-thumbnail">
     <br>
     <div class="row justify-content-center">
-      <div class="col-4">
-        {{ form|crispy }}      
-        <button class="btn btn-primary" onclick="queryLoop()">Next</button>
+      <div class="col-5">
+        <div class="card control-box">
+          <div class="card-body">
+            <h5 class="card-title">Manual Control</h5>
+            {{ form|crispy }}      
+            <div class="next-button-container">
+              <button class="btn btn-primary next-button" onclick="queryLoop()">Next</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-5">
+        <div class="card control-box">
+          <div class="card-body">
+            <h5 class="card-title">Quick Feedback</h5>
+            <p class="card-text text-muted">Click thumbs up/down to provide feedback</p>
+            <div class="btn-group" role="group" aria-label="Feedback buttons">
+              <button type="button" class="btn btn-outline-success" onclick="sendFeedback(1)">
+                <i class="bi bi-hand-thumbs-up"></i> Good Move (+1)
+              </button>
+              <button type="button" class="btn btn-outline-danger" onclick="sendFeedback(-1)">
+                <i class="bi bi-hand-thumbs-down"></i> Bad Move (-1)
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
+
+  <style>
+    .btn-group {
+      margin-top: 5px;
+    }
+    .btn-group .btn {
+      padding: 8px 15px;
+    }
+    .bi {
+      margin-right: 5px;
+    }
+    .card {
+      margin-bottom: 10px;
+    }
+    .card-title {
+      margin-bottom: 10px;
+    }
+    .card-text {
+      margin-bottom: 5px;
+      font-size: 0.9rem;
+    }
+    .btn-outline-success:hover {
+      background-color: #198754;
+      color: white;
+    }
+    .btn-outline-danger:hover {
+      background-color: #dc3545;
+      color: white;
+    }
+    .control-box {
+      width: 100%;
+      margin: 0 auto;
+    }
+    .control-box .card-body {
+      padding: 1rem;
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+    }
+    .control-box .form-group {
+      margin-bottom: 0.5rem;
+    }
+    .next-button-container {
+      margin-top: auto;
+      text-align: center;
+      padding-top: 10px;
+    }
+    .next-button {
+      width: 100px;
+      padding: 8px 15px;
+    }
+    .row {
+      margin: 0 -15px;
+    }
+    .col-5 {
+      padding: 0 15px;
+    }
+  </style>
 {% endblock %}
