@@ -27,6 +27,9 @@ from AMaze import websocket as amaze_websocket
 from spread import websocket as spread_websocket
 from tag import websocket as tag_websocket
 #from minecraft import websocket as minecraft_websocket
+from panda import websocket as panda_websocket
+from custom_maze import websocket as custom_maze_websocket
+from tamer_maze import websocket as tamer_maze_websocket
 
 application = ProtocolTypeRouter(
     {
@@ -40,6 +43,9 @@ application = ProtocolTypeRouter(
                         re_path("spread/run", spread_websocket.Consumer.as_asgi()),
                         re_path("tag/run", tag_websocket.Consumer.as_asgi()),
                         #re_path("minecraft/run", minecraft_websocket.Consumer.as_asgi()),
+                        re_path("panda/run", panda_websocket.Consumer.as_asgi()),
+                        re_path("custom_maze/run", custom_maze_websocket.Consumer.as_asgi()),
+                        re_path("tamer_maze/run", tamer_maze_websocket.Consumer.as_asgi())                        
                     ]
                 )
             )

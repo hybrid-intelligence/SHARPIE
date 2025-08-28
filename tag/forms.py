@@ -37,12 +37,19 @@ class ConfigForm(forms.Form):
         widget=forms.Select(attrs={'data-help-text': 'Choose between continuous or discrete action spaces.'})
     )
     
-    played_agent = forms.CharField(
-        label='Played agent', 
-        max_length=20,
+    AGENT_CHOICES = [
+        ('adversary_0', 'adversary_0'),
+        ('adversary_1', 'adversary_1'),
+        ('adversary_2', 'adversary_2'),
+        ('agent_0', 'agent_0'),
+    ]
+    played_agent = forms.ChoiceField(
+        label='Played agent',
+        choices=AGENT_CHOICES,
         help_text='Which agent you want to play (i.e. adversary_0, adversary_1, adversary_2, agent_0, etc)',
-        widget=forms.TextInput(attrs={'data-help-text': 'Which agent you want to play (i.e. adversary_0, adversary_1, adversary_2, agent_0, etc)'})
+        widget=forms.Select(attrs={'data-help-text': 'Which agent you want to play (i.e. adversary_0, adversary_1, adversary_2, agent_0, etc)'})
     )
+
 
     room_name = forms.CharField(
         label='Room name', 

@@ -44,17 +44,19 @@ class Consumer(ConsumerTemplate):
         up_action = text_data_json["up"]
 
         played_agent = self.scope['session']['played_agent']
-        # Overwrite the action if needed
-        if left_action:
-            self.actions[self.room_name][played_agent] = 1
-        elif right_action:
-            self.actions[self.room_name][played_agent] = 2
-        elif down_action:
-            self.actions[self.room_name][played_agent] = 3
-        elif up_action:
-            self.actions[self.room_name][played_agent] = 4
-        else:
-            self.actions[self.room_name][played_agent] = 0
+        #print("self.actions: ", self.actions)
+        if self.actions and self.actions[self.room_name]:
+            # Overwrite the action if needed
+            if left_action:
+                self.actions[self.room_name][played_agent] = 1
+            elif right_action:
+                self.actions[self.room_name][played_agent] = 2
+            elif down_action:
+                self.actions[self.room_name][played_agent] = 3
+            elif up_action:
+                self.actions[self.room_name][played_agent] = 4
+            else:
+                self.actions[self.room_name][played_agent] = 0
 
     # This function performs a step in the experiment
     async def process_step(self):

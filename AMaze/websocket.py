@@ -101,7 +101,6 @@ class Consumer(ConsumerTemplate):
                                                   self.obs_[self.room_name], 
                                                   self.action_[self.room_name], 
                                                   alpha=ALPHA, gamma=GAMMA)
-        
         if self.step[self.room_name] > 0:
             self.action_[self.room_name] = self.action[self.room_name]
             self.obs_[self.room_name] = self.obs[self.room_name]

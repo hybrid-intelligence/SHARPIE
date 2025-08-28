@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<script>
+    // Django template variables
+    image_scr = "{% static request.path %}/{{ room_name }}/step.jpg";
+    restart_button = '<a href="/{{ app_folder }}/run" class="btn btn-primary restart-btn"><i class="bi bi-bootstrap-reboot"></i> Restart</a>';
+    ws_setting = "{{ ws_setting }}";
+</script>
+
+<script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+<script src="{% static app_folder %}/js/mobileControl.jsx"></script>
+<script src="{% static app_folder %}/js/script.js?v=1.0.3"></script>
+
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        --dark-bg: #1a1a2e;
+        --card-bg: rgba(255, 255, 255, 0.95);
+        --glass-bg: rgba(255, 255, 255, 0.1);
+        --text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        --box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        --border-radius: 20px;
+    }
+
+    body {
+        background: var(--primary-gradient);
+        min-height: 100vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .game-header {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: var(--border-radius);
+        padding: 2rem;
+        margin: 2rem auto;
+        box-shadow: var(--box-shadow);
+        color: white;
+        text-shadow: var(--text-shadow);
+        max-width: 900px;
+    }
+
+    .game-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        background: linear-gradient(45deg, #fff, #f0f0f0);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .room-info {
+        font-size: 1.2rem;
+        opacity: 0.9;
+        margin-bottom: 1rem;
+    }
+
+    .step-counter {
+        font-size: 1.5rem;
+        font-weight: 600;
+        padding: 0.5rem 1rem;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50px;
+        display: inline-block;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .control-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 1.5rem;
+    }
+
+    .btn-modern {
+        padding: 0.75rem 1.5rem;
+        border-radius: 50px;
+        border: none;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        backdrop-filter: blur(10px);
+    }
+
+    .btn-config {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-config:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        color: white;
+    }
+
+    .restart-btn {
+        background: var(--secondary-gradient) !important;
+        color: white !important;
+        border: none !important;
+    }
+
+    .restart-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+    }
+
+    .game-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .game-display {
+        background: var(--card-bg);
+        border-radius: var(--border-radius);
+        padding: 2rem;
+        box-shadow: var(--box-shadow);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .game-display::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--secondary-gradient);
+    }
+
+    .loading-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem;
+        color: #666;
+        font-size: 1.1rem;
+    }
+
+    .loading-spinner {
+        width: 2rem;
+        height: 2rem;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-left: 1rem;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .game-image {
+        max-width: 100%;
+        height: auto;
+        border-radius: 15px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        transition: all 0.3s ease;
+    }
+
+    .game-image:hover {
+        transform: scale(1.02);
+        box-shadow: 0 12px 35px rgba(0,0,0,0.2);
+    }
+
+    .mobile-controls-container {
+        position: fixed;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        border-radius: var(--border-radius);
+        padding: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: var(--box-shadow);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .game-header {
+            margin: 1rem;
+            padding: 1.5rem;
+        }
+
+        .game-title {
+            font-size: 2rem;
+        }
+
+        .control-buttons {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .game-container {
+            padding: 1rem;
+        }
+
+        .game-display {
+            padding: 1rem;
+        }
+
+        .mobile-controls-container {
+            bottom: 1rem;
+            left: 1rem;
+            right: 1rem;
+            transform: none;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .game-header {
+            padding: 1rem;
+        }
+
+        .game-title {
+            font-size: 1.5rem;
+        }
+
+        .step-counter {
+            font-size: 1.2rem;
+        }
+    }
+
+    /* Animation for image loading */
+    .fade-in {
+        animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Status indicator */
+    .status-indicator {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #4CAF50;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+    }
+</style>
+
+<header class="game-header">
+    <div class="text-center">
+        <h1 class="game-title">{{ app_name }}</h1>
+        <p class="room-info">Room: <strong>{{ room_name }}</strong></p>
+        <div class="step-counter" id="sub-title">
+            Step 0</div>
+        <div class="control-buttons">
+            <a href="/{{ app_folder }}/config" class="btn-modern btn-config">
+                <i class="bi bi-gear"></i> Configuration
+            </a>
+        </div>
+    </div>
+</header>
+
+<div class="game-container">
+    <div class="game-display">
+        <div class="status-indicator"></div>
+        
+        <div id="loading_div" class="loading-container">
+            <strong>Initializing game environment...</strong>
+            <div class="loading-spinner"></div>
+        </div>
+
+        <div class="text-center">
+            <img id="image" 
+                 style="visibility: hidden;" 
+                 class="game-image fade-in" 
+                 src="{% static request.path %}/{{ room_name }}/step.jpg"
+                 alt="Game Step Visualization">
+        </div>
+    </div>
+    
+    <button id="freeze-btn" class="btn-modern btn-config" >
+        <i class="bi bi-pause-circle"></i> Freeze Agent (D)
+    </button>
+
+    <div id="agent-status" style="position: absolute; top: 1rem; left: 1rem; color: white; font-weight: bold; text-shadow: var(--text-shadow); display: none;">
+        Agent Frozen
+    </div>
+
+
+</div>
+
+<!-- Mobile Controls Container -->
+<div id="mobile-controls-root" class="mobile-controls-container"></div>
+
+
+<script>
+    window.addEventListener('load', function() {
+        function isMobileDevice() {
+            return (window.innerWidth <= 768) || ('ontouchstart' in window);
+        }
+
+        function MobileControlsWrapper() {
+            if (isMobileDevice()) {
+                return React.createElement(MobileControls, {
+                    onUpPress: () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' })),
+                    onDownPress: () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' })),
+                    onLeftPress: () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' })),
+                    onRightPress: () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }))
+                });
+            }
+            return null;
+        }
+
+        const rootElement = document.getElementById('mobile-controls-root');
+        if (rootElement && window.MobileControls) {
+            ReactDOM.render(React.createElement(MobileControlsWrapper), rootElement);
+        }
+
+        // Enhanced image loading with fade-in effect
+        const gameImage = document.getElementById('image');
+        if (gameImage) {
+            gameImage.addEventListener('load', function() {
+                this.style.visibility = 'visible';
+                this.classList.add('fade-in');
+            });
+        }
+
+        // Enhanced loading state management
+        const loadingDiv = document.getElementById('loading_div');
+        if (loadingDiv) {
+            // Hide loading after image loads or after timeout
+            setTimeout(() => {
+                if (gameImage.complete) {
+                    loadingDiv.style.display = 'none';
+                }
+            }, 3000);
+        }
+        // added ---------------------------------------------------
+        let isAgentFrozen = false;
+
+        function toggleFreezeAgent() {
+            isAgentFrozen = !isAgentFrozen;
+            const statusElement = document.getElementById('agent-status');
+            if (isAgentFrozen) {
+                statusElement.style.display = 'block';
+                statusElement.classList.add('blink');
+                console.log("Agent Frozen. User can demonstrate behavior.");
+            } else {
+                statusElement.style.display = 'none';
+                statusElement.classList.remove('blink');
+                console.log("Agent Unfrozen. Resuming normal behavior.");
+            }
+            // Here you can trigger WebSocket or backend call to freeze/unfreeze agent logic.
+        }
+
+        // Handle 'D' key press
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'd' || event.key === 'D') {
+                toggleFreezeAgent();
+            }
+        });
+
+        // Handle button click
+        document.getElementById('freeze-btn').addEventListener('click', toggleFreezeAgent);
+
+    });
+
+
+</script>
+
+{% endblock %}

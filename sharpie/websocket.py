@@ -40,7 +40,6 @@ class ConsumerTemplate(AsyncWebsocketConsumer):
         self.room_group_name = f"chat_{self.app_folder}_{self.room_name}"
         # Join room group
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
-
         # Check if someone did already reset the environment
         if not self.room_group_name in self.is_in_use:
             # Raise a flag that the room is in use
@@ -58,19 +57,21 @@ class ConsumerTemplate(AsyncWebsocketConsumer):
 
             # Initialize the experiment
             await self.process_connection()
-
+            print("self.process_connection() is done. | sharpie.")
             # Raise a flag that the room is not in use
             self.is_in_use[self.room_group_name] = False
-
+            print("before self.accept")
+        print("before self.accept")
         await self.accept()
+        print("after self.accept")
 
     # Receive message from WebSocket
     async def receive(self, text_data):
+        print("recieve is called | sharpie folder")
         # Decode what has been sent by the user
         await self.process_inputs(text_data)
-
         # Don't do anything if a step is already in process
-        if(self.is_in_use[self.room_group_name]):
+        if(not self.is_in_use or (self.is_in_use and self.is_in_use[self.room_group_name])):
             return
         # Raise a flag that the room is in use
         self.is_in_use[self.room_group_name] = True
@@ -79,14 +80,19 @@ class ConsumerTemplate(AsyncWebsocketConsumer):
         await self.process_step()
         # Send message to room group
         message = await self.process_ouputs()
-        await self.channel_layer.group_send(self.room_group_name, message)
+        #await self.channel_layer.group_send(self.room_group_name, message)
+        if message is not None:
+            await self.channel_layer.group_send(self.room_group_name, message)
+        else:
+            print("Warning: Attempted to send None message to channel layer")
+
         # Perform additional things to do 
         await self.process_extras()
 
         # Raise a flag that the room is not in use
         self.is_in_use[self.room_group_name] = False
         # If the game is over, we delete the room to allow to reset it
-        if self.terminated[self.room_name]:
+        if self.terminated and self.terminated.get(self.room_name): # safe check
             del self.is_in_use[self.room_group_name]
 
     # Receive message from room group

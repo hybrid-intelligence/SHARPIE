@@ -48,7 +48,10 @@ INSTALLED_APPS = [
     'spread',
     'tag',
     #'minecraft',
-
+    'panda',
+    'custom_maze',
+    'tamer_maze',
+    
     'crispy_forms',
     'crispy_bootstrap4',
     

@@ -25,6 +25,10 @@ urlpatterns = [
     path("spread/", include("spread.urls")),
     path("tag/", include("tag.urls")),
     #path("minecraft/", include("minecraft.urls")),
+    path("panda/", include("panda.urls")),
+    path("custom_maze/", include("custom_maze.urls")),
+    path("tamer_maze/", include("tamer_maze.urls")),
+    
     path('accounts/', include("accounts.urls")),
     path('admin/', admin.site.urls),
 ]
