@@ -255,6 +255,10 @@ class Consumer(ConsumerTemplate):
     total_episodes = {}
     episode_reward = {}
     new_human_input = {}  
+#             self.step, self.env, self.obs, self.state, self.next_state,
+#             self.actions, self.reward, self.terminated, self.truncated,
+#             self.agent, self.episode_rewards, self.episode_lengths,
+#             self.total_episodes, self.episode_reward
 
     # This function is called during the connection with the browser
     async def process_connection(self):
@@ -349,6 +353,17 @@ class Consumer(ConsumerTemplate):
             logger.error(f"Error in _reset_episode: {e}")
             self.terminated[self.room_name] = True
    
+# #
+#     def _cleanup_room(self, room_name):
+#         """Clean up all resources for a specific room"""
+#         resources_to_clean = [
+#             self.step, self.env, self.obs, self.state, self.next_state,
+#             self.actions, self.reward, self.terminated, self.truncated,
+#             self.agent, self.episode_rewards, self.episode_lengths,
+#             self.total_episodes, self.episode_reward
+#         ]
+# #
+
 
     # This function gets the information sent by the browser and processes it
     async def process_inputs(self, text_data):
