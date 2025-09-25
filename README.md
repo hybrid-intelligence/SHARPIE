@@ -11,15 +11,15 @@ Our framework is relying on Django for serving files to the user browser. Theref
 * We highly recommend to use a virtual environment such as Anaconda. This code has been tested on Python 3.11.
 * Git clone this repository
 * Install Redis server `apt install redis-server`
-* Install SHARPIE requirements `pip install django channels[daphne] channels_redis django-crispy-forms crispy-bootstrap4 opencv-python-headless`
+* Install SHARPIE requirements `pip install -r requirements`
 * Webserver:
   * Run `python manage.py makemigrations` and `python manage.py migrate` to setup your database.
   * Run `python manage.py createsuperuser` to create an admin account for you.
   * Run `python manage.py runserver` to start the webserver
 * Runner:
-  * Run `python websocket.py` to start the server
+  * Run `python websocket.py` to start the runner
 * You can access the website at [localhost:8000](localhost:8000) and manage the authorized users from [localhost:8000/admin](localhost:8000/admin)
-* You can look at our gallery and try another use-case
+* You can look at our gallery and try any other use-case!
 
 ## Run into production
 Will be added soon.
