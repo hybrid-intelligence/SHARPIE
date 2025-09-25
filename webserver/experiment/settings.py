@@ -10,7 +10,8 @@ class ConfigForm(forms.Form):
         widget=forms.TextInput(attrs={'data-help-text': 'A unique identifier for this experiment session.'})
     )
     
-    agent = forms.ChoiceField(
+    agent = forms.CharField(
+        required=False,
         label='Played agent', 
         initial='agent_0',
         help_text='Which agent you want to play',

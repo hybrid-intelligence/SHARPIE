@@ -2,7 +2,10 @@ import json
 import gzip
 
 from asgiref.sync import async_to_sync
+from django.db.models.functions import Now
 from channels.generic.websocket import WebsocketConsumer
+
+from .models import Experiment, Trial, Interaction
 
 
 
@@ -16,8 +19,16 @@ class Consumer(WebsocketConsumer):
         # Get the room name, if not defined in session that is a runner
         if 'room_name' not in self.scope['session'].keys():
             self.room_name = 'runner'
+            self.trial = None
         else:
             self.room_name = self.scope['session']['room_name']
+            self.trial = Trial(
+                experiment=Experiment.objects.get(name='Mountain car'),
+                room_name=self.room_name,
+                user=self.scope['user'] if self.scope['user'].is_authenticated else None,
+                agent_played=self.scope['session']['agent']
+            )
+            self.trial.save()
         
         # Join room group
         async_to_sync(self.channel_layer.group_add)(
@@ -49,6 +60,20 @@ class Consumer(WebsocketConsumer):
     def websocket_message(self, event):
         # Forward message to the browser WebSocket
         self.send(json.dumps(event))
+        # Save interaction to the database
+        if self.trial:
+            interaction = Interaction(
+                trial=self.trial,
+                step=event['step'],
+                observations=event['observations'],
+                actions=event['actions'],
+                rewards=event['rewards']
+            )
+            interaction.save()
+        # If the episode has ended, we save the end time of the trial
+        if self.trial and event['terminated']:
+            self.trial.ended_at = Now()
+            self.trial.save() 
 
     # Receive message from WebSocket
     def receive(self, text_data=None, bytes_data=None):
@@ -62,15 +87,10 @@ class Consumer(WebsocketConsumer):
         # Else that comes from the runner
         elif(bytes_data):
             message = json.loads(gzip.decompress(bytes_data))
-            group_message = {
-                "type": "websocket.message",
-                "terminated": message['terminated'],
-                "step": message['step'],
-                "image": message['image']
-            }
+            message['type'] = "websocket.message"
             # Send message to room group
             async_to_sync(self.channel_layer.group_send)(
-                message['room'], group_message
+                message['room'], message
             )
  
 

@@ -46,6 +46,9 @@ def run_entire_episode(websocket, room):
             "room": room,
             "terminated": termination_condition(terminated, truncated),
             "step": step_count,
+            "observations": obs.tolist() if isinstance(obs, np.ndarray) else obs,
+            "rewards": reward,
+            "actions": actions,
             "image": image_base64
         }
         compressed_message = gzip.compress(json.dumps(group_message).encode('utf-8'))
