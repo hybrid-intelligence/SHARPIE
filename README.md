@@ -13,7 +13,9 @@ Our framework is relying on Django for serving files to the user browser. Theref
 * Install Redis server `apt install redis-server`
 * Install SHARPIE requirements `pip install -r requirements`
 * Webserver:
-  * Run `python manage.py makemigrations` and `python manage.py migrate` to setup your database.
+  * Run `python manage.py migrate` to create your database.
+  * Run `python manage.py makemigrations` and `python manage.py makemigrations accounts experiment` to setup additionnal tables.
+  * Run `python manage.py migrate` to apply those changes to your database.
   * Run `python manage.py createsuperuser` to create an admin account for you.
   * Run `python manage.py runserver` to start the webserver
 * Runner:
@@ -22,7 +24,9 @@ Our framework is relying on Django for serving files to the user browser. Theref
 * You can look at our gallery and try any other use-case!
 
 ## Run into production
-Will be added soon.
+You can start by looking at the [deployement checklist](https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/) from Django. For the webserver, we recommend to use the [example setup with Nginx and Supervisor](https://channels.readthedocs.io/en/latest/deploying.html#example-setups) from the official Channels documentation. For the runner, we also recommend using Supervisor:
+* Copy `runner_supervisor.conf` to `/etc/supervisor/conf.d/` and modify the paths mentionned in the file to match your configuration
+* Have supervisor reread and update its jobs: `sudo supervisorctl reread && sudo supervisorctl update`
 
 ## FAQ
 **Q**: *How long will SHARPIE be supported?*  
