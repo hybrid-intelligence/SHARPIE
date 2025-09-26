@@ -1,7 +1,7 @@
 # chat/consumers.py
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
-from sharpie.settings import STATIC_ROOT, PROD
+from mysite.settings import STATIC_ROOT, PROD
 
 import os
 

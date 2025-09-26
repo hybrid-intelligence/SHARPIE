@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from .settings import ConfigForm, inputsListened, experiment_name
 
-from sharpie.settings import WS_SETTING
+from mysite.settings import WS_SETTING
 
 
 # Configuration view that will automatically check and save the parameters into the user session variable
