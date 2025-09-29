@@ -14,6 +14,12 @@ websocket.onopen = function(e) {
 };
 
 
+websocket.onerror = function(e) {
+    console.log("WebSocket connection error.");
+    console.log(e);
+}
+
+
 
 var startTime = Date.now();
 var averageFPS = [];
@@ -40,6 +46,20 @@ function decodeImage(image){
 // When the server finishes a step and replies
 websocket.onmessage = function(e) {
     const data = JSON.parse(e.data);
+
+    if(data.error !== undefined){
+        document.getElementById("sub-title").innerText = "Error: " + data.error;
+        document.getElementById("sub-title").style.color = 'red';
+        document.getElementById("loading_div").style.visibility = 'hidden';
+        return;
+    }
+    if(data.message !== undefined){
+        document.getElementById("sub-title").innerText = data.message;
+        document.getElementById("sub-title").style.color = 'red';
+        document.getElementById("loading_div").style.visibility = 'hidden';
+        return;
+    }
+
     const image_scr = decodeImage(data.image);
 
     document.getElementById("image").src = image_scr;
@@ -61,8 +81,9 @@ websocket.onmessage = function(e) {
     if(data.terminated){
         console.log("Game over, average FPS: ", average(averageFPS));
         // Replace the subtitle text by adding "game over" and a restart button
-        restart_button = '<a href="/experiment/run" class="btn btn-info"><i class="bi bi-bootstrap-reboot"></i> Restart</a>';
+        restart_button = '<a href="run" class="btn btn-info"><i class="bi bi-bootstrap-reboot"></i> Restart</a>';
         document.getElementById("sub-title").innerHTML = document.getElementById("sub-title").innerText + " (game over) " + restart_button;
+        websocket.close();
     } 
 };
 
