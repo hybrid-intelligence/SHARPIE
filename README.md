@@ -13,15 +13,10 @@ Our framework is relying on Django for serving files to the user browser. Theref
 * Install Redis server `apt install redis-server`
 * Install SHARPIE requirements `pip install -r requirements`
 * Webserver:
-  * Run `python manage.py migrate` to create your database.
-  * Run `python manage.py makemigrations` and `python manage.py makemigrations accounts experiment` to setup additionnal tables.
-  * Run `python manage.py migrate` to apply those changes to your database.
-  * Run `python manage.py createsuperuser` to create an admin account for you.
+  * Run `cd webserver`
   * Run `python manage.py runserver` to start the webserver
-* Runner:
-  * Run `python websocket.py` to start the runner
-* You can access the website at [localhost:8000](localhost:8000) and manage the authorized users from [localhost:8000/admin](localhost:8000/admin)
-* You can look at our gallery and try any other use-case!
+* You can access the website at [localhost:8000](localhost:8000) and manage the authorized users from [localhost:8000/admin](localhost:8000/admin) with the username "admin" and password "password"
+* For now there is no experiment available but you can find some examples ready to use in our gallery!
 
 ## Run into production
 You can start by looking at the [deployement checklist](https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/) from Django. For the webserver, we recommend to use the [example setup with Nginx and Supervisor](https://channels.readthedocs.io/en/latest/deploying.html#example-setups) from the official Channels documentation. For the runner, we also recommend using Supervisor:
