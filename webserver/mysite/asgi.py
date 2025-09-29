@@ -29,7 +29,8 @@ application = ProtocolTypeRouter(
         "websocket": AllowedHostsOriginValidator(
             AuthMiddlewareStack(
                 URLRouter([
-                        re_path("experiment/run", websocket.Consumer.as_asgi()),
+                        re_path(r"^experiment/(?P<link>\w+)/run$", websocket.InterfaceConsumer.as_asgi()),
+                        re_path(r"^experiment/queue$", websocket.QueueConsumer.as_asgi()),
                     ]
                 )
             )
