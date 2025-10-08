@@ -47,7 +47,7 @@ def run_entire_episode(websocket, room, users_needed):
     ai_agents = agents
 
     step_count = 0
-    terminated = False
+    terminated = False 
     truncated = False
     actions = {}
     while not termination_condition(terminated, truncated):
@@ -79,6 +79,10 @@ def run_entire_episode(websocket, room, users_needed):
         websocket.send(compressed_message)
         for i in range(users_needed):
             message = json.loads(websocket.recv())
+            if 'message' in message.keys():
+                logging.info(f"Message from room {room}: {message['message']}")
+                if message['message'] == 'A user has disconnected':
+                    return
             actions[message['session']['agent']] = message['actions']
         end_transport = time.time()
         average_transport_time.append(end_transport - start_transport)
@@ -131,6 +135,7 @@ if __name__ == "__main__":
     while True:
         try:
             with connect(f"ws://{hostname}:{port}/experiment/queue") as websocket:
+                sleeptime = 1.0
                 logging.info(f"Connected to server's queue")
                 while True:
                     websocket.send(json.dumps({"status": "idle"}))
