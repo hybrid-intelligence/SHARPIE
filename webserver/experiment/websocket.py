@@ -82,12 +82,6 @@ class InterfaceConsumer(WebsocketConsumer):
                 rewards=event['rewards']
             )
             interaction.save()
-        # If the episode has ended, we save the end time of the trial
-        if self.trial and event['terminated']:
-            self.trial.ended_at = Now()
-            self.trial.save() 
-            self.queue.status = 'terminated'
-            self.queue.save()
 
     # Receive message from WebSocket
     def receive(self, text_data=None, bytes_data=None):
@@ -108,10 +102,27 @@ class InterfaceConsumer(WebsocketConsumer):
             )
 
     def disconnect(self, close_code):
+        # Send message to all connected users that this user has disconnected
+        message = {
+            "type": "websocket.message",
+            "message": "A user has disconnected",
+        }
+        async_to_sync(self.channel_layer.group_send)(
+            self.room_name + self.link, message
+        )
+        async_to_sync(self.channel_layer.group_send)(
+            'runner' + self.link, message
+        )
         # Leave room group
         async_to_sync(self.channel_layer.group_discard)(
             self.room_name + self.link, self.channel_name
         )
+        # If the episode has ended, we save the end time of the trial
+        if self.trial:
+            self.trial.ended_at = Now()
+            self.trial.save() 
+            self.queue.status = 'terminated'
+            self.queue.save()
 
 
 
