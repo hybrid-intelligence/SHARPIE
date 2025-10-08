@@ -3,6 +3,7 @@ from django.db import models
 
 class Experiment(models.Model):
     name = models.CharField('Name', max_length=100)
+    type = models.CharField('Type ("action" or "reward")', max_length=50, default='action')
     description = models.TextField('Description', blank=True)
     input_list = models.JSONField('Inputs captured from the users', default=list)
     agent_list = models.JSONField('Agents available to play', default=list(['agent_0', 'Agent']))
