@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main role="main">
+
+    <section class="jumbotron text-center">
+      <div class="container">
+        <br>
+        <h1 class="jumbotron-heading">SHARPIE website</h1>
+        <p class="lead text-muted">Shared Human-AI Reinforcement Learning Platform for Interactive Experiments</p>
+        <p>
+          <a href="https://arxiv.org/abs/2501.19245" class="btn btn-primary my-2">Check out our paper</a>
+          <a href="https://github.com/libgoncalv/SHARPIE" class="btn btn-secondary my-2">Check out our code</a>
+        </p>
+      </div>
+    </section>
+
+    <div class="album py-5 bg-adaptive">
+      <div class="container">
+
+        <div class="row">
+          {% for experiment in experiments %}
+            <div class="col-md-4">
+              <div class="card mb-4 box-shadow">
+                <div class="card-body">
+                  <h5 class="card-title">{{ experiment.name }}</h5>
+                  <p class="card-text">{{ experiment.description }}</p>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div class="btn-group">
+                      <a href="/experiment/{{ experiment.link }}" class="btn btn-sm btn-outline-primary">Go to experiment</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+  </main>
+{% endblock %}

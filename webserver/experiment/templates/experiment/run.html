@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block content %}
+  <script>
+    ws_setting = "{{ ws_setting }}";
+    inputsListened = [{% for input in inputsListened %}"{{ input }}",{% endfor %}];
+    inputsForwarded = [];
+  </script>
+  <script src="{% static 'experiment' %}/js/inputListener.js"></script>
+  <script src="{% static 'experiment' %}/js/websocket.js"></script>
+
+  <section class="text-center">
+    <div class="container">
+      <br>
+      <h2 class="text-start"><a href="config" class="btn btn-info"><i class="bi bi-arrow-left"></i> Config</a></h2>
+      <h1>{{ experiment_name }} - room <i>{{ room_name }}</i></h1>
+      <h2 id="sub-title">Step 0</h2>
+    </div>
+  </section>
+
+  <br>
+  <div class="container">
+    <div id="loading_div" class="d-flex align-items-center">
+      <strong>Your game is loading...</strong> &nbsp;&nbsp;&nbsp;
+      <div class="spinner-border ml-auto" role="status" aria-hidden="true"></div>
+    </div>
+
+    <img id="image" style="visibility: hidden;" class="img-fluid rounded mx-auto d-block img-thumbnail">
+  </div>
+{% endblock %}
