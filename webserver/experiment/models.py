@@ -6,7 +6,7 @@ class Experiment(models.Model):
     type = models.CharField('Type ("action" or "reward")', max_length=50, default='action')
     description = models.TextField('Description', blank=True)
     input_list = models.JSONField('Inputs captured from the users', default=list)
-    agent_list = models.JSONField('Agents available to play', default=list(['agent_0', 'Agent']))
+    agent_list = models.JSONField('Agents available to play', default=list([['agent_0', 'Agent']]))
     users_needed = models.IntegerField('Number of users needed to start the experiment', default=1)
     link = models.CharField('Link to the experiment', max_length=100, blank=True)
 
