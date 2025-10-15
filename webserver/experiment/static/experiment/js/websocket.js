@@ -76,6 +76,10 @@ websocket.onmessage = function(e) {
 
     // We send back the inputs
     websocket.send(JSON.stringify({actions: inputsForwarded}))
+    // For reward-based experiments, we clear the inputs after sending them
+    if (experiment_type === 'reward') {
+        inputsForwarded = [];
+    }
 
     // If the game is over
     if(data.terminated){
