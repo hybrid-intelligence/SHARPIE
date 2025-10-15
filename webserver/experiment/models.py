@@ -9,6 +9,7 @@ class Experiment(models.Model):
     agent_list = models.JSONField('Agents available to play', default=list([['agent_0', 'Agent']]))
     users_needed = models.IntegerField('Number of users needed to start the experiment', default=1)
     link = models.CharField('Link to the experiment', max_length=100, blank=True)
+    target_fps = models.FloatField('Target FPS for the experiment', default=24.0)
 
     def __str__(self):
         return self.name
