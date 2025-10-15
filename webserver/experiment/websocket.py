@@ -167,7 +167,7 @@ class QueueConsumer(WebsocketConsumer):
                     self.runner.experiment = queue.experiment
                     self.runner.save()
                     # Send message to runner to start the episode
-                    self.send(json.dumps({"experiment": queue.experiment.link, "room": queue.room_name, "users_needed": queue.users_waiting}))
+                    self.send(json.dumps({"experiment": queue.experiment.link, "room": queue.room_name, "users_needed": queue.users_waiting, "type": queue.experiment.type, "target_fps": queue.experiment.target_fps}))
                 else:
                     # Send message to runner that there are no experiments in the queue
                     self.send(json.dumps({"message": "No experiments in the queue"}))
