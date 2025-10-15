@@ -58,4 +58,4 @@ def run_(request, link):
 
     experiment = models.Experiment.objects.get(link=link)
     room_name = request.session['room_name']
-    return render(request, "experiment/run.html", {"room_name": room_name, 'ws_setting': WS_SETTING, 'inputsListened': experiment.input_list, 'experiment_name': experiment.name})
+    return render(request, "experiment/run.html", {"room_name": room_name, 'ws_setting': WS_SETTING, 'inputsListened': experiment.input_list, 'experiment_name': experiment.name, 'experiment_type': experiment.type})
