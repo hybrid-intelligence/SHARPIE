@@ -8,4 +8,5 @@ urlpatterns = [
     path("", views.config_, name="index"),
     path("config", views.config_, name="config"),
     path("run", views.run_, name="run"),
+    path("evaluate", views.evaluate_, name="evaluate"),
 ]
