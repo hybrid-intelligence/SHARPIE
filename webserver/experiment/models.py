@@ -10,6 +10,7 @@ class Experiment(models.Model):
     users_needed = models.IntegerField('Number of users needed to start the experiment', default=1)
     link = models.CharField('Link to the experiment', max_length=100, blank=True)
     target_fps = models.FloatField('Target FPS for the experiment', default=24.0)
+    train = models.BooleanField('Whether the agent is trained during the experiment', default=False)
 
     def __str__(self):
         return self.name
@@ -47,6 +48,7 @@ class Runner(models.Model):
 class Queue(models.Model):
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
     room_name = models.CharField('Room name', max_length=20)
+    evaluate = models.BooleanField('Whether the experiment is in evaluation mode', default=False)
     users_waiting = models.IntegerField('Number of users currently waiting', default=0) 
     status = models.CharField('Status of the queue', max_length=20, default='waiting')  # e.g., waiting, running, terminated, dead
     created_at = models.DateTimeField('Created at', db_default=Now())
