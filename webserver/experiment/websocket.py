@@ -13,7 +13,109 @@ from .models import Experiment, Trial, Interaction, Runner, Queue
 
 
 
-class InterfaceConsumer(WebsocketConsumer):
+
+
+
+class EvaluateConsumer(WebsocketConsumer):
+    def connect(self):
+        # Get the experiment link from the URL
+        self.link = self.scope["url_route"]["kwargs"]["link"]
+
+        # Get the room name, if not defined in session that is a runner
+        if 'room_name' not in self.scope['session'].keys():
+            self.room_name = 'runner'
+            self.queue = None
+
+            self.accept()
+            # Join room group
+            async_to_sync(self.channel_layer.group_add)(
+                self.room_name + self.link, self.channel_name
+            )
+        else:
+            self.room_name = self.scope['session']['room_name']
+            experiment = Experiment.objects.get(link=self.link)
+
+            self.queue = Queue.objects.filter(experiment=experiment, room_name=self.room_name, status__in=['waiting', 'running']).first()
+            if self.queue and self.queue.created_at < timezone.now() - timezone.timedelta(minutes=10):  # If the queue was created more than 10 min ago, we consider it dead
+                self.queue.status = 'dead'
+                self.queue.save()
+            if not self.queue:
+                self.queue = Queue(experiment=experiment, room_name=self.room_name, users_waiting=0)
+                self.queue.status = 'waiting'
+                self.queue.evaluate = True
+            
+            if self.queue.users_waiting + 1 > experiment.users_needed:
+                self.accept()
+                self.send(json.dumps({"message": "A experiment already started in this room, please select another one."}))
+                self.close()
+            else:
+                self.queue.users_waiting += 1
+                self.queue.save()
+
+                self.accept()
+                # Join room group
+                async_to_sync(self.channel_layer.group_add)(
+                    self.room_name + self.link, self.channel_name
+                )
+    
+    # Create message for the runner
+    def runner_message(self, key, value):
+        runner_message = {"type": "websocket.message", "room": None, "received": False, "actions": [], "fps": 0, "session": None, "users_needed": 1}
+        runner_message[key] = value
+        runner_message['session'] = dict(self.scope['session'])
+        runner_message['room'] = self.room_name
+        return runner_message
+
+    # Send message
+    def websocket_message(self, event):
+        # Forward message to the browser WebSocket
+        self.send(json.dumps(event))
+
+    # Receive message from WebSocket
+    def receive(self, text_data=None, bytes_data=None):
+        # If it is text data, that comes from the browser
+        if(text_data):
+            message = json.loads(text_data)
+            # Send message to runner
+            async_to_sync(self.channel_layer.group_send)(
+                'runner' + self.link, self.runner_message("actions", message['actions'])
+            )
+        # Else that comes from the runner
+        elif(bytes_data):
+            message = json.loads(gzip.decompress(bytes_data))
+            message['type'] = "websocket.message"
+            # Send message to room group
+            async_to_sync(self.channel_layer.group_send)(
+                message['room'] + self.link, message
+            )
+
+    def disconnect(self, close_code):
+        # Send message to all connected users that this user has disconnected
+        message = {
+            "type": "websocket.message",
+            "message": "A user has disconnected",
+        }
+        async_to_sync(self.channel_layer.group_send)(
+            self.room_name + self.link, message
+        )
+        async_to_sync(self.channel_layer.group_send)(
+            'runner' + self.link, message
+        )
+        # Leave room group
+        async_to_sync(self.channel_layer.group_discard)(
+            self.room_name + self.link, self.channel_name
+        )
+        # If the episode has ended, we terminate the queue
+        if self.queue:
+            self.queue.status = 'terminated'
+            self.queue.save()
+
+
+
+
+
+
+class RunConsumer(WebsocketConsumer):
     def connect(self):
         # Get the experiment link from the URL
         self.link = self.scope["url_route"]["kwargs"]["link"]
@@ -22,6 +124,7 @@ class InterfaceConsumer(WebsocketConsumer):
         if 'room_name' not in self.scope['session'].keys():
             self.room_name = 'runner'
             self.trial = None
+            self.queue = None
 
             self.accept()
             # Join room group
@@ -167,7 +270,7 @@ class QueueConsumer(WebsocketConsumer):
                     self.runner.experiment = queue.experiment
                     self.runner.save()
                     # Send message to runner to start the episode
-                    self.send(json.dumps({"experiment": queue.experiment.link, "room": queue.room_name, "users_needed": queue.users_waiting, "type": queue.experiment.type, "target_fps": queue.experiment.target_fps}))
+                    self.send(json.dumps({"experiment": queue.experiment.link, "room": queue.room_name, "users_needed": queue.users_waiting, "type": queue.experiment.type, "target_fps": queue.experiment.target_fps, "train": queue.experiment.train, "evaluate": queue.evaluate}))
                 else:
                     # Send message to runner that there are no experiments in the queue
                     self.send(json.dumps({"message": "No experiments in the queue"}))
