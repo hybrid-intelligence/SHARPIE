@@ -20,7 +20,9 @@ from websockets.exceptions import ConnectionClosedError
 
 
 def sanitize_data(data):
-    if isinstance(data, np.ndarray):
+    if isinstance(data, np.int64):
+        return data.item()
+    elif isinstance(data, np.ndarray):
         return data.tolist()
     elif isinstance(data, dict):
         return {k: sanitize_data(v) for k, v in data.items()}
@@ -28,9 +30,56 @@ def sanitize_data(data):
         return [sanitize_data(v) for v in data]
     else:
         return data
+    
+def action_mapping(actions):
+    if len(actions) == 1:
+        return actions['agent_0']
+    return actions
 
+def send_message(websocket, room, env, step_count, termination_condition, terminated, truncated, obs, actions, reward):
+    frame = env.render()
+    step_count += 1
 
-def run_entire_episode(websocket, room, users_needed):
+    # Encode numpy frame as base64, makes it more compact for transfer
+    _, buffer = cv2.imencode('.jpeg', frame.astype(np.uint8))
+    image_base64 = base64.b64encode(buffer).decode('utf-8')
+
+    # Create message to send to server
+    group_message = {
+        "room": room,
+        "terminated": termination_condition(terminated, truncated),
+        "step": step_count,
+        "observations": sanitize_data(obs),
+        "rewards": sanitize_data(reward),
+        "actions": sanitize_data(actions),
+        "image": image_base64
+    }
+    compressed_message = gzip.compress(json.dumps(group_message).encode('utf-8'))
+    # Send message to server
+    websocket.send(compressed_message)
+    return step_count
+
+def receive_message(websocket, room, users_needed, inputs):
+    for i in range(users_needed):
+        message = json.loads(websocket.recv())
+        if 'message' in message.keys():
+            logging.info(f"Message from room {room}: {message['message']}")
+            if message['message'] == 'A user has disconnected':
+                return
+        inputs[message['session']['agent']] = message['actions']
+
+def generate_actions(ai_agents, obs, evaluate, actions):
+    for ai_agent in ai_agents:
+        if evaluate:
+            actions[ai_agent.name] = ai_agent.predict(obs)
+        else:
+            actions[ai_agent.name] = ai_agent.sample(obs)
+
+def train_agents(ai_agents, state, actions, reward, done, next_state):
+    for ai_agent in ai_agents:
+        ai_agent.train(state, action_mapping(actions), reward, done, next_state)
+
+def run_episode(websocket, room, users_needed, type, target_fps, train, evaluate):
     from environment import environment, termination_condition, input_mapping
 
     try:
@@ -38,74 +87,69 @@ def run_entire_episode(websocket, room, users_needed):
     except ModuleNotFoundError:
         agents = []
 
-    average_process_time = []
-    average_transport_time = []
+    inputs = {}
 
+    # Initialize environment
     env = environment
-    env.reset()
+    # Some environments return obs and info, some don't
+    try:
+        obs, info = env.reset()
+    except TypeError:
+        env.reset()
+        obs = None
 
+    # Initialize AI agents
     ai_agents = agents
 
+    # Initialize variables
     step_count = 0
     terminated = False 
     truncated = False
+    reward = 0
+    # Get initial actions for agents
     actions = {}
+
     while not termination_condition(terminated, truncated):
         start_time = time.time()
-
-        # Perform a step in the environment and get the rendered frame
-        obs, reward, terminated, truncated, info = env.step(input_mapping(actions))
-        frame = env.render()
-        step_count += 1
-
-        # Encode numpy frame as base64, makes it more compact for transfer
-        _, buffer = cv2.imencode('.jpeg', frame.astype(np.uint8))
-        image_base64 = base64.b64encode(buffer).decode('utf-8')
-
-        group_message = {
-            "room": room,
-            "terminated": termination_condition(terminated, truncated),
-            "step": step_count,
-            "observations": sanitize_data(obs),
-            "rewards": sanitize_data(reward),
-            "actions": sanitize_data(actions),
-            "image": image_base64
-        }
-        compressed_message = gzip.compress(json.dumps(group_message).encode('utf-8'))
-        end_time = time.time()
-        average_process_time.append(end_time - start_time)
         
-        start_transport = time.time()
-        websocket.send(compressed_message)
-        for i in range(users_needed):
-            message = json.loads(websocket.recv())
-            if 'message' in message.keys():
-                logging.info(f"Message from room {room}: {message['message']}")
-                if message['message'] == 'A user has disconnected':
-                    return
-            actions[message['session']['agent']] = message['actions']
-        end_transport = time.time()
-        average_transport_time.append(end_transport - start_transport)
+        # Send data to server
+        step_count = send_message(websocket, room, env, step_count, termination_condition, terminated, truncated, obs, actions, reward)
+        # Wait for inputs from all users
+        receive_message(websocket, room, users_needed, inputs)
+        # Map inputs to actions or rewards
+        if type == "action":
+            actions = input_mapping(dict(inputs))
+        else:
+            reward = input_mapping(dict(inputs))
         
+        # Get actions from AI agents
         if(not termination_condition(terminated, truncated)):
-            for ai_agent in ai_agents:
-                actions[ai_agent.name] = ai_agent.sample(obs)
+            generate_actions(ai_agents, obs, evaluate, actions)
+
+        # Perform a step in the environment
+        previous_obs = obs
+        previous_reward = reward
+        if type == "action":
+            obs, reward, terminated, truncated, info = env.step(actions)
+        else:
+            obs, _, terminated, truncated, info = env.step(action_mapping(actions))
+
+        if train and not evaluate:
+            train_agents(ai_agents, previous_obs, actions, previous_reward, termination_condition(terminated, truncated), obs)
+
+        loop_time = time.time() - start_time
+        time.sleep(max(0, (1.0 / target_fps) - (loop_time + 0.001)))  # Maintain a minimum frame_rate
+    # Send final message to server indicating termination
+    send_message(websocket, room, env, step_count, termination_condition, terminated, truncated, obs, actions, reward)
 
 
-        loop_time = end_transport - start_time
-        time.sleep(max(0, (1.0 / 24) - (loop_time + 0.001)))  # Maintain a minimum frame_rate
-    
-    logging.info(f"Experiment {room} over. Average process time: {int(sum(average_process_time) * 1000 / len(average_process_time))} ms. Average transport time: {int(sum(average_transport_time) * 1000 / len(average_transport_time))} ms.\n")
-
-
-
-def start_experiment(dir, room, users_needed):
+def start_experiment(dir, room, users_needed, type, target_fps, train, evaluate):
     try:
-        with connect(f"ws://{hostname}:{port}/experiment/{dir}/run") as websocket:
+        with connect(f"ws://{hostname}:{port}/experiment/{dir}/{"evaluate" if evaluate else "run"}") as websocket:
             logging.info(f"Connected to experiment {dir}")
             sys.path.append(f"experiments/{dir}")
             logging.info(f"Starting experiment for room {room}")
-            run_entire_episode(websocket, room, users_needed)
+            run_episode(websocket, room, users_needed, type, target_fps, train, evaluate)
         logging.info(f"Connection to {dir} closed")
     except ConnectionRefusedError:
         logging.warning(f"Connection to {dir} refused")
@@ -143,7 +187,7 @@ if __name__ == "__main__":
                     if 'experiment' in message.keys():
                         if message['experiment'] in dirs:
                             logging.info(f"Starting experiment {message['experiment']}")
-                            p = Process(target=start_experiment, args=(message['experiment'], message['room'], message['users_needed']))
+                            p = Process(target=start_experiment, args=(message['experiment'], message['room'], message['users_needed'], message['type'], message['target_fps'], message['train'], message['evaluate']))
                             p.start()
                             p.join()
                         else:
