@@ -65,7 +65,7 @@ def receive_message(websocket, room, users_needed, inputs):
         if 'message' in message.keys():
             logging.info(f"Message from room {room}: {message['message']}")
             if message['message'] == 'A user has disconnected':
-                return
+                exit(1)
         inputs[message['session']['agent']] = message['actions']
 
 def generate_actions(ai_agents, obs, evaluate, actions):
@@ -83,7 +83,8 @@ def run_episode(websocket, room, users_needed, type, target_fps, train, evaluate
     from environment import environment, termination_condition, input_mapping
 
     try:
-        from agent import agents
+        from agent import create_agents
+        agents = create_agents(room)
     except ModuleNotFoundError:
         agents = []
 
