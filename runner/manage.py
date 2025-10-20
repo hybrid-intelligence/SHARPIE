@@ -146,7 +146,7 @@ def run_episode(websocket, room, users_needed, type, target_fps, train, evaluate
 
 def start_experiment(dir, room, users_needed, type, target_fps, train, evaluate):
     try:
-        with connect(f"ws://{hostname}:{port}/experiment/{dir}/{"evaluate" if evaluate else "run"}") as websocket:
+        with connect(f"ws://{hostname}:{port}/experiment/{dir}/{'evaluate' if evaluate else 'run'}") as websocket:
             logging.info(f"Connected to experiment {dir}")
             sys.path.append(f"experiments/{dir}")
             logging.info(f"Starting experiment for room {room}")
