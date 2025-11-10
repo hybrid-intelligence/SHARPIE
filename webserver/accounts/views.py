@@ -1,7 +1,21 @@
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
-from .forms import LoginForm, RegisterForm
+from django.utils import timezone
+from .forms import LoginForm, RegisterForm, ConsentForm
+from .models import Consent
+
+
+def has_consented(user):
+    """Check if user has given consent."""
+    if not user.is_authenticated:
+        return False
+    try:
+        consent = Consent.objects.get(user=user)
+        return consent.agreed
+    except Consent.DoesNotExist:
+        return False
 
 
 def login_(request):
@@ -16,6 +30,9 @@ def login_(request):
                 login(request, user)
 
     if request.user.is_authenticated:
+        # Check if user has consented, if not redirect to consent page
+        if not has_consented(request.user):
+            return redirect('/accounts/consent/')
         return redirect(request.GET.get('next', '/'))
     
     # Create empty config form
@@ -40,6 +57,9 @@ def register_(request):
                 login(request, user)
 
     if request.user.is_authenticated:
+        # Check if user has consented, if not redirect to consent page
+        if not has_consented(request.user):
+            return redirect('/accounts/consent/')
         return redirect(request.GET.get('next', '/'))
     
     # Create empty config form
@@ -51,3 +71,38 @@ def logout_(request):
         logout(request)
     
     return redirect('/')
+
+
+@login_required
+def consent_(request):
+    """Handle informed consent form."""
+    # Check if user already has consent
+    try:
+        consent = Consent.objects.get(user=request.user)
+        if consent.agreed:
+            # User already consented, redirect to home
+            return redirect('/')
+    except Consent.DoesNotExist:
+        pass
+    
+    if request.method == "POST":
+        form = ConsentForm(request.POST)
+        if form.is_valid() and form.cleaned_data['agree']:
+            # Get or create consent record
+            consent, created = Consent.objects.get_or_create(user=request.user)
+            consent.agreed = True
+            consent.agreed_at = timezone.now()
+            # Try to get IP address
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            if x_forwarded_for:
+                ip_address = x_forwarded_for.split(',')[0]
+            else:
+                ip_address = request.META.get('REMOTE_ADDR')
+            consent.ip_address = ip_address
+            consent.save()
+            # Redirect to the next page or home
+            return redirect(request.GET.get('next', '/'))
+    else:
+        form = ConsentForm()
+    
+    return render(request, "registration/consent.html", {'form': form})
