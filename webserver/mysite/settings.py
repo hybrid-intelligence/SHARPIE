@@ -39,6 +39,8 @@ ALLOWED_HOSTS = ['*']
 # Set to False to disable new user registration
 # Set to a string value to require a registration key for new user registration
 REGISTRATION_KEY = 'sharpie'
+# Redirect URL after experiment completion for crowd sourcing platforms
+REDIRECT_AFTER_EXPERIMENT = None
 
 
 # Application definition
