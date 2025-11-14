@@ -8,6 +8,7 @@ class Experiment(models.Model):
     agent_list = models.JSONField('Agents available to play', default=list(['agent_0', 'Agent']))
     users_needed = models.IntegerField('Number of users needed to start the experiment', default=1)
     link = models.CharField('Link to the experiment', max_length=100, blank=True)
+    episodes_to_complete = models.IntegerField('Number of episodes to complete per user', default=1)
 
     def __str__(self):
         return self.name
