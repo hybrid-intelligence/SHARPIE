@@ -80,9 +80,18 @@ websocket.onmessage = function(e) {
     // If the game is over
     if(data.terminated){
         console.log("Game over, average FPS: ", average(averageFPS));
-        // Replace the subtitle text by adding "game over" and a restart button
-        restart_button = '<a href="run" class="btn btn-info"><i class="bi bi-bootstrap-reboot"></i> Restart</a>';
-        document.getElementById("sub-title").innerHTML = document.getElementById("sub-title").innerText + " (game over) " + restart_button;
+        if(data.redirect){
+            // Wait and redirect to the experiment page
+            document.getElementById("sub-title").innerHTML = "Thanks for participating! You will now be redirected to complete the experiment.";
+            setTimeout(function() {
+                window.location.href = data.redirect;
+            }, 5000);
+        } 
+        else {
+            // Replace the subtitle text by adding "game over" and a restart button
+            restart_button = '<a href="' + window.location.href + '" class="btn btn-primary"><i class="bi bi-bootstrap-reboot"></i> Restart</a>';
+            document.getElementById("sub-title").innerHTML = document.getElementById("sub-title").innerText + " (game over) " + restart_button;
+        }
         websocket.close();
     } 
 };
