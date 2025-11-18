@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container">
     <div class="row my-4 justify-content-center">
-        <div class="col-8 bg-light rounded shadow p-4">
+        <div class="col-10 col-lg-8 rounded shadow p-4">
             <h1>Informed Consent Agreement</h1>
             <p>Before taking part in this study, please read the following information and indicate below whether you consent to the conditions of participation.</p>
             
@@ -13,9 +13,17 @@
             
             <p>Only the research team will have access to the data, and all the information is kept in secure locations approved by The Hybrid Intelligence Centre.</p>
             
-            <p><strong>Principal Investigator:</strong><br>
-            Hybrid Intelligence Centre<br>
-            The Netherlands</p>
+            <div class="row justify-content-evenly">
+                <div class="col-auto">
+                    <p>
+                        <strong>Principal Investigator:</strong>
+                        <br>
+                        Hybrid Intelligence Centre
+                        <br>
+                        The Netherlands
+                    </p>
+                </div>
+            </div>
             
             <p>Participation is <b>completely voluntary</b>. You can decide to withdraw at any time and for any reason, including after participating. However, if you choose to withdraw after participating, we will not be required to undo the processing of your data that has taken place up until that time. The personal data we have obtained from you up until the time when you withdraw your consent will be erased (where personal data is any data that can be linked to you, so this excludes any already anonymized data).</p>
             
@@ -38,7 +46,7 @@
     </div>
         
     <div class="row my-4 justify-content-center">
-        <div class="col-8 bg-light rounded shadow p-4">
+        <div class="col-10 col-lg-8 rounded shadow p-4">
             <h3>Agreement</h3>
             <form method="post" class="text-end">
                 {% csrf_token %}
@@ -49,17 +57,20 @@
                     <li class="list-group-item" style="display: list-item;">I understand that my responses may be shared with the broader research community and may be reported in scientific publications. Any information that could identify me as an individual will be replaced or removed</li>
                 </ul>
                 
-                <div class="form-check mt-3 mx-3 text-start">
-                    {{ form.agree }}
-                    <label class="form-check-label" for="{{ form.agree.id_for_label }}">
-                        {{ form.agree.label }}
-                    </label>
-                    {% if form.agree.errors %}
-                        <div class="text-danger">{{ form.agree.errors }}</div>
-                    {% endif %}
-                </div>
-                
-                <button type="submit" class="btn btn-primary my-3">Continue</button>
+                {% if consent and consent.agreed %}
+                    <br>You gave us your consent on the {{ consent.agreed_at }} Please contact us if you want to retract it.
+                {% else %}
+                    <div class="form-check mt-3 mx-3 text-start">
+                        {{ form.agree }}
+                        <label class="form-check-label" for="{{ form.agree.id_for_label }}">
+                            {{ form.agree.label }}
+                        </label>
+                        {% if form.agree.errors %}
+                            <div class="text-danger">{{ form.agree.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <button type="submit" class="btn btn-primary my-3">Continue</button>
+                {% endif %}
             </form>
         </div>
     </div>
