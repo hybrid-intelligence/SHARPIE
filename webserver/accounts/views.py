@@ -2,6 +2,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from .forms import LoginForm, RegisterForm
+from mysite.settings import REGISTRATION_KEY
 
 
 def login_(request):
@@ -23,6 +24,10 @@ def login_(request):
     return render(request, "registration/login.html", {'form': form, 'view': 'login'})
 
 def register_(request):
+    # If registration is disabled
+    if REGISTRATION_KEY == False:
+        return render(request, "registration/login.html", {'form': None, 'view': 'register', 'error': None})
+
     # Create empty register form
     form = RegisterForm()
 

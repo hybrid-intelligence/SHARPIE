@@ -21,21 +21,27 @@
             {{ error }}
           </div>
         {% endif %}
-        <form method="post">
-          {% csrf_token %}
-          {{ form|crispy }}      
-          <br>
-          {% if view == 'login' %}
-            <button type="submit" class="btn btn-primary btn-block">Login</button>
-            <p class="text-center mt-3">
-              <a href="{% url 'register' %}">Don't have an account? Register here.</a>
-            </p>
-          {% elif view == 'register' %}
-            <button type="submit" class="btn btn-primary btn-block">Register</button>
-            <p class="text-center mt-3">
-              <a href="{% url 'login' %}">Already have an account? Login here.</a>
-            </p>
-          {% endif %}
+        {% if form %}
+          <form method="post">
+            {% csrf_token %}
+            {{ form|crispy }}      
+            <br>
+            {% if view == 'login' %}
+              <button type="submit" class="btn btn-primary btn-block">Login</button>
+              <p class="text-center mt-3">
+                <a href="{% url 'register' %}">Don't have an account? Register here.</a>
+              </p>
+            {% elif view == 'register' %}
+              <button type="submit" class="btn btn-primary btn-block">Register</button>
+              <p class="text-center mt-3">
+                <a href="{% url 'login' %}">Already have an account? Login here.</a>
+              </p>
+            {% endif %}
+        {% else %}
+              <p class="text-center mt-3">
+                Self-registration is disabled. Already have an account? <a href="{% url 'login' %}">Login here.</a>
+              </p>
+        {% endif %}
         </form>
       </div>
     </div>
