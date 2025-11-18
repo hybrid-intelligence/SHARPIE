@@ -7,7 +7,7 @@
   <section class="text-center">
     <div class="container">
       <br>
-      <h1>Login page</h1>
+      <h1>{{ view|capfirst }}</h1>
     </div>
   </section>
   
@@ -15,12 +15,35 @@
 
   <div class="container">
     <div class="row align-items-center">
-        <form method="post">
-          {% csrf_token %}
-          {{ form|crispy }}      
-          <br>
-          <button type="submit" class="btn btn-primary">Log in</button>
+      <div class="col-md-4 offset-md-4">
+        {% if error %}
+          <div class="alert alert-danger" role="alert">
+            {{ error }}
+          </div>
+        {% endif %}
+        {% if form %}
+          <form method="post">
+            {% csrf_token %}
+            {{ form|crispy }}      
+            <br>
+            {% if view == 'login' %}
+              <button type="submit" class="btn btn-primary btn-block">Login</button>
+              <p class="text-center mt-3">
+                <a href="{% url 'register' %}">Don't have an account? Register here.</a>
+              </p>
+            {% elif view == 'register' %}
+              <button type="submit" class="btn btn-primary btn-block">Register</button>
+              <p class="text-center mt-3">
+                <a href="{% url 'login' %}">Already have an account? Login here.</a>
+              </p>
+            {% endif %}
+        {% else %}
+              <p class="text-center mt-3">
+                Self-registration is disabled. Already have an account? <a href="{% url 'login' %}">Login here.</a>
+              </p>
+        {% endif %}
         </form>
+      </div>
     </div>
   </div>
 {% endblock %}
