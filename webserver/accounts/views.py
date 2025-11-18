@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.utils import timezone
-from .forms import LoginForm, RegisterForm, ConsentForm
+from .forms import LoginForm, RegisterForm, ConsentForm, ProfileInfoForm, ProfilePasswordForm
 from .models import Consent
 
 
@@ -79,11 +79,8 @@ def consent_(request):
     # Check if user already has consent
     try:
         consent = Consent.objects.get(user=request.user)
-        if consent.agreed:
-            # User already consented, redirect to home
-            return redirect('/')
     except Consent.DoesNotExist:
-        pass
+        consent = None
     
     if request.method == "POST":
         form = ConsentForm(request.POST)
@@ -105,4 +102,32 @@ def consent_(request):
     else:
         form = ConsentForm()
     
-    return render(request, "registration/consent.html", {'form': form})
+    return render(request, "registration/consent.html", {'form': form, 'consent': consent})
+
+
+@login_required
+def profile_(request):
+    formInfo = ProfileInfoForm(initial={'email': request.user.email,
+                                        'first_name': request.user.first_name,
+                                        'last_name': request.user.last_name,}) 
+    formPassword = ProfilePasswordForm()
+
+    if request.method == "POST":
+        formInfo = ProfileInfoForm(request.POST)
+        if formInfo.is_valid():
+            request.user.email = formInfo.cleaned_data['email']
+            request.user.first_name = formInfo.cleaned_data['first_name']
+            request.user.last_name = formInfo.cleaned_data['last_name']
+            request.user.save()
+        formPassword = ProfilePasswordForm(request.POST)
+        if formPassword.is_valid() and formPassword.cleaned_data['password1'] == formPassword.cleaned_data['password2']:
+            request.user.set_password(formPassword.cleaned_data['password'])
+            request.user.save()
+        return redirect('/accounts/profile/')
+    
+    try:
+        consent = Consent.objects.get(user=request.user)
+    except Consent.DoesNotExist:
+        consent = None
+
+    return render(request, "registration/profile.html", {'formInfo': formInfo, 'formPassword': formPassword, 'consent': consent})

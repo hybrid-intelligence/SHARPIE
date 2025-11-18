@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block content %}
+  <section class="text-center">
+    <div class="container">
+      <br>
+      <h1>Profile</h1>
+    </div>
+  </section>
+  
+  <br>
+
+  <div class="container">
+    <div class="row align-items-center justify-content-evenly">      
+      <div class="col-md-4">
+        <h6 id="id_username">You are currently logged in as <em>{{ user.username }}</em></h6>
+        <br>
+        <h4>Personal information</h4>
+        <form method="post">
+          {% csrf_token %}
+          {{ formInfo|crispy }}      
+          <br>
+          <button type="submit" class="btn btn-primary">Update information</button>
+        </form>
+      </div>
+         
+      <div class="col-md-4">
+        <h4>Password information</h4>
+        <form method="post">
+          {% csrf_token %}
+          {{ formPassword|crispy }}
+          <br>
+          <button type="submit" class="btn btn-primary">Update password</button>
+        </form>
+      </div>
+    </div>
+
+    <br><br>
+    <div class="row justify-content-center">
+      <div class="col-md-4">
+        <h4>Informed Consent Agreement</h4>
+        {% if consent and consent.agreed %}
+            You gave us your consent on the {{ consent.agreed_at }} <a href="/accounts/consent">You can review the agreement by clicking here.</a>
+        {% else %}
+            You did not give us consent to use your information. <a href="/accounts/consent">Please review the agreement by clicking here.</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
