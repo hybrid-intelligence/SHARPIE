@@ -76,13 +76,21 @@ websocket.onmessage = function(e) {
 
     // We send back the inputs
     websocket.send(JSON.stringify({actions: inputsForwarded}))
+    console.log(inputsForwarded);
+    // For reward-based experiments, we clear the inputs after sending them
+    if (experiment_type === 'reward') {
+        inputsForwarded = [];
+    }
 
     // If the game is over
     if(data.terminated){
         console.log("Game over, average FPS: ", average(averageFPS));
         // Replace the subtitle text by adding "game over" and a restart button
-        restart_button = '<a href="run" class="btn btn-info"><i class="bi bi-bootstrap-reboot"></i> Restart</a>';
+        restart_button = '<a href="' + window.location.href + '" class="btn btn-primary"><i class="bi bi-bootstrap-reboot"></i> Restart</a>';
         document.getElementById("sub-title").innerHTML = document.getElementById("sub-title").innerText + " (game over) " + restart_button;
+        // Adding an evaluate button
+        if (experiment_train === 'True')
+            document.getElementById("evaluate-col").hidden = false;
         websocket.close();
     } 
 };

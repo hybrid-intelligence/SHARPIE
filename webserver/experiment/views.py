@@ -58,4 +58,20 @@ def run_(request, link):
 
     experiment = models.Experiment.objects.get(link=link)
     room_name = request.session['room_name']
-    return render(request, "experiment/run.html", {"room_name": room_name, 'ws_setting': WS_SETTING, 'inputsListened': experiment.input_list, 'experiment_name': experiment.name})
+    return render(request, "experiment/run.html", {"room_name": room_name, 'ws_setting': WS_SETTING, 'inputsListened': experiment.input_list, 'experiment_name': experiment.name, 'experiment_type': experiment.type, 'experiment_train': experiment.train})
+
+
+
+@login_required
+def evaluate_(request, link):
+    # Create empty config form
+    form = ConfigForm()
+    # Check if all the fields have been saved in the session
+    saved = all((k in request.session.keys() or not form.fields[k].required) for k in form.fields.keys())
+    # If a config was not saved, we redirect the user to the config page
+    if not saved:
+        return redirect(f"/experiment/{link}/config")
+
+    experiment = models.Experiment.objects.get(link=link)
+    room_name = request.session['room_name']
+    return render(request, "experiment/evaluate.html", {"room_name": room_name, 'ws_setting': WS_SETTING, 'inputsListened': [], 'experiment_name': experiment.name, 'experiment_type': experiment.type})
