@@ -1,26 +1,29 @@
-[![versions](https://img.shields.io/badge/python-3.10-blue)](#) [![motivating-paper](https://img.shields.io/badge/paper-motivation-blue)](https://doi.org/10.48550/arXiv.2501.19245)
+[![versions](https://img.shields.io/badge/python-3.10-blue)](#) [![motivating-paper](https://img.shields.io/badge/paper-motivation-blue)](https://doi.org/10.48550/arXiv.2501.19245) [![docs](https://app.readthedocs.org/projects/sharpie/badge/?version=latest)](https://sharpie.readthedocs.io/en/latest/index.html)
 
 # SHARPIE - beta version
 ## Shared Human-AI Reinforcement Learning Platform for Interactive Experiments
-[![Demo](https://github.com/libgoncalv/SHARPIE/blob/main/home/static/home/preview_image_1.png)](https://archive.org/embed/hhai-demo-1)
+[![Demo](https://github.com/hybrid-intelligence/SHARPIE/blob/main/webserver/home/static/home/preview_image_1.png)](https://archive.org/embed/hhai-demo-1)
 
 Our framework is relying on Django for serving files to the user browser. Therefore, it is following the architecture of Django to organize the code i.e. decomposition of the pages in apps. In this repository, we only present the core of SHARPIE and you can find examples/use-cases in our Gallery repository. For clarity we will detail briefly here the important files in our project but we highly recommend to look at the Django documentation for a better understanding.
 
 
 ## Development installation
-* We highly recommend to use a virtual environment such as Anaconda. This code has been tested on Python 3.11.
-* Git clone this repository
-* Install Redis server `apt install redis-server`
-* Install SHARPIE requirements `pip install -r requirements`
-* Webserver:
-  * Run `cd webserver`
-  * Run `python manage.py runserver` to start the webserver
+* We highly recommend to use a virtual environment such as Anaconda. This code has been tested on Python 3.11. If you have already installed Anaconda:
+  * Create a virtual environment ```conda create -n sharpie_env python=3.11```
+  * Then activate ```conda activate sharpie_env``` 
+* Git clone this repository ```git clone https://github.com/hybrid-intelligence/SHARPIE.git```
+* Install Redis server ```apt install redis-server```
+* Install SHARPIE requirements ```pip install -r requirements.txt```
+* Start Redis server ```redis-server```
+* Start Webserver:
+  * Run ```cd webserver```
+  * Run ```python manage.py runserver``` to start the webserver
 * You can access the website at [localhost:8000](localhost:8000) and manage the authorized users from [localhost:8000/admin](localhost:8000/admin) with the username "admin" and password "password"
-* For now there is no experiment available but you can find some examples ready to use in our gallery!
+* For now there is no experiment available but you can find some examples ready to use in our [gallery](https://github.com/hybrid-intelligence/SHARPIE_Gallery)!
 
 ## Run into production
 You can start by looking at the [deployement checklist](https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/) from Django. For the webserver, we recommend to use the [example setup with Nginx and Supervisor](https://channels.readthedocs.io/en/latest/deploying.html#example-setups) from the official Channels documentation. For the runner, we also recommend using Supervisor:
-* Copy `runner_supervisor.conf` to `/etc/supervisor/conf.d/` and modify the paths mentionned in the file to match your configuration
+* Copy `runner_supervisor.conf` to `/etc/supervisor/conf.d/` and modify the paths mentioned in the file to match your configuration
 * Have supervisor reread and update its jobs: `sudo supervisorctl reread && sudo supervisorctl update`
 
 ## FAQ
@@ -29,7 +32,7 @@ A: SHARPIE is currently under active development, a request for support budget (
 is in preparation and we will continue do so until the end of the [HI
 center](https://www.hybrid-intelligence-centre.nl/) in 2029.
 
-**Q**: *Can SHARPIE integrate with environmnet X?*  
+**Q**: *Can SHARPIE integrate with environment X?*  
 A: SHARPIE integrates with any environment that implements the
 [Gymnasium ``env``](https://gymnasium.farama.org/api/env/) API: SHARPIE needs access to 
 ``step()``, ``reset()`` and ``render()`` functions. Since SHARPIE runs the environment on a
@@ -54,7 +57,7 @@ this.
 **Q**: *Why did you develop SHARPIE?*  
 A: We developed SHARPIE to facilitate experiments involving RL agents and humans. We believe that
 the study of this interaction is crucial to establishing artificial intelligence(s) that do not
-replace human intellect but instead expand it. We thereby want to put humans at the centre,
+replace human intellect but instead expand it. We thereby want to put humans at the center,
 and change the course of the ongoing AI revolution.
 
 **Q**: *Can SHARPIE be used for education and outreach?*  
