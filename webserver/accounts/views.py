@@ -107,23 +107,56 @@ def consent_(request):
 
 @login_required
 def profile_(request):
-    formInfo = ProfileInfoForm(initial={'email': request.user.email,
+    formInfo = ProfileInfoForm(initial={'username': request.user.username,
+                                        'email': request.user.email,
                                         'first_name': request.user.first_name,
                                         'last_name': request.user.last_name,}) 
     formPassword = ProfilePasswordForm()
 
     if request.method == "POST":
-        formInfo = ProfileInfoForm(request.POST)
-        if formInfo.is_valid():
-            request.user.email = formInfo.cleaned_data['email']
-            request.user.first_name = formInfo.cleaned_data['first_name']
-            request.user.last_name = formInfo.cleaned_data['last_name']
-            request.user.save()
-        formPassword = ProfilePasswordForm(request.POST)
-        if formPassword.is_valid() and formPassword.cleaned_data['password1'] == formPassword.cleaned_data['password2']:
-            request.user.set_password(formPassword.cleaned_data['password'])
-            request.user.save()
-        return redirect('/accounts/profile/')
+        # Handle consent retraction
+        if 'retract_consent' in request.POST:
+            try:
+                consent = Consent.objects.get(user=request.user)
+                consent.agreed = False
+                consent.save()
+                return redirect('/accounts/consent/')
+            except Consent.DoesNotExist:
+                pass
+        
+        # Handle profile info update
+        if 'update_info' in request.POST:
+            formInfo = ProfileInfoForm(request.POST)
+            if formInfo.is_valid():
+                # Check if username is being changed and if it's available
+                new_username = formInfo.cleaned_data['username']
+                username_valid = True
+                if new_username != request.user.username:
+                    # Check if username is already taken
+                    if User.objects.filter(username=new_username).exclude(pk=request.user.pk).exists():
+                        formInfo.add_error('username', 'This username is already taken.')
+                        username_valid = False
+                
+                # Only update if username is valid (either unchanged or available)
+                if username_valid:
+                    if new_username != request.user.username:
+                        request.user.username = new_username
+                    request.user.email = formInfo.cleaned_data['email']
+                    request.user.first_name = formInfo.cleaned_data['first_name']
+                    request.user.last_name = formInfo.cleaned_data['last_name']
+                    request.user.save()
+                    return redirect('/accounts/profile/')
+        
+        # Handle password update
+        if 'update_password' in request.POST:
+            formPassword = ProfilePasswordForm(request.POST)
+            if formPassword.is_valid():
+                if formPassword.cleaned_data['password1'] == formPassword.cleaned_data['password2']:
+                    request.user.set_password(formPassword.cleaned_data['password1'])
+                    request.user.save()
+                    return redirect('/accounts/profile/')
+                else:
+                    formPassword.add_error('password2', 'Passwords do not match.')
     
     try:
         consent = Consent.objects.get(user=request.user)

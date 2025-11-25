@@ -23,6 +23,7 @@ class ConsentForm(forms.Form):
 
 class ProfileInfoForm(forms.Form):
     """Form for updating user profile information."""
+    username = forms.CharField(label='Username', max_length=255, required=True)
     email = forms.EmailField(label='Email', required=False,
                              widget=forms.TextInput(attrs={'placeholder': 'You can add your email here'}))
     first_name = forms.CharField(label='First name', max_length=255, required=False,
