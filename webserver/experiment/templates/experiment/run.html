@@ -3,18 +3,31 @@
 {% load static %}
 
 {% block content %}
+  <!-- Load external CSS -->
+  <link rel="stylesheet" href="{% static 'experiment/css/controls.css' %}">
+
   <script>
     ws_setting = "{{ ws_setting }}";
     inputsListened = [{% for input in inputsListened %}"{{ input }}",{% endfor %}];
     inputsForwarded = [];
+    experiment_type = "{{ experiment_type }}";
+    experiment_train = "{{ experiment_train }}"; 
   </script>
   <script src="{% static 'experiment' %}/js/inputListener.js"></script>
   <script src="{% static 'experiment' %}/js/websocket.js"></script>
+  <script src="{% static 'experiment' %}/js/mobileControls.js"></script>
 
   <section class="text-center">
     <div class="container">
       <br>
-      <h2 class="text-start"><a href="config" class="btn btn-info"><i class="bi bi-arrow-left"></i> Config</a></h2>
+      <div class="row justify-content-between">
+        <div class="col-auto">
+          <p class="fs-5"><a href="config" class="btn btn-info"><i class="bi bi-arrow-left"></i> Config</a></p>
+        </div>
+        <div class="col-auto" id="evaluate-col" hidden>
+          <p class="fs-5"><a href="evaluate" class="btn btn-success">Evaluate <i class="bi bi-arrow-right"></i></a></p>
+        </div>
+      </div>
       <h1>{{ experiment_name }} - room <i>{{ room_name }}</i></h1>
       <h2 id="sub-title">Step 0</h2>
     </div>
@@ -27,6 +40,73 @@
       <div class="spinner-border ml-auto" role="status" aria-hidden="true"></div>
     </div>
 
-    <img id="image" style="visibility: hidden;" class="img-fluid rounded mx-auto d-block img-thumbnail">
+    <div class="row mt-3">
+      <div class="col-md-8 d-flex justify-content-center">
+        <div class="game-container" style="width: 40%;">
+          <img id="image" style="visibility: hidden;" class="img-fluid rounded img-thumbnail w-100">
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card border-secondary controls-card">
+          <div class="card-header bg-light">
+            <h5 class="card-title mb-0">Controls</h5>
+          </div>
+          <div class="card-body">
+            <p class="card-text">Use the following keys to control:</p>
+            <div class="d-flex justify-content-around mb-3" id="desktop-controls">
+              {% for input in inputsListened %}
+                {% if input == "ArrowLeft" %}
+                  <div class="text-center">
+                    <kbd class="keyboard-key">←</kbd>
+                    <div>Left</div>
+                  </div>
+                {% elif input == "ArrowRight" %}
+                  <div class="text-center">
+                    <kbd class="keyboard-key">→</kbd>
+                    <div>Right</div>
+                  </div>
+                {% elif input == "ArrowUp" %}
+                  <div class="text-center">
+                    <kbd class="keyboard-key">↑</kbd>
+                    <div>Up</div>
+                  </div>
+                {% elif input == "ArrowDown" %}
+                  <div class="text-center">
+                    <kbd class="keyboard-key">↓</kbd>
+                    <div>Down</div>
+                  </div>
+                {% endif %}
+              {% endfor %}
+            </div>
+            {% if experiment_type == "action" %}
+              <p class="card-text">These keys will override the agent's actions.</p>
+            {% else %}
+              <p class="card-text">These keys will override the agent's reward.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Controls -->
+  <div id="mobile-controls" class="mobile-controls" style="display: none;">
+    <div class="text-center mb-2">
+      <small class="text-muted">Touch Controls</small>
+    </div>
+    <div class="d-flex justify-content-center" id="mobile-control-buttons">
+      {% for input in inputsListened %}
+        {% if input == "ArrowLeft" %}
+          <button class="mobile-control-btn" data-key="ArrowLeft">←</button>
+        {% elif input == "ArrowRight" %}
+          <button class="mobile-control-btn" data-key="ArrowRight">→</button>
+        {% elif input == "ArrowUp" %}
+          <button class="mobile-control-btn" data-key="ArrowUp">↑</button>
+        {% elif input == "ArrowDown" %}
+          <button class="mobile-control-btn" data-key="ArrowDown">↓</button>
+        {% endif %}
+      {% endfor %}
+    </div>
   </div>
 {% endblock %}

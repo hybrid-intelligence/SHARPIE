@@ -4,11 +4,15 @@ from django.core.exceptions import ValidationError
 
 class Experiment(models.Model):
     name = models.CharField('Name', max_length=100)
+    type = models.CharField('Type ("action" or "reward")', max_length=50, default='action')
     description = models.TextField('Description', blank=True)
     input_list = models.JSONField('Inputs captured from the users', default=list)
     agent_list = models.JSONField('Agents available to play', default=[['agent_0', 'Agent']])
     users_needed = models.IntegerField('Number of users needed to start the experiment', default=1)
     link = models.CharField('Link to the experiment', max_length=100, blank=True)
+    episodes_to_complete = models.IntegerField('Number of episodes to complete per user', default=1)
+    target_fps = models.FloatField('Target FPS for the experiment', default=24.0)
+    train = models.BooleanField('Whether the agent is trained during the experiment', default=False)
 
     def clean(self):
         # Validate input_list: must be a list of strings
@@ -70,6 +74,7 @@ class Runner(models.Model):
 class Queue(models.Model):
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
     room_name = models.CharField('Room name', max_length=20)
+    evaluate = models.BooleanField('Whether the experiment is in evaluation mode', default=False)
     users_waiting = models.IntegerField('Number of users currently waiting', default=0) 
     status = models.CharField('Status of the queue', max_length=20, default='waiting')  # e.g., waiting, running, terminated, dead
     created_at = models.DateTimeField('Created at', db_default=Now())
