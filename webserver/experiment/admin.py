@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import Experiment, Trial, Interaction, Runner, Queue
 
 class ExperimentAdmin(admin.ModelAdmin):
-    list_display = ['name', 'input_list', 'agent_list', 'link']
+    list_display = ['name', 'type', 'input_list', 'agent_list', 'link', 'target_fps']
 
 class TrialAdmin(admin.ModelAdmin):
     list_display = ['experiment', 'room_name', 'user', 'agent_played', 'started_at', 'ended_at']
