@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block content %}
+  <section class="text-center">
+    <div class="container">
+      <br>
+      <h1>Profile</h1>
+    </div>
+  </section>
+  
+  <br>
+
+  <div class="container">
+    <div class="row align-items-center justify-content-evenly">      
+      <div class="col-md-4">
+        <h4>Personal information</h4>
+        <form method="post">
+          {% csrf_token %}
+          {{ formInfo|crispy }}      
+          <br>
+          <button type="submit" name="update_info" class="btn btn-primary">Update information</button>
+        </form>
+      </div>
+         
+      <div class="col-md-4">
+        <h4>Password information</h4>
+        <form method="post">
+          {% csrf_token %}
+          {{ formPassword|crispy }}
+          <br>
+          <button type="submit" name="update_password" class="btn btn-primary">Update password</button>
+        </form>
+      </div>
+    </div>
+
+    <br><br>
+    <div class="row justify-content-center">
+      <div class="col-md-4">
+        <h4>Informed Consent Agreement</h4>
+        {% if consent and consent.agreed %}
+            <p>You gave us your consent on {{ consent.agreed_at|date:"F d, Y" }} at {{ consent.agreed_at|time:"H:i" }}.</p>
+            <p><a href="/accounts/consent">You can review the agreement by clicking here.</a></p>
+            <form method="post" onsubmit="return confirm('Are you sure you want to retract your consent? This may affect your ability to use certain features.');">
+              {% csrf_token %}
+              <button type="submit" name="retract_consent" class="btn btn-danger">Retract Consent</button>
+            </form>
+        {% else %}
+            <p>You did not give us consent to use your information.</p>
+            <p><a href="/accounts/consent">Please review the agreement by clicking here.</a></p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
