@@ -7,6 +7,7 @@ from django.utils import timezone
 from channels.generic.websocket import WebsocketConsumer
 
 from .models import Experiment, Trial, Interaction, Runner, Queue
+from mysite.settings import REDIRECT_AFTER_EXPERIMENT
 
 
 
@@ -199,6 +200,13 @@ class RunConsumer(WebsocketConsumer):
         elif(bytes_data):
             message = json.loads(gzip.decompress(bytes_data))
             message['type'] = "websocket.message"
+            if message['terminated']:
+                episodes_to_complete = Experiment.objects.get(link=self.link).episodes_to_complete
+                n_trials = Trial.objects.filter(experiment__link=self.link, room_name=message['room']).count()
+                if n_trials >= episodes_to_complete:
+                    message['redirect'] = REDIRECT_AFTER_EXPERIMENT
+                else:
+                    message['redirect'] = None
             # Send message to room group
             async_to_sync(self.channel_layer.group_send)(
                 message['room'] + self.link, message
