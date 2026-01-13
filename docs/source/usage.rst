@@ -33,6 +33,14 @@ Navigate to the SHARPIE directory and install the required packages:
    cd SHARPIE
    pip install -r requirements.txt
 
+Create a database file (SQLite by default) and add an admin user:
+
+.. code-block:: console
+
+   cd webserver
+   python manage.py migrate
+   python manage.py createsuperuser
+
 Run in development mode
 ----------------
 
@@ -50,7 +58,7 @@ In another terminal, start the runner:
    cd runner
    python manage.py runserver
 
-You can access the website at http://localhost:8000 and manage the authorized users from http://localhost:8000/admin with the username "admin" and password "password". For now there is no experiment available but you can find some examples ready to use in our `galery <https://github.com/hybrid-intelligence/SHARPIE_Gallery/>`_!
+You can access the website at http://localhost:8000 and manage the authorized users from http://localhost:8000/admin with the username and password that you set at the end of the installation. For now there is no experiment available but you can find some examples ready to use in our `galery <https://github.com/hybrid-intelligence/SHARPIE_Gallery/>`_!
 
 Run in production mode
 ------------------
