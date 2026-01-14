@@ -3,67 +3,14 @@
 # SHARPIE - beta version
 ## Shared Human-AI Reinforcement Learning Platform for Interactive Experiments
 [![Demo](https://github.com/hybrid-intelligence/SHARPIE/blob/main/webserver/home/static/home/preview_image_1.png)](https://archive.org/embed/hhai-demo-1)
+SHARPIE is a Python-based modular framework for Reinforcement Learning and Human-AI interaction experiments.
 
-Our framework is relying on Django for serving files to the user browser. Therefore, it is following the architecture of Django to organize the code i.e. decomposition of the pages in apps. In this repository, we only present the core of SHARPIE and you can find examples/use-cases in our Gallery repository. For clarity we will detail briefly here the important files in our project but we highly recommend to look at the Django documentation for a better understanding.
+Reinforcement learning offers a general approach for modeling and training AI agents, including human-AI interaction scenarios. SHARPIE addresses the need for a generic framework to support experiments with RL agents and humans. Its modular design consists of a versatile wrapper for RL environments and algorithm libraries, a participant-facing web interface, logging utilities, deployment on popular cloud and participant recruitment platforms. 
 
+It empowers researchers to study a wide variety of research questions related to the interaction between humans and RL agents, including those related to interactive reward specification and learning, learning from human feedback, action delegation, preference elicitation, user-modeling, and human-AI teaming. The platform is based on a generic interface for human-RL interactions that aims to standardize the field of study on RL in human contexts.
 
-## Development installation
-* We highly recommend to use a virtual environment such as Anaconda. This code has been tested on Python 3.11. If you have already installed Anaconda:
-  * Create a virtual environment ```conda create -n sharpie_env python=3.11```
-  * Then activate ```conda activate sharpie_env``` 
-* Git clone this repository ```git clone https://github.com/hybrid-intelligence/SHARPIE.git```
-* Install Redis server ```apt install redis-server```
-* Install SHARPIE requirements ```pip install -r requirements.txt```
-* Start Redis server ```redis-server```
-* Start Webserver:
-  * Run ```cd webserver```
-  * Run ```python manage.py runserver``` to start the webserver
-* You can access the website at [localhost:8000](localhost:8000) and manage the authorized users from [localhost:8000/admin](localhost:8000/admin) with the username "admin" and password "password"
-* For now there is no experiment available but you can find some examples ready to use in our [gallery](https://github.com/hybrid-intelligence/SHARPIE_Gallery)!
-
-## Run into production
-You can start by looking at the [deployement checklist](https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/) from Django. For the webserver, we recommend to use the [example setup with Nginx and Supervisor](https://channels.readthedocs.io/en/latest/deploying.html#example-setups) from the official Channels documentation. For the runner, we also recommend using Supervisor:
-* Copy `runner_supervisor.conf` to `/etc/supervisor/conf.d/` and modify the paths mentioned in the file to match your configuration
-* Have supervisor reread and update its jobs: `sudo supervisorctl reread && sudo supervisorctl update`
-
-## FAQ
-**Q**: *How long will SHARPIE be supported?*  
-A: SHARPIE is currently under active development, a request for support budget (a.o.) for 2025
-is in preparation and we will continue do so until the end of the [HI
-center](https://www.hybrid-intelligence-centre.nl/) in 2029.
-
-**Q**: *Can SHARPIE integrate with environment X?*  
-A: SHARPIE integrates with any environment that implements the
-[Gymnasium ``env``](https://gymnasium.farama.org/api/env/) API: SHARPIE needs access to 
-``step()``, ``reset()`` and ``render()`` functions. Since SHARPIE runs the environment on a
-back-end server rather than in the browser, it supports any environment with Python bindings to these
-functions.
-
-**Q**: *Does SHARPIE support experiments involving mixed human-AI teams?*  
-A: SHARPIE is designed to support mixed human-AI teams, involving multiple AI agents and multiple
-human participants at the same time. The SHARPIE architecture includes a back-end to manage
-synchronization between participants, and rendering for you.
-
-**Q**: *What are the computational requirements for SHARPIE*  
-A: SHARPIE itself does not come with strict computational requirements, we suggest that you follow
-the computational requirements of your environment and RL model of choice.
-
-**Q**: *Can I use SHARPIE to run experiments involving participants from different continents?*  
-A: It depends. Having participants located in different continents in the same room is likely to
-cause latency issues that are fundamental to the nature of cross-continental networking.
-Separating participants per room may be a viable alternative if your experimental setup support
-this.
-
-**Q**: *Why did you develop SHARPIE?*  
-A: We developed SHARPIE to facilitate experiments involving RL agents and humans. We believe that
-the study of this interaction is crucial to establishing artificial intelligence(s) that do not
-replace human intellect but instead expand it. We thereby want to put humans at the center,
-and change the course of the ongoing AI revolution.
-
-**Q**: *Can SHARPIE be used for education and outreach?*  
-A: SHARPIE can be used for educational purposes and outreach. However, it is currently still under
-active development. We plan to develop educational materials on hybrid human-AI systems and
-experiments once the platform stabilizes.
+## Documentation
+You can find the documentation [here](https://sharpie.readthedocs.io/en/latest/).
 
 ## Acknowledgements
 This research was funded by the [Hybrid Intelligence
