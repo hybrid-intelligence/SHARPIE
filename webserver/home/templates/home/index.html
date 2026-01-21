@@ -2,18 +2,20 @@
 
 {% block content %}
 <main role="main">
-
-    <section class="jumbotron text-center">
-      <div class="container">
-        <br>
-        <h1 class="jumbotron-heading">SHARPIE website</h1>
-        <p class="lead text-muted">Shared Human-AI Reinforcement Learning Platform for Interactive Experiments</p>
-        <p>
-          <a href="https://arxiv.org/abs/2501.19245" target="_blank" class="btn btn-primary my-2">Check out our paper</a>
-          <a href="https://github.com/libgoncalv/SHARPIE" target="_blank" class="btn btn-secondary my-2">Check out our code</a>
-        </p>
-      </div>
-    </section>
+    
+    {% if DEMO %}
+      <section class="jumbotron text-center">
+        <div class="container">
+          <br>
+          <h1 class="jumbotron-heading">SHARPIE website</h1>
+          <p class="lead text-muted">Shared Human-AI Reinforcement Learning Platform for Interactive Experiments</p>
+          <p>
+            <a href="https://arxiv.org/abs/2501.19245" target="_blank" class="btn btn-primary my-2">Check out our paper</a>
+            <a href="https://github.com/hybrid-intelligence/SHARPIE" target="_blank" class="btn btn-secondary my-2">Check out our code</a>
+          </p>
+        </div>
+      </section>
+    {% endif %}
 
     <div class="album py-5 bg-adaptive">
       <div class="container">

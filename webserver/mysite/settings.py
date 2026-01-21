@@ -25,6 +25,8 @@ SECRET_KEY = 'django-insecure-n135)#u&k!m6k%dg4&&ek=_yj^d13y0q&j617hf9!&$t5y6x=_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 PROD = False
+# Useful to add some information only for the self-hosted version at sharpie.science.uu.nl
+DEMO = False
 
 HTTPS = False
 if HTTPS:

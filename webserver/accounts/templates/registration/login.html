@@ -34,6 +34,9 @@
             {% elif view == 'register' %}
               <button type="submit" class="btn btn-primary btn-block">Register</button>
               <p class="text-center mt-3">
+                {% if DEMO %}
+                  Pssst, this is a demo version. The registration key is {{ REGISTRATION_KEY }}. 
+                {% endif %}
                 <a href="{% url 'login' %}">Already have an account? Login here.</a>
               </p>
             {% endif %}
