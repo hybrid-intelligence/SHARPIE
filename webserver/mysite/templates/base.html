@@ -65,6 +65,11 @@
                   {% endif %}
                 </ul>
               </li>
+              {% if user.is_staff %}
+                <li class="nav-item">
+                  <a class="nav-link fw-bold" href="/admin">View admin page</a>
+                </li>
+              {% endif %}
             </ul>
             <div class="d-flex align-items-center">
               <button class="theme-toggle me-3" id="themeToggle" aria-label="Toggle theme">

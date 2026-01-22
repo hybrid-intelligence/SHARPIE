@@ -21,7 +21,11 @@
           {% csrf_token %}
           {{ formInfo|crispy }}      
           <br>
-          <button type="submit" name="update_info" class="btn btn-primary">Update information</button>
+          {% if participant.agreed_at and not participant.withdrawn_at and not participant.external_id %}
+            <button type="submit" name="update_info" class="btn btn-primary">Update information</button>
+          {% else %}
+            <p class="alert alert-warning">You cannot update this information</p>
+          {% endif %}
         </form>
       </div>
          
@@ -31,7 +35,11 @@
           {% csrf_token %}
           {{ formPassword|crispy }}
           <br>
-          <button type="submit" name="update_password" class="btn btn-primary">Update password</button>
+          {% if participant.agreed_at and not participant.withdrawn_at and not participant.external_id %}
+            <button type="submit" name="update_password" class="btn btn-primary">Update password</button>
+          {% else %}
+            <p class="alert alert-warning">You cannot update this information</p>
+          {% endif %}
         </form>
       </div>
     </div>
@@ -40,17 +48,14 @@
     <div class="row justify-content-center">
       <div class="col-md-4">
         <h4>Informed Consent Agreement</h4>
-        {% if consent and consent.agreed %}
-            <p>You gave us your consent on {{ consent.agreed_at|date:"F d, Y" }} at {{ consent.agreed_at|time:"H:i" }}.</p>
-            <p><a href="/accounts/consent">You can review the agreement by clicking here.</a></p>
-            <form method="post" onsubmit="return confirm('Are you sure you want to retract your consent? This may affect your ability to use certain features.');">
-              {% csrf_token %}
-              <button type="submit" name="retract_consent" class="btn btn-danger">Retract Consent</button>
-            </form>
+        {% if participant.withdrawn_at %}
+            <br>You withdrawn your consent on the {{ participant.withdrawn_at }} No further information will be collected.
+        {% elif participant.agreed_at %}
+            <p>You gave us your consent on {{ participant.agreed_at|date:"F d, Y" }} at {{ participant.agreed_at|time:"H:i" }}.</p>
         {% else %}
             <p>You did not give us consent to use your information.</p>
-            <p><a href="/accounts/consent">Please review the agreement by clicking here.</a></p>
         {% endif %}
+        <p><a href="/accounts/consent">You can review the agreement by clicking here.</a></p>
       </div>
     </div>
   </div>

@@ -68,3 +68,14 @@ Start by looking at the `deployment checklist <https://docs.djangoproject.com/en
 
 For the runner:
 We recommend using `supervisor <http://supervisord.org/>`_ to manage the runner process. You can find an example configuration file in `runner/runner_supervisor.conf`. You can modify the paths mentioned in the file to match your configuration and copy it to `/etc/supervisor/conf.d/`. Then, run: `sudo supervisorctl reread`_ and `sudo supervisorctl update`_ to apply the changes.
+
+Updating your installation
+------------------
+If you already have a release of SHARPIE installed, you can upgrade it by downloading the latest version from GitHub, copy your settings (and database file if you are using SQLite) to your new installation directory, and run:
+
+.. code-block:: console
+
+   cd webserver
+   python manage.py migrate
+
+This will look at the migrations files under /accounts and /experiment, and apply any new migrations that are available to your database.
