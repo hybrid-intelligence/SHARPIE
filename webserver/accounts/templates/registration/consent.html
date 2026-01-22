@@ -6,42 +6,38 @@
         <div class="col-10 col-lg-8 rounded shadow p-4">
             <h1>Informed Consent Agreement</h1>
             <p>Before taking part in this study, please read the following information and indicate below whether you consent to the conditions of participation.</p>
-            
-            <p>This study involves participation in interactive experiments using the SHARPIE (Shared Human-AI Reinforcement Learning Platform for Interactive Experiments) platform. You will interact with AI agents in reinforcement learning environments. The experiment typically takes 15-30 minutes to complete, depending on the specific experiment configuration.</p>
-            
-            <p>During the experiment, we will collect data about your interactions with the AI system, including your actions, decisions, and responses. This data will be used solely for research purposes to improve our understanding of human-AI collaboration in reinforcement learning settings.</p>
-            
-            <p>Only the research team will have access to the data, and all the information is kept in secure locations approved by The Hybrid Intelligence Centre.</p>
-            
-            <div class="row justify-content-evenly">
-                <div class="col-auto">
-                    <p>
-                        <strong>Principal Investigator:</strong>
-                        <br>
-                        Hybrid Intelligence Centre
-                        <br>
-                        The Netherlands
-                    </p>
+            <br>
+
+            {% if consent %}
+                <h4>Description</h4>
+                <p>{{ consent.explanation_text }}</p>
+                <p>During the experiment, we will collect data about your interactions with the AI system, including your actions, decisions, and responses. This data will be used solely for research purposes to improve our understanding of human-AI collaboration in reinforcement learning settings.</p>
+                <p>All the information is kept in secure locations approved by the institute and is only available to the research team:</p>
+                
+                <div class="row justify-content-evenly">
+                    {% for key, member in consent.research_team.items %}
+                        <div class="col-auto">
+                            <p>
+                                <strong>{{ member.designation }}:</strong>
+                                <br>
+                                {{ member.institution }}
+                                <br>
+                                {{ member.location }}
+                                <br>
+                                {{ member.email }}
+                            </p>
+                        </div>
+                    {% endfor %}
                 </div>
-            </div>
-            
-            <p>Participation is <b>completely voluntary</b>. You can decide to withdraw at any time and for any reason, including after participating. However, if you choose to withdraw after participating, we will not be required to undo the processing of your data that has taken place up until that time. The personal data we have obtained from you up until the time when you withdraw your consent will be erased (where personal data is any data that can be linked to you, so this excludes any already anonymized data).</p>
-            
-            <p>We intend to report <b>the results of this study</b> in publications and/or presentations. Upon request, we can share these results with you through email. We also intend to share collected survey data with the broader research community, following FAIR (Findable, Accessible, Interoperable, Reusable) data principles. Any information from the study that could identify you as an individual will be replaced or removed before publishing the survey data. Personal characteristics are only collected in broad categories. Therefore, <b>your identity as a participant will remain confidential at all times</b>, and the risk of participation will be minimal. The data will be stored for 10 years.</p>
-            
-            <p>This project adheres to the <b>ethical guidelines</b> established by The Hybrid Intelligence Centre, and falls under fundamental research without any commercial purpose nor external stakeholders or partners. For details of our legal basis for using personal data and the rights you have over your data, please see the privacy information at <a href="https://www.hybrid-intelligence-centre.nl/wp-content/uploads/2023/04/HI-Ethics-Policy.pdf" target="_blank">HI Centre Ethics Policy (PDF)</a>.</p>
-            
-            <p>For more information regarding this project, please contact:</p>
-            
-            <div class="row">
-                <div class="col">
-                    <p>
-                        Hybrid Intelligence Center<br>
-                        The Netherlands<br>
-                        <a href="https://hybrid-intelligence-centre.nl" target="_blank">https://hybrid-intelligence-centre.nl</a>
-                    </p>
-                </div>
-            </div>
+                <br>
+                
+                <h4>Participation</h4>
+                <p>Participation is <b>completely voluntary</b>. You can decide to withdraw at any time and for any reason, including after participating. However, if you choose to withdraw after participating, we will not be required to undo the processing of your data that has taken place up until that time. The personal data we have obtained from you up until the time when you withdraw your consent will be erased (where personal data is any data that can be linked to you, so this excludes any already anonymized data).</p>
+                <p>We intend to report <b>the results of this study</b> in publications and/or presentations. Upon request, we can share these results with you through email. We also intend to share collected survey data with the broader research community, following FAIR (Findable, Accessible, Interoperable, Reusable) data principles. Any information from the study that could identify you as an individual will be replaced or removed before publishing the survey data. Personal characteristics are only collected in broad categories. Therefore, <b>your identity as a participant will remain confidential at all times</b>, and the risk of participation will be minimal. The data will be stored for 10 years.</p>
+                <p>{{ consent.ethical_guidelines }}</p>
+            {% else %}
+                <p class="alert alert-warning">It seems there is not consent agreement available, please contact the administrator.</p>
+            {% endif %}
         </div>
     </div>
         
@@ -57,8 +53,13 @@
                     <li class="list-group-item" style="display: list-item;">I understand that my responses may be shared with the broader research community and may be reported in scientific publications. Any information that could identify me as an individual will be replaced or removed</li>
                 </ul>
                 
-                {% if consent and consent.agreed %}
-                    <br>You gave us your consent on the {{ consent.agreed_at }} Please contact us if you want to retract it.
+                {% if not consent %}
+                    <br><p class="alert alert-warning">It seems there is not consent agreement available, please contact the administrator.</p>
+                {% elif participant.withdrawn_at %}
+                    <br>You withdrawn your consent on the {{ participant.withdrawn_at }} No further information will be collected.
+                {% elif participant.agreed_at %}
+                    <br>You gave us your consent on the {{ participant.agreed_at }}
+                    <button type="submit" onclick="return confirm('Are you sure you want to retract your consent?')" name="retract_consent" class="btn btn-sm btn-danger">Retract Consent</button>
                 {% else %}
                     <div class="form-check mt-3 mx-3 text-start">
                         {{ form.agree }}
@@ -76,4 +77,3 @@
     </div>
 </div>
 {% endblock %}
-
