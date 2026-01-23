@@ -8,7 +8,7 @@
     <div class="container">
       <br>
       {% if saved %}
-        <h2 class="text-end"><a href="run" class="btn btn-info">Play <i class="bi bi-arrow-right"></i></a></h2>
+        <h2 class="text-end"><a href="run" id="playButton" class="btn btn-info">Play <i class="bi bi-arrow-right"></i></a></h2>
       {% endif %}
       <h1>{{ experiment_name }} experiment</h1>
     </div>
@@ -40,4 +40,58 @@
   </div>
 
   {% include "tooltips.html" %}
+
+  <script src="{% static 'experiment/js/connectionChecker.js' %}"></script>
+  <script src="{% static 'experiment/js/connectionWarning.js' %}"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const playButton = document.getElementById('playButton');
+      if (playButton) {
+        let isChecking = false;
+        
+        playButton.addEventListener('click', async function(e) {
+          e.preventDefault();
+          
+          // Prevent multiple simultaneous checks
+          if (isChecking) {
+            return;
+          }
+          
+          isChecking = true;
+          
+          // Show loading state
+          const originalText = playButton.innerHTML;
+          playButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Checking connection...';
+          playButton.style.pointerEvents = 'none';
+          playButton.style.opacity = '0.6';
+          
+          try {
+            // Check connection quality
+            const checker = new ConnectionChecker();
+            const result = await checker.checkConnectionQuality();
+            
+            // If poor connection detected, show warning
+            if (result.isPoor) {
+              const warning = new ConnectionWarning();
+              warning.show();
+              // User must close popup and click Play again to retry
+            } else {
+              // Good connection, proceed directly
+              window.location.href = playButton.href;
+            }
+          } catch (error) {
+            console.error('Connection check failed:', error);
+            // On error, proceed anyway
+            window.location.href = playButton.href;
+          } finally {
+            // Restore button state
+            playButton.innerHTML = originalText;
+            playButton.style.pointerEvents = 'auto';
+            playButton.style.opacity = '1';
+            isChecking = false;
+          }
+        });
+      }
+    });
+  </script>
 {% endblock %}
