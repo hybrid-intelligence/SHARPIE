@@ -57,23 +57,27 @@
             <div class="d-flex justify-content-around mb-3" id="desktop-controls">
               {% for input in inputsListened %}
                 {% if input == "ArrowLeft" %}
-                  <div class="text-center">
-                    <kbd class="keyboard-key">←</kbd>
+                  <div class="text-center key-feedback-container">
+                    <span class="key-feedback" data-feedback="ArrowLeft"></span>
+                    <kbd class="keyboard-key" data-key="ArrowLeft">←</kbd>
                     <div>Left</div>
                   </div>
                 {% elif input == "ArrowRight" %}
-                  <div class="text-center">
-                    <kbd class="keyboard-key">→</kbd>
+                  <div class="text-center key-feedback-container">
+                    <span class="key-feedback" data-feedback="ArrowRight"></span>
+                    <kbd class="keyboard-key" data-key="ArrowRight">→</kbd>
                     <div>Right</div>
                   </div>
                 {% elif input == "ArrowUp" %}
-                  <div class="text-center">
-                    <kbd class="keyboard-key">↑</kbd>
+                  <div class="text-center key-feedback-container">
+                    <span class="key-feedback" data-feedback="ArrowUp"></span>
+                    <kbd class="keyboard-key" data-key="ArrowUp">↑</kbd>
                     <div>Up</div>
                   </div>
                 {% elif input == "ArrowDown" %}
-                  <div class="text-center">
-                    <kbd class="keyboard-key">↓</kbd>
+                  <div class="text-center key-feedback-container">
+                    <span class="key-feedback" data-feedback="ArrowDown"></span>
+                    <kbd class="keyboard-key" data-key="ArrowDown">↓</kbd>
                     <div>Down</div>
                   </div>
                 {% endif %}
