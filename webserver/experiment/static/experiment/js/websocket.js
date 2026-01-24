@@ -80,6 +80,7 @@ websocket.onmessage = function(e) {
     // For reward-based experiments, we clear the inputs after sending them
     if (experiment_type === 'reward') {
         inputsForwarded = [];
+        clearAllVisualFeedback();
     }
 
     // If the game is over

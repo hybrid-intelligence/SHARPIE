@@ -28,6 +28,62 @@
   text-align: center;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
   color: #212529;
+  transition: all 0.1s ease;
+}
+
+.keyboard-key.pressed {
+  background-color: #007bff !important;
+  border-color: #0056b3 !important;
+  color: #ffffff !important;
+  transform: scale(0.95);
+  box-shadow: 0 0 10px rgba(0, 123, 255, 0.6);
+}
+
+/* Visual feedback container */
+.key-feedback-container {
+  position: relative;
+  display: inline-block;
+  padding-top: 30px;
+}
+
+.key-feedback {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 16px;
+  font-weight: bold;
+  padding: 4px 12px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  white-space: nowrap;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.key-feedback.show {
+  opacity: 1;
+}
+
+/* Reward feedback styles */
+.key-feedback.reward-positive {
+  background-color: #28a745;
+  color: white;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.5);
+}
+
+.key-feedback.reward-negative {
+  background-color: #dc3545;
+  color: white;
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.5);
+}
+
+/* Action feedback styles */
+.key-feedback.action {
+  background-color: #17a2b8;
+  color: white;
+  box-shadow: 0 2px 8px rgba(23, 162, 184, 0.5);
 }
 
 .mobile-control-btn {
