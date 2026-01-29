@@ -148,16 +148,16 @@ def run_episode(websocket, room, users_needed, type, target_fps, train, evaluate
     send_message(websocket, room, env, step_count, termination_condition, terminated, truncated, obs, actions, reward)
 
 
-def start_experiment(dir, room, users_needed, type, target_fps, train, evaluate):
+def start_experiment(hostname, port, dirname, room, users_needed, type, target_fps, train, evaluate):
     try:
-        with connect(f"ws://{hostname}:{port}/experiment/{dir}/{'evaluate' if evaluate else 'run'}") as websocket:
-            logging.info(f"Connected to experiment {dir}")
-            sys.path.append(f"experiments/{dir}")
+        with connect(f"ws://{hostname}:{port}/experiment/{dirname}/{'evaluate' if evaluate else 'run'}") as websocket:
+            logging.info(f"Connected to experiment {dirname}")
+            sys.path.append(f"experiments/{dirname}")
             logging.info(f"Starting experiment for room {room}")
             run_episode(websocket, room, users_needed, type, target_fps, train, evaluate)
-        logging.info(f"Connection to {dir} closed")
+        logging.info(f"Connection to {dirname} closed")
     except ConnectionRefusedError:
-        logging.warning(f"Connection to {dir} refused")
+        logging.warning(f"Connection to {dirname} refused")
 
 
 
@@ -192,7 +192,7 @@ if __name__ == "__main__":
                     if 'experiment' in message.keys():
                         if message['experiment'] in dirs:
                             logging.info(f"Starting experiment {message['experiment']}")
-                            p = Process(target=start_experiment, args=(message['experiment'], message['room'], message['users_needed'], message['type'], message['target_fps'], message['train'], message['evaluate']))
+                            p = Process(target=start_experiment, args=(hostname, port, message['experiment'], message['room'], message['users_needed'], message['type'], message['target_fps'], message['train'], message['evaluate'], ))
                             p.start()
                             p.join()
                         else:
