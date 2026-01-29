@@ -3,7 +3,7 @@ from django.db import models
 from django.core.exceptions import ValidationError
 
 class Experiment(models.Model):
-    name = models.CharField('Name', max_length=100)
+    name = models.CharField('Name', max_length=100, help_text="Human-readable name of the experiment, should match the directory name in the runner/experiments directory.")
     type = models.CharField('Type ("action" or "reward")', max_length=50, default='action')
     description = models.TextField('Description', blank=True)
     input_list = models.JSONField('Inputs captured from the users', default=list)
