@@ -7,13 +7,12 @@ def input_mapping(inputs):
     
     for agent, actions in inputs.items():
         # positive reward
-        if 'ArrowRight' in actions:
+        if 'ArrowUp' in actions:
             inputs[agent] = 1
         # negative reward
-        elif 'ArrowLeft' in actions:
+        elif 'ArrowDown' in actions:
             inputs[agent] = -1
         else:
-            # ignore input
             inputs[agent] = 0
 
     return inputs['agent_0']
