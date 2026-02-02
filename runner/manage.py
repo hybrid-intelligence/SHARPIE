@@ -28,6 +28,8 @@ def sanitize_data(data):
         return {k: sanitize_data(v) for k, v in data.items()}
     elif isinstance(data, list):
         return [sanitize_data(v) for v in data]
+    elif isinstance(data, tuple):
+        return tuple(sanitize_data(v) for v in data)
     else:
         return data
     
@@ -69,6 +71,7 @@ def receive_message(websocket, room, users_needed, inputs):
         inputs[message['session']['agent']] = message['actions']
 
 def generate_actions(ai_agents, obs, evaluate, actions):
+    print(f"[kgd-debug] {ai_agents=} {actions=}")
     for ai_agent in ai_agents:
         if evaluate:
             actions[ai_agent.name] = ai_agent.predict(obs)
@@ -85,6 +88,7 @@ def run_episode(websocket, room, users_needed, type, target_fps, train, evaluate
     try:
         from agent import create_agents
         agents = create_agents(room)
+        print(f"[kgd-debug] {agents=}")
     except ModuleNotFoundError:
         agents = []
 
