@@ -22,8 +22,9 @@ class Agent:
         #     return
         print("reward received:", reward)
         td_target = reward
-        self.tamer.update_reward_model(state, action, td_target)
-        self.tamer.save_model(f"experiments/TAMERmountain/collected/{self.room_name}_tamer_model.npy")
+        if reward is not None and reward != 0:
+            self.tamer.update_reward_model(state, action, td_target)
+            self.tamer.save_model(f"experiments/TAMERmountain/collected/{self.room_name}_tamer_model.npy")
     
 def create_agents(room_name):
     return [Agent('agent_0', room_name)]

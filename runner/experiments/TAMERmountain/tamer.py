@@ -132,6 +132,7 @@ class TAMERAgent:
             filepath: Path to save the model
         """
         np.save(filepath, self.reward_weights)
+        print("Stored TAMER model from:", filepath)
         
     def load_model(self, filepath: str) -> None:
         """
@@ -141,6 +142,8 @@ class TAMERAgent:
             filepath: Path to load the model from
         """
         self.reward_weights = np.load(filepath)
+        print("Loaded TAMER model from:", filepath)
+
     
     def _encode_state_action(self, state: np.ndarray, action: int) -> np.ndarray:
         """

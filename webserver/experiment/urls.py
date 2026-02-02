@@ -7,6 +7,7 @@ from . import views
 urlpatterns = [
     path("", views.config_, name="index"),
     path("config", views.config_, name="config"),
+    path("experiment/TAMERmountain/run", views.run_tamer_, name="runtamer"),
     path("run", views.run_, name="run"),
     path("evaluate", views.evaluate_, name="evaluate"),
 ]
