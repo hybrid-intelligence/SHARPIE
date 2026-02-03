@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block content %}
+  <!-- Load external CSS -->
+  <link rel="stylesheet" href="{% static 'experiment/css/controls.css' %}">
+  
+  <style>
+    @keyframes update-pulse {
+      0% {
+        transform: scale(1);
+        color:gray;
+      }
+      50% { 
+        color:black;
+        transform: scale(1.1);
+      }
+      100% {
+        color:gray;
+        transform: scale(1);
+      }
+    }
+    
+    .action-updated {
+      animation: update-pulse 0.05s ease-out;
+    }
+  </style>
+
+  <script>
+    ws_setting = "{{ ws_setting }}";
+    inputsListened = [{% for input in inputsListened %}"{{ input }}",{% endfor %}];
+    inputsForwarded = [];
+    experiment_type = "{{ experiment_type }}";
+    experiment_train = "{{ experiment_train }}"; 
+  </script>
+  <script src="{% static 'experiment' %}/js/inputListener.js"></script>
+  <script type="module" src="{% static 'experiment' %}/js/websocket.js"></script>
+  <script src="{% static 'experiment' %}/js/mobileControls.js"></script>
+  <script type="module">
+    // When the server finishes a step and replies
+    import { websocket } from '{% static "experiment/js/websocket.js" %}';
+
+    const action_char_text_map = {
+      0: ['LEFT', '←'],
+      1: ['NOOP', '&nbsp;'],
+      2: ['RIGHT', '→'],
+    };
+    websocket.addEventListener('message', (event) => {
+      var agent_action = JSON.parse(event.data).actions['agent_0'];
+      console.log("Agent action: ", agent_action);
+      if (agent_action === undefined ){
+        return;
+      } else if (!(agent_action in action_char_text_map)) {
+        console.error("Unknown agent action: ", agent_action);
+        return;
+      }
+      var action_text= action_char_text_map[agent_action][0];
+      var action_char = action_char_text_map[agent_action][1];
+      
+      // Update the elements and trigger animation
+      const charElement = document.getElementById("agent-action-char");
+      const textElement = document.getElementById("agent-action-text");
+      
+      charElement.innerHTML = action_char;
+      textElement.innerHTML = action_text;
+      
+      // Trigger the update animation
+      charElement.classList.remove("action-updated");
+      
+      // Trigger reflow to restart animation
+      void charElement.offsetWidth;
+      void textElement.offsetWidth;
+      
+      charElement.classList.add("action-updated");
+      
+      return;
+    });
+  </script>
+
+  <section class="text-center">
+    <div class="container">
+      <br>
+      <div class="row justify-content-between">
+        <div class="col-auto">
+          <p class="fs-5"><a href="config" class="btn btn-info"><i class="bi bi-arrow-left"></i> Config</a></p>
+        </div>
+        <div class="col-auto" id="evaluate-col" hidden>
+          <p class="fs-5"><a href="evaluate" class="btn btn-success">Evaluate <i class="bi bi-arrow-right"></i></a></p>
+        </div>
+      </div>
+      <h1>{{ experiment_name }} - room <i>{{ room_name }}</i></h1>
+      <h2 id="sub-title">Step 0</h2>
+    </div>
+  </section>
+
+  <br>
+  <div class="container">
+    <div id="loading_div" class="d-flex align-items-center">
+      <strong>Your game is loading...</strong> &nbsp;&nbsp;&nbsp;
+      <div class="spinner-border ml-auto" role="status" aria-hidden="true"></div>
+    </div>
+
+    <div class="row mt-3">
+      <div class="col-md-8 d-flex justify-content-center">
+        <div class="game-container" style="width: 40%;">
+          <img id="image" style="visibility: hidden;" class="img-fluid rounded img-thumbnail w-100">
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card border-secondary controls-card">
+          <div class="card-header bg-light">
+            <h5 class="card-title mb-0">Controls</h5>
+          </div>
+          <div class="card-body">
+            <p class="card-text">Use the following keys to control:</p>
+            <div class="d-flex justify-content-around mb-3" id="desktop-controls">
+              {% for input in inputsListened %}
+                {% if input == "ArrowLeft" %}
+                  <div class="text-center">
+                    <kbd class="keyboard-key">←</kbd>
+                    <div>Left</div>
+                  </div>
+                {% elif input == "ArrowRight" %}
+                  <div class="text-center">
+                    <kbd class="keyboard-key">→</kbd>
+                    <div>Right</div>
+                  </div>
+                {% elif input == "ArrowUp" %}
+                  <div class="text-center">
+                    <kbd class="keyboard-key">↑</kbd>
+                    <div>Up</div>
+                  </div>
+                {% elif input == "ArrowDown" %}
+                  <div class="text-center">
+                    <kbd class="keyboard-key">↓</kbd>
+                    <div>Down</div>
+                  </div>
+                {% endif %}
+              {% endfor %}
+            </div>
+            {% if experiment_type == "action" %}
+              <p class="card-text">These keys will override the agent's actions.</p>
+            {% else %}
+              <p class="card-text">These keys will override the agent's reward.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row mt-3">
+    <div class="col-md-8 d-flex justify-content-center">
+      <div class="card border-secondary controls-card">
+        <div class="card-body">
+          <p class="card-text">Agent selected:</p>
+          <div class="d-flex justify-content-around mb-3" id="desktop-controls">
+            
+              
+                <div class="text-center">
+                  <kbd class="keyboard-key" id="agent-action-char">&nbsp;</kbd>
+                  <div id="agent-action-text">NOOP</div>
+                </div>            
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Mobile Controls -->
+  <div id="mobile-controls" class="mobile-controls" style="display: none;">
+    <div class="text-center mb-2">
+      <small class="text-muted">Touch Controls</small>
+    </div>
+    <div class="d-flex justify-content-center" id="mobile-control-buttons">
+      {% for input in inputsListened %}
+        {% if input == "ArrowLeft" %}
+          <button class="mobile-control-btn" data-key="ArrowLeft">←</button>
+        {% elif input == "ArrowRight" %}
+          <button class="mobile-control-btn" data-key="ArrowRight">→</button>
+        {% elif input == "ArrowUp" %}
+          <button class="mobile-control-btn" data-key="ArrowUp">↑</button>
+        {% elif input == "ArrowDown" %}
+          <button class="mobile-control-btn" data-key="ArrowDown">↓</button>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+{% endblock %}
