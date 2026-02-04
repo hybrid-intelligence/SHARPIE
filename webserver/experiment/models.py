@@ -9,7 +9,7 @@ class Experiment(models.Model):
     input_list = models.JSONField('Inputs captured from the users', default=list)
     agent_list = models.JSONField('Agents available to play', default=[['agent_0', 'Agent']])
     users_needed = models.IntegerField('Number of users needed to start the experiment', default=1)
-    link = models.CharField('Link to the experiment', max_length=100, blank=True)
+    link = models.CharField('Link to the experiment', max_length=100, unique=True, help_text="Unique identifier (slug) for the experiment URL")
     episodes_to_complete = models.IntegerField('Number of episodes to complete per user', default=1)
     target_fps = models.FloatField('Target FPS for the experiment', default=24.0)
     train = models.BooleanField('Whether the agent is trained during the experiment', default=False)
