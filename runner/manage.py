@@ -71,7 +71,7 @@ def receive_message(websocket, room, users_needed, inputs):
         inputs[message['session']['agent']] = message['actions']
 
 def generate_actions(ai_agents, obs, evaluate, actions):
-    print(f"[kgd-debug] {ai_agents=} {actions=}")
+    print(f"[kgd-debug|generate_actions] {ai_agents=} {actions=}")
     for ai_agent in ai_agents:
         if evaluate:
             actions[ai_agent.name] = ai_agent.predict(obs)
@@ -85,11 +85,15 @@ def train_agents(ai_agents, state, actions, reward, done, next_state):
 def run_episode(websocket, room, users_needed, type, target_fps, train, evaluate):
     from environment import environment, termination_condition, input_mapping
 
+    print("\033[H\033[J", end="")
+    print("[kgd-debug|run_episode] == START ==")
+
     try:
         from agent import create_agents
         agents = create_agents(room)
         print(f"[kgd-debug] {agents=}")
-    except ModuleNotFoundError:
+    except ModuleNotFoundError as e:
+        print(f"[kgd-debug] Failed to create ai agents:", e)
         agents = []
 
     inputs = {}
@@ -115,6 +119,8 @@ def run_episode(websocket, room, users_needed, type, target_fps, train, evaluate
     actions = {}
 
     while not termination_condition(terminated, truncated):
+        print()
+        print(f"[kgd-debug|run_episode] = Stepping")
         start_time = time.time()
         
         # Send data to server
@@ -126,7 +132,9 @@ def run_episode(websocket, room, users_needed, type, target_fps, train, evaluate
             actions = input_mapping(dict(inputs))
         else:
             reward = input_mapping(dict(inputs))
-        
+
+        print(f"[kgd-debug|run_episode] {actions=}")
+
         # Get actions from AI agents
         if(not termination_condition(terminated, truncated)):
             generate_actions(ai_agents, obs, evaluate, actions)
