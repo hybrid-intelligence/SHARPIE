@@ -40,40 +40,53 @@
   <script type="module">
     // When the server finishes a step and replies
     import { websocket } from '{% static "experiment/js/websocket.js" %}';
+    var previous_action = null;
+    function showAgentAction(action, action_char_text_map) {
+      // Feedback CSS class constants
+      const ActionHighlightClasses = Object.freeze({
+          HIGHLIGHT: "highlight-action",
+          SHOW: "show-action"
+      });
+      const ALL_ACTION_HIGHLIGHT_CLASSES = Object.freeze(Object.values(ActionHighlightClasses));
+      const actionElement = document.querySelector('#agent-action-char');
+      const actionTextElement = document.querySelector('#agent-action-text');
+      if (!actionElement) return;
+      if (!actionTextElement) return;
 
-    const action_char_text_map = {
-      0: ['LEFT', '←'],
-      1: ['NOOP', '&nbsp;'],
-      2: ['RIGHT', '→'],
-    };
+      // Clear existing classes
+      actionElement.classList.remove(...ALL_ACTION_HIGHLIGHT_CLASSES);
+      actionElement.classList.add(ActionHighlightClasses.HIGHLIGHT);
+      actionElement.classList.add('pressed');
+      console.info("Showing agent action: ", action,  action_char_text_map[action][1]);
+      actionElement.innerHTML = action_char_text_map[action][1]; // Update the character representation
+      actionTextElement.innerHTML = action_char_text_map[action][0]; // Update the text representation
+
+      // Auto-hide feedback after delay
+      setTimeout(function() {
+          actionElement.classList.remove(ActionHighlightClasses.HIGHLIGHT);
+          actionElement.classList.remove('pressed');
+      }, 500);
+    }
+
     websocket.addEventListener('message', (event) => {
+      const action_char_text_map = {
+        0: ['LEFT', '←'],
+        1: ['&nbsp;', '&nbsp;'],
+        2: ['RIGHT', '→'],
+      };
       var agent_action = JSON.parse(event.data).actions['agent_0'];
-      // console.log("Agent action: ", agent_action);
+      console.log("Agent action: ", agent_action);
       if (agent_action === undefined ){
         return;
       } else if (!(agent_action in action_char_text_map)) {
         console.error("Unknown agent action: ", agent_action);
         return;
       }
-      var action_text= action_char_text_map[agent_action][0];
-      var action_char = action_char_text_map[agent_action][1];
-      
-      // Update the elements and trigger animation
-      const charElement = document.getElementById("agent-action-char");
-      const textElement = document.getElementById("agent-action-text");
-      
-      charElement.innerHTML = action_char;
-      textElement.innerHTML = action_text;
-      
-      // Trigger the update animation
-      charElement.classList.remove("action-updated");
-      
-      // Trigger reflow to restart animation
-      void charElement.offsetWidth;
-      void textElement.offsetWidth;
-      
-      charElement.classList.add("action-updated");
-      
+      if(agent_action !== previous_action){
+        // Update the elements and trigger animation
+        showAgentAction(agent_action, action_char_text_map);      
+        previous_action = agent_action;
+      }
       return;
     });
   </script>
@@ -118,23 +131,27 @@
             <div class="d-flex justify-content-around mb-3" id="desktop-controls">
               {% for input in inputsListened %}
                 {% if input == "ArrowLeft" %}
-                  <div class="text-center">
-                    <kbd class="keyboard-key">←</kbd>
+                  <div class="text-center key-feedback-container">
+                    <span class="key-feedback" data-feedback="ArrowLeft"></span>
+                    <kbd class="keyboard-key" data-key="ArrowLeft">←</kbd>
                     <div>Left</div>
                   </div>
                 {% elif input == "ArrowRight" %}
-                  <div class="text-center">
-                    <kbd class="keyboard-key">→</kbd>
+                  <div class="text-center key-feedback-container">
+                    <span class="key-feedback" data-feedback="ArrowRight"></span>
+                    <kbd class="keyboard-key" data-key="ArrowRight">→</kbd>
                     <div>Right</div>
                   </div>
                 {% elif input == "ArrowUp" %}
-                  <div class="text-center">
-                    <kbd class="keyboard-key">↑</kbd>
+                  <div class="text-center key-feedback-container">
+                    <span class="key-feedback" data-feedback="ArrowUp"></span>
+                    <kbd class="keyboard-key" data-key="ArrowUp">↑</kbd>
                     <div>Up</div>
                   </div>
                 {% elif input == "ArrowDown" %}
-                  <div class="text-center">
-                    <kbd class="keyboard-key">↓</kbd>
+                  <div class="text-center key-feedback-container">
+                    <span class="key-feedback" data-feedback="ArrowDown"></span>
+                    <kbd class="keyboard-key" data-key="ArrowDown">↓</kbd>
                     <div>Down</div>
                   </div>
                 {% endif %}
@@ -153,7 +170,7 @@
     <div class="col-md-8 d-flex justify-content-center">
       <div class="card border-secondary controls-card">
         <div class="card-body">
-          <p class="card-text">Agent selected:</p>
+          <p class="card-text">Agent selects:</p>
           <div class="d-flex justify-content-around mb-3" id="desktop-controls">
             
               
