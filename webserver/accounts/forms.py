@@ -42,8 +42,22 @@ class ProfileInfoForm(forms.Form):
                              widget=forms.TextInput(attrs={'placeholder': 'You can add your first name here'}))
     last_name = forms.CharField(label='Last name', max_length=255, required=False,
                              widget=forms.TextInput(attrs={'placeholder': 'You can add your last name here'}))
+    
+    def __init__(self, disabled, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if disabled:
+            self.fields['username'].widget.attrs['disabled'] = True
+            self.fields['email'].widget.attrs['disabled'] = True
+            self.fields['first_name'].widget.attrs['disabled'] = True
+            self.fields['last_name'].widget.attrs['disabled'] = True
 
 class ProfilePasswordForm(forms.Form):
     password1 = forms.CharField(widget=forms.PasswordInput, label='Password')
     password2 = forms.CharField(widget=forms.PasswordInput, label='Confirm Password',
                                 help_text='Enter the same password as before, for verification.')
+    
+    def __init__(self, disabled, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if disabled:
+            self.fields['password1'].widget.attrs['disabled'] = True
+            self.fields['password2'].widget.attrs['disabled'] = True
