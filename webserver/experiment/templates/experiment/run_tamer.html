@@ -48,7 +48,7 @@
     };
     websocket.addEventListener('message', (event) => {
       var agent_action = JSON.parse(event.data).actions['agent_0'];
-      console.log("Agent action: ", agent_action);
+      // console.log("Agent action: ", agent_action);
       if (agent_action === undefined ){
         return;
       } else if (!(agent_action in action_char_text_map)) {
