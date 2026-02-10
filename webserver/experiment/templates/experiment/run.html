@@ -80,6 +80,12 @@
                     <kbd class="keyboard-key" data-key="ArrowDown">↓</kbd>
                     <div>Down</div>
                   </div>
+                {% elif input == "Enter" %}
+                  <div class="text-center key-feedback-container">
+                    <span class="key-feedback" data-feedback="Enter"></span>
+                    <kbd class="keyboard-key" data-key="Enter">↵</kbd>
+                    <div>Enter</div>
+                  </div>
                 {% endif %}
               {% endfor %}
             </div>
