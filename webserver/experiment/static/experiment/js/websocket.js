@@ -1,5 +1,5 @@
 // Connecting to the server's websocket
-const websocket = new WebSocket(
+export const websocket = new WebSocket(
     ws_setting
     + '://'
     + window.location.host
@@ -76,7 +76,7 @@ websocket.onmessage = function(e) {
 
     // We send back the inputs
     websocket.send(JSON.stringify({actions: inputsForwarded}))
-    console.log(inputsForwarded);
+
     // For reward-based experiments, we clear the inputs after sending them
     if (experiment_type === 'reward') {
         inputsForwarded = [];
@@ -95,7 +95,7 @@ websocket.onmessage = function(e) {
         } 
         else {
             // Replace the subtitle text by adding "game over" and a restart button
-            restart_button = '<a href="' + window.location.href + '" class="btn btn-primary"><i class="bi bi-bootstrap-reboot"></i> Restart</a>';
+            var restart_button = '<a href="' + window.location.href + '" class="btn btn-primary"><i class="bi bi-bootstrap-reboot"></i> Restart</a>';
             document.getElementById("sub-title").innerHTML = document.getElementById("sub-title").innerText + " (game over) " + restart_button;
             // Adding an evaluate button
             if (experiment_train === 'True')
