@@ -2,7 +2,7 @@
 
 {% block content %}
 <main role="main">
-    
+
     {% if DEMO %}
       <section class="jumbotron text-center">
         <div class="container">
@@ -22,19 +22,21 @@
 
         <div class="row">
           {% for experiment in experiments %}
-            <div class="col-md-4">
-              <div class="card mb-4 box-shadow">
-                <div class="card-body">
-                  <h5 class="card-title">{{ experiment.name }}</h5>
-                  <p class="card-text">{{ experiment.description }}</p>
-                  <div class="d-flex justify-content-between align-items-center">
-                    <div class="btn-group">
-                      <a href="/experiment/{{ experiment.link }}" class="btn btn-sm btn-outline-primary">Go to experiment</a>
+            {% if experiment.enabled %}
+              <div class="col-md-4">
+                <div class="card mb-4 box-shadow">
+                  <div class="card-body">
+                    <h5 class="card-title">{{ experiment.name }}</h5>
+                    <p class="card-text">{{ experiment.short_description }}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div class="btn-group">
+                        <a href="/experiment/{{ experiment.link }}/config" class="btn btn-sm btn-outline-primary">Start experiment</a>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            {% endif %}
           {% endfor %}
         </div>
       </div>
