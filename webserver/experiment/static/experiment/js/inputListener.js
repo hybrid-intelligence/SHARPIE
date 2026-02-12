@@ -38,7 +38,7 @@ function showFeedback(key) {
     // Clear existing classes
     feedbackElement.classList.remove(...ALL_FEEDBACK_CLASSES);
 
-    if (experiment_type === 'reward') {
+    if (inputsType === 'reward') {
         // Reward-based: show positive/negative indicator
         // TODO: Display actual configured reward values from admin settings.
         // This requires passing reward config from backend to frontend, possibly via
@@ -74,6 +74,10 @@ function clearAllVisualFeedback() {
 
 // If a key is pressed
 document.addEventListener('keydown', function(event) {
+    // If the agent does not allow multiple keybord inputs
+    if(!multipleInputs){
+        inputsForwarded = [];
+    }
     for (var i = 0; i < inputsListened.length; i++) {
         var input = inputsListened[i];
         if (event.key === input && inputsForwarded.indexOf(event.key) === -1) {
@@ -84,14 +88,11 @@ document.addEventListener('keydown', function(event) {
     }
 });
 
-// Only for action-based experiments. For reward-based experiments, the keys are reset on message sent
-if (experiment_type === 'action') {
-    // Reset controls when keys are released
-    document.addEventListener('keyup', function(event) {
-        var index = inputsForwarded.indexOf(event.key);
-        if (index > -1) {
-            inputsForwarded.splice(index, 1);
-            hideKeyPressed(event.key);
-        }
-    });
-}
+// If a key is up we remove it
+document.addEventListener('keyup', function(event) {
+    var index = inputsForwarded.indexOf(event.key);
+    if (index > -1) {
+        inputsForwarded.splice(index, 1);
+        hideKeyPressed(event.key);
+    }
+});
