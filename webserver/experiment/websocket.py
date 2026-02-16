@@ -53,8 +53,10 @@ class RunConsumer(WebsocketConsumer):
         except Episode.DoesNotExist:
             # Create a new episode
             self.episode = Episode.objects.create(session=self.session)
+        if self.runner:
+            self.role = None
         # If it is not a runner, we can retrieve the participant role
-        if not self.runner:
+        else:
             self.role = self.scope["session"]["role"]
             self.session.connected_participants += 1
             # If all participants connected, we can set the session status to 'pending'
@@ -120,6 +122,8 @@ class RunConsumer(WebsocketConsumer):
             # Forward message to participants
             message["type"] = "websocket.message"
             message["from"] = self.channel_name
+            if self.role:
+                message["role"] = self.role
             async_to_sync(self.channel_layer.group_send)(
                 f"{self.link}_{self.room}", message
             )

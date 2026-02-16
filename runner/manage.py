@@ -64,7 +64,7 @@ def receive_message(websocket, agents_settings):
                 logging.info(f"Message from room: {message['error']}")
                 exit(1)
 
-            actions[agent_name] = message['action']
+            actions[message['role']] = message['action']
     return actions
 
 
