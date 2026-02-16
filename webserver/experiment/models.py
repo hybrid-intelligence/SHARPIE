@@ -16,7 +16,7 @@ class Policy(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
 
-    filepaths = models.JSONField('List of files needed by the policy', default=lambda: dict(policy='policy.py'), help_text='Those should be located under the top runner folder. You can also specify files under subfolders like <folder>/<filename>.py. <a href="/experiment/download/policy_template" target="_blank">Download policy template</a>')
+    filepaths = models.JSONField('List of files needed by the policy', default=lambda: dict(policy='policy.py'), help_text='Those should be located under the top runner folder. You can also specify files under subfolders like <folder>/<filename>.py. <a href="/experiment/download/policy_template" target="_blank">Download policy template</a>, your policy file should define a variable called "policy" that implements the logic of the policy.')
     checkpoint_interval = models.IntegerField(default=0, help_text='Checkpoint interval (in steps) at which the policy is saved. Can also be 0 (never) or -2 (at the end of each episode).')
     
     metadata = models.JSONField(null=True, blank=True)
@@ -92,7 +92,7 @@ class Environment(models.Model):
     name = models.CharField(max_length=255, null=False)
     description = models.TextField(null=True, blank=True)
 
-    filepaths = models.JSONField('List of files needed by the environment', default=lambda: dict(environment='environment.py'), help_text='Those should be located under the top runner folder. You can also specify files under subfolders like <folder>/<filename>.py. <a href="/experiment/download/environment_template" target="_blank">Download environment template</a>')
+    filepaths = models.JSONField('List of files needed by the environment', default=lambda: dict(environment='environment.py'), help_text='Those should be located under the top runner folder. You can also specify files under subfolders like <folder>/<filename>.py. <a href="/experiment/download/environment_template" target="_blank">Download environment template</a>, your environment file should define a variable called "environment" that implements the logic of the environment.')
 
     metadata = models.JSONField(null=True, blank=True)
 
