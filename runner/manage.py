@@ -68,70 +68,62 @@ def receive_message(websocket, agents_settings):
     return actions
 
 
-def train_policies(policy_modules, policy_checkpoint_intervals, prev_obs, obs, reward, actions, terminated, truncated, agents_settings):
+
+
+
+
+def train_policies(policy_modules, policy_checkpoint_intervals, prev_obs, actions, obs, reward, terminated, truncated, agents_settings):
     """
-    Train policies based on their checkpoint_interval setting.
+    Train policies based on their checkpoint_interval settings.
 
     Args:
         policy_modules: Dictionary mapping agent names to their policy modules
-        policy_checkpoint_intervals: Dictionary mapping agent names to their checkpoint intervals
-        prev_obs: Previous observation before the step
-        obs: Current observation after the step
-        reward: Reward(s) from the step
+        policy_checkpoint_intervals: Dictionary mapping agent names to checkpoint intervals
+        prev_obs: Previous observation(s) before the step
         actions: Actions taken
-        terminated: Whether the episode terminated
+        obs: Current observation(s) after the step
+        reward: Reward(s) received
+        terminated: Whether the episode has ended
         truncated: Whether the episode was truncated
         agents_settings: Dictionary of agent settings
-
-    Returns:
-        None
     """
     for agent_name, policy_module in policy_modules.items():
         checkpoint_interval = policy_checkpoint_intervals[agent_name]
-        # Skip if checkpoint_interval is 0 (never train)
+
+        # Determine if training should occur based on checkpoint_interval
+        # Note: step_count is managed by the caller for interval checking
+        # This function is called when training should occur
         if checkpoint_interval == 0:
+            # Never train
             continue
 
-        # Determine if we should train based on checkpoint_interval
-        should_train = False
-        if checkpoint_interval == -1:
-            # Always train (every step)
-            should_train = True
-        elif checkpoint_interval == -2:
-            # Train at end of episode only
-            should_train = (terminated or truncated)
-        elif checkpoint_interval > 0 and policy_checkpoint_intervals.get('_step_count', 0) % checkpoint_interval == 0:
-            # Train every N steps
-            should_train = True
+        # Get the reward for this agent (handle both single and multi-agent rewards)
+        if isinstance(reward, dict):
+            agent_reward = reward.get(agent_name, 0)
+        else:
+            agent_reward = reward
 
-        if should_train:
-            # Get the reward for this agent (handle both single and multi-agent rewards)
-            agent_reward = reward[agent_name] if isinstance(reward, dict) else reward
-            # Get the observation for this agent
-            if isinstance(obs, dict):
-                agent_next_obs = obs.get(agent_name, obs)
-            else:
-                agent_next_obs = obs
-            # Get previous observation for this agent
-            if isinstance(prev_obs, dict):
-                agent_prev_obs = prev_obs.get(agent_name, prev_obs)
-            else:
-                agent_prev_obs = prev_obs
-            # Get action for this agent
-            agent_action = actions.get(agent_name, 0)
+        # Get the observation for this agent
+        if isinstance(obs, dict):
+            agent_next_obs = obs.get(agent_name, obs)
+        else:
+            agent_next_obs = obs
 
-            # Try to call update() method (from policy template)
-            if hasattr(policy_module, 'update'):
-                try:
-                    policy_module.update(agent_prev_obs, agent_action, agent_reward, agent_next_obs)
-                except Exception as e:
-                    logging.warning(f"Policy update failed for {agent_name}: {e}")
-            # Try to call train() method (alternative method like TAMER)
-            elif hasattr(policy_module, 'train'):
-                try:
-                    policy_module.train(agent_prev_obs, agent_action, agent_reward, terminated or truncated, agent_next_obs)
-                except Exception as e:
-                    logging.warning(f"Policy train failed for {agent_name}: {e}")
+        # Get previous observation for this agent
+        if isinstance(prev_obs, dict):
+            agent_prev_obs = prev_obs.get(agent_name, prev_obs)
+        else:
+            agent_prev_obs = prev_obs
+
+        # Get action for this agent
+        agent_action = actions.get(agent_name, 0)
+
+        # Try to call update() method (from policy template)
+        if hasattr(policy_module, 'update'):
+            try:
+                policy_module.update(agent_prev_obs, agent_action, agent_reward, terminated or truncated, agent_next_obs)
+            except Exception as e:
+                logging.warning(f"Policy update failed for {agent_name}: {e}")
 
 
 def get_policy_actions(obs, policy_modules, participant_inputs=None, agents_settings=None):
@@ -168,67 +160,6 @@ def get_policy_actions(obs, policy_modules, participant_inputs=None, agents_sett
     return actions
 
 
-def train_policies(policy_modules, policy_checkpoint_intervals, agents_settings,
-                   prev_obs, obs, actions, reward, terminated, truncated, step_count):
-    """
-    Train policies based on their checkpoint_interval setting.
-
-    Args:
-        policy_modules: Dictionary mapping agent names to their policy modules
-        policy_checkpoint_intervals: Dictionary mapping agent names to their checkpoint intervals
-        agents_settings: Dictionary of agent settings
-        prev_obs: Previous observation(s)
-        obs: Current observation(s)
-        actions: Actions taken
-        reward: Reward(s) received
-        terminated: Whether the episode has ended
-        truncated: Whether the episode was truncated
-        step_count: Current step count
-
-    Returns:
-        None (policies are trained in place)
-    """
-    for agent_name, policy_module in policy_modules.items():
-        checkpoint_interval = policy_checkpoint_intervals[agent_name]
-        # Determine if training should happen
-        should_train = False
-        if checkpoint_interval == -1:
-            # Always train (every step)
-            should_train = True
-        elif checkpoint_interval == -2:
-            # Train at end of episode only
-            should_train = (terminated or truncated)
-        elif checkpoint_interval > 0 and step_count % checkpoint_interval == 0:
-            # Train every N steps
-            should_train = True
-
-        if not should_train:
-            continue
-
-        # Get the reward for this agent (handle both single and multi-agent rewards)
-        agent_reward = reward[agent_name] if isinstance(reward, dict) else reward
-        # Get the observation for this agent
-        if isinstance(obs, dict):
-            agent_obs = obs.get(agent_name, obs)
-            agent_next_obs = obs.get(agent_name, obs)
-        else:
-            agent_obs = obs
-            agent_next_obs = obs
-        # Get previous observation for this agent
-        if isinstance(prev_obs, dict):
-            agent_prev_obs = prev_obs.get(agent_name, prev_obs)
-        else:
-            agent_prev_obs = prev_obs
-        # Get action for this agent
-        agent_action = actions.get(agent_name, 0)
-        # Try to call update() method (from policy template)
-        if hasattr(policy_module, 'update'):
-            try:
-                policy_module.update(agent_prev_obs, agent_action, agent_reward, terminated or truncated, agent_next_obs)
-            except Exception as e:
-                logging.warning(f"Policy update failed for {agent_name}: {e}")
-
-
 
 
 
@@ -255,61 +186,6 @@ def load_episode(websocket):
     experiment_settings = json.loads(websocket.recv())
     return environment_settings, agents_settings, experiment_settings
 
-
-def train_policies(policy_modules, policy_checkpoint_intervals, prev_obs, actions, obs, reward, terminated, truncated, agents_settings):
-    """
-    Train policies based on their checkpoint_interval settings.
-
-    Args:
-        policy_modules: Dictionary mapping agent names to their policy modules
-        policy_checkpoint_intervals: Dictionary mapping agent names to checkpoint intervals
-        prev_obs: Previous observation(s) before the step
-        actions: Actions taken
-        obs: Current observation(s) after the step
-        reward: Reward(s) received
-        terminated: Whether the episode has ended
-        truncated: Whether the episode was truncated
-        agents_settings: Dictionary of agent settings
-    """
-    for agent_name, policy_module in policy_modules.items():
-        checkpoint_interval = policy_checkpoint_intervals[agent_name]
-
-        # Determine if training should occur based on checkpoint_interval
-        # Note: step_count is managed by the caller for interval checking
-        # This function is called when training should occur
-        if checkpoint_interval == 0:
-            # Never train
-            continue
-
-        # Get the reward for this agent (handle both single and multi-agent rewards)
-        if isinstance(reward, dict):
-            agent_reward = reward.get(agent_name, 0)
-        else:
-            agent_reward = reward
-
-        # Get the observation for this agent
-        if isinstance(obs, dict):
-            agent_obs = obs.get(agent_name, obs)
-            agent_next_obs = obs.get(agent_name, obs)
-        else:
-            agent_obs = obs
-            agent_next_obs = obs
-
-        # Get previous observation for this agent
-        if isinstance(prev_obs, dict):
-            agent_prev_obs = prev_obs.get(agent_name, prev_obs)
-        else:
-            agent_prev_obs = prev_obs
-
-        # Get action for this agent
-        agent_action = actions.get(agent_name, 0)
-
-        # Try to call update() method (from policy template)
-        if hasattr(policy_module, 'update'):
-            try:
-                policy_module.update(agent_prev_obs, agent_action, agent_reward, terminated or truncated, agent_next_obs)
-            except Exception as e:
-                logging.warning(f"Policy update failed for {agent_name}: {e}")
 
 
 def run_episode(websocket, environment_settings, agents_settings, experiment_settings):
