@@ -6,10 +6,10 @@ class Consent(models.Model):
     """Model to formulate user consent for research participation."""
     name = models.CharField(max_length=100)
     explanation_text = models.TextField(max_length=1000, default="This study involves participation in interactive experiments using the SHARPIE (Shared Human-AI Reinforcement Learning Platform for Interactive Experiments) platform. You will interact with AI agents in reinforcement learning environments. The experiment typically takes 15-30 minutes to complete, depending on the specific experiment configuration.")
-    research_team = models.JSONField(default=dict(main = dict(designation = "Principal investigator",
-                                                        institution = "Hybrid Intelligence Centre",
-                                                        location = "The Netherlands",
-                                                        email = "principal.investigator@example.com")))
+    research_team = models.JSONField(default=lambda: dict(main=dict(designation="Principal investigator",
+                                                        institution="Hybrid Intelligence Centre",
+                                                        location="The Netherlands",
+                                                        email="principal.investigator@example.com")))
     ethical_guidelines = models.TextField(max_length=1000, default="This project adheres to the ethical guidelines established by The Hybrid Intelligence Centre, and falls under fundamental research without any commercial purpose nor external stakeholders or partners. For details of our legal basis for using personal data and the rights you have over your data, please see the privacy information at HI Centre Ethics Policy (PDF).")
     created_at = models.DateTimeField(auto_now_add=True)
 

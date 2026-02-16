@@ -16,7 +16,7 @@ class Policy(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
 
-    filepaths = models.JSONField('List of files needed by the policy', default=dict(policy='policy.py'), help_text='Those should be located under the top runner folder. You can also specify files under subfolders like <folder>/<filename>.py. <a href="/experiment/download/policy_template" target="_blank">Download policy template</a>')
+    filepaths = models.JSONField('List of files needed by the policy', default=lambda: dict(policy='policy.py'), help_text='Those should be located under the top runner folder. You can also specify files under subfolders like <folder>/<filename>.py. <a href="/experiment/download/policy_template" target="_blank">Download policy template</a>')
     checkpoint_interval = models.IntegerField(default=0, help_text='Checkpoint interval (in steps) at which the policy is saved. Can also be 0 (never) or -2 (at the end of each episode).')
     
     metadata = models.JSONField(null=True, blank=True)
@@ -70,7 +70,7 @@ class Agent(models.Model):
     policy = models.ForeignKey(Policy, on_delete=models.DO_NOTHING, null=True, blank=True)
     participant = models.BooleanField('Can the participant act?', default=False)
 
-    keyboard_inputs = models.JSONField('Inputs captured from the participant, with mapping', default=dict(default=0))
+    keyboard_inputs = models.JSONField('Inputs captured from the participant, with mapping', default=lambda: dict(default=0))
     multiple_keyboard_inputs = models.BooleanField('Allow multiple inputs from users', default=False)
     inputs_type = models.CharField('How will the inputs be used in the environment?', choices=[('actions', 'To determine the agent\'s actions'), ('reward', 'To be used as reward'), ('other', 'To be given to the agent policy in a different way')], default='actions')
     textual_inputs = models.BooleanField('Allow textual inputs from users', default=False)
@@ -92,7 +92,7 @@ class Environment(models.Model):
     name = models.CharField(max_length=255, null=False)
     description = models.TextField(null=True, blank=True)
 
-    filepaths = models.JSONField('List of files needed by the environment', default=dict(environment='environment.py'), help_text='Those should be located under the top runner folder. You can also specify files under subfolders like <folder>/<filename>.py. <a href="/experiment/download/environment_template" target="_blank">Download environment template</a>')
+    filepaths = models.JSONField('List of files needed by the environment', default=lambda: dict(environment='environment.py'), help_text='Those should be located under the top runner folder. You can also specify files under subfolders like <folder>/<filename>.py. <a href="/experiment/download/environment_template" target="_blank">Download environment template</a>')
 
     metadata = models.JSONField(null=True, blank=True)
 
