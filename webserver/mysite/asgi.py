@@ -30,7 +30,7 @@ application = ProtocolTypeRouter(
         "websocket": SessionMiddlewareStack(
             AuthMiddlewareStack(
                 URLRouter([
-                        re_path(r"^experiment/(?P<link>\w+)/run/(?P<room>\w+)$", experiment_websocket.RunConsumer.as_asgi()),
+                        re_path(r"^experiment/(?P<link>\w+)/run/(?P<room>.+)$", experiment_websocket.RunConsumer.as_asgi()),
                         re_path(r"^runner/connection$", runner_websocket.ConnectionConsumer.as_asgi()),
                     ]
                 )
