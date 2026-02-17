@@ -29,7 +29,7 @@
             {% if view == 'login' %}
               <button type="submit" class="btn btn-primary btn-block">Login</button>
               <p class="text-center mt-3">
-                <a href="{% url 'register' %}">Don't have an account? Register here.</a>
+                <a href="{% url 'register' %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">Don't have an account? Register here.</a>
               </p>
             {% elif view == 'register' %}
               <button type="submit" class="btn btn-primary btn-block">Register</button>
@@ -37,7 +37,7 @@
                 {% if DEMO %}
                   Pssst, this is a demo version. The registration key is {{ REGISTRATION_KEY }}. 
                 {% endif %}
-                <a href="{% url 'login' %}">Already have an account? Login here.</a>
+                <a href="{% url 'login' %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">Already have an account? Login here.</a>
               </p>
             {% endif %}
         {% else %}

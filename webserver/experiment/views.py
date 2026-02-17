@@ -4,6 +4,7 @@ import os
 
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from accounts.decorators import consent_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import Http404, HttpResponse
 from experiment.forms import ConfigForm
@@ -15,21 +16,11 @@ from data.models import Session
 from django.conf import settings
 
 
-def has_consented(user):
-    """Check if user has given consent."""
-    if not user.is_authenticated:
-        return False
-    try:
-        participant = Participant.objects.get(user=user)
-        return participant.agreed_at and not participant.withdrawn_at
-    except Participant.DoesNotExist:
-        participant = Participant(user=user)
-        participant.save()
-        return False
 
 
 # Configuration view that will automatically check and save the parameters into the user session variable
 @login_required
+@consent_required
 def config_(request, link):
     # Check the experiment
     try:
@@ -42,10 +33,6 @@ def config_(request, link):
     experiment_roles = []
     for agent in experiment.agents.filter(participant=True):
         experiment_roles.append((agent.role, agent.name))
-
-    # Check if user has consented, if not redirect to consent page
-    if not has_consented(request.user):
-        return redirect('/accounts/consent/')
     
     error_message = None
     # If this is a POST request we need to process the form data
@@ -115,6 +102,7 @@ def config_(request, link):
 
 
 @login_required
+@consent_required
 def run_(request, link, room):
     # Get a matching session and check if the participant is linked to it
     try:
@@ -145,7 +133,6 @@ def download_policy_template(request):
 
         return response
     except FileNotFoundError:
-        from django.http import Http404
         raise Http404("Policy template file not found")
 
 
@@ -166,5 +153,4 @@ def download_environment_template(request):
 
         return response
     except FileNotFoundError:
-        from django.http import Http404
         raise Http404("Environment template file not found")
