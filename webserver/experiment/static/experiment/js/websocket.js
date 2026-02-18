@@ -43,63 +43,97 @@ function decodeImage(image){
     return URL.createObjectURL(blob);
 }
 
+function inputsMappingFunction(inputs){
+    let result = [];
+    for(let i in inputs){
+        result.push(inputsMapping[inputs[i]]);
+    }
+    if(result.length == 0){
+        result.push(inputsMapping['default']);
+    }
+    if(multipleInputs)
+        return result;
+    else
+        return result[0];
+}
+
 // When the server finishes a step and replies
 websocket.onmessage = function(e) {
     const data = JSON.parse(e.data);
 
-    if(data.error !== undefined){
-        document.getElementById("sub-title").innerText = "Error: " + data.error;
-        document.getElementById("sub-title").style.color = 'red';
-        document.getElementById("loading_div").style.visibility = 'hidden';
-        return;
-    }
-    if(data.message !== undefined){
-        document.getElementById("sub-title").innerText = data.message;
-        document.getElementById("sub-title").style.color = 'red';
-        document.getElementById("loading_div").style.visibility = 'hidden';
-        return;
+    // Stop the experiment if there is an error
+    if(data.error){
+        document.getElementById("image").style.display = "none";
+        document.getElementById("loading_div").style.display = "block";
+        var config_button = '<a href="config" class="btn btn-sm btn-outline-primary"><i class="bi bi-bootstrap-reboot"></i> configuration </a>';
+        document.getElementById("loading_div").innerHTML = "<h3>Error: "+data.error+"</h3><br><h4>Go to back the " + config_button + " and try again</h4>";
+        websocket.close();
     }
 
     const image_scr = decodeImage(data.image);
 
     document.getElementById("image").src = image_scr;
     // We set the image visible and hide the loading icon
-    document.getElementById("image").style.visibility = 'visible';
-    document.getElementById("loading_div").style.visibility = 'hidden';
-    // Replace the subtitle text by the new step number received
-    document.getElementById("sub-title").innerText = "Step " + data.step;
+    document.getElementById("image").style.display = "block";
+    document.getElementById("loading_div").style.display = "none";
 
     // Logging what is the actual frame rate on the browser
     let currentTime = Date.now();
     averageFPS.push(parseInt(1000.0 / (currentTime - startTime)));
     startTime = Date.now();
 
-    // We send back the inputs
-    websocket.send(JSON.stringify({actions: inputsForwarded}))
+    // Showing detailled info
+    document.getElementById("details").innerHTML += "<li>Step "+data.step;
 
-    // For reward-based experiments, we clear the inputs after sending them
-    if (experiment_type === 'reward') {
-        inputsForwarded = [];
-        clearAllVisualFeedback();
+    // We send back the inputs
+    // If waitForInputs is True, wait until a non-default action is provided
+    const action = inputsMappingFunction(inputsForwarded);
+    const defaultAction = inputsMapping['default'];
+
+    if (waitForInputs) {
+        // Show waiting indicator
+        document.getElementById("waiting_for_input").style.display = "block";
+        // Wait for user to provide a non-default action
+        const checkInterval = setInterval(() => {
+            const currentAction = inputsMappingFunction(inputsForwarded);
+            if (currentAction !== defaultAction) {
+                // Send the action
+                websocket.send(JSON.stringify({type: 'broadcast', action: currentAction}));
+                // Hide waiting indicator
+                document.getElementById("waiting_for_input").style.display = "none";
+                // Clear the interval and input forward list
+                clearInterval(checkInterval);
+                clearAllVisualFeedback();
+                inputsForwarded = [];
+            }
+        }, 100); // Check every 100ms
+    } else {
+        websocket.send(JSON.stringify({type: 'broadcast', action: action}));
     }
 
     // If the game is over
-    if(data.terminated){
+    if(data.terminated || data.truncated){
         console.log("Game over, average FPS: ", average(averageFPS));
         if(data.redirect){
             // Wait and redirect to the experiment page
-            document.getElementById("sub-title").innerHTML = "Thanks for participating! You will now be redirected to complete the experiment.";
+            document.getElementById("image").style.display = "none";
+            document.getElementById("loading_div").style.display = "block";
+            document.getElementById("loading_div").innerHTML = "<h3>Thanks for participating! You will now be redirected to complete the experiment.</h3>";
             setTimeout(function() {
                 window.location.href = data.redirect;
             }, 5000);
         } 
+        else if(data.completed){
+            document.getElementById("image").style.display = "none";
+            document.getElementById("loading_div").style.display = "block";
+            document.getElementById("loading_div").innerHTML = "<h3>Thanks for participating! This experiment is completed.</h3>";
+        } 
         else {
             // Replace the subtitle text by adding "game over" and a restart button
-            var restart_button = '<a href="' + window.location.href + '" class="btn btn-primary"><i class="bi bi-bootstrap-reboot"></i> Restart</a>';
-            document.getElementById("sub-title").innerHTML = document.getElementById("sub-title").innerText + " (game over) " + restart_button;
-            // Adding an evaluate button
-            if (experiment_train === 'True')
-                document.getElementById("evaluate-col").hidden = false;
+            document.getElementById("image").style.display = "none";
+            document.getElementById("loading_div").style.display = "block";
+            var restart_button = '<a href="' + window.location.href + '" class="btn btn-sm btn-outline-primary"><i class="bi bi-bootstrap-reboot"></i> Restart</a>';
+            document.getElementById("loading_div").innerHTML = "<h3>Episode finished!</h3><br><h4>Ready to " + restart_button + " ?</h4>";
         }
         websocket.close();
     } 

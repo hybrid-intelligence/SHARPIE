@@ -7,55 +7,40 @@
   <link rel="stylesheet" href="{% static 'experiment/css/controls.css' %}">
 
   <script>
+    // Websocket and input settings from Django context
     ws_setting = "{{ ws_setting }}";
-    inputsListened = [{% for input in inputsListened %}"{{ input }}",{% endfor %}];
+    inputsListened = [{% for input in agent.keyboard_inputs %}"{{ input }}",{% endfor %}];
+    multipleInputs = {% if agent.multiple_keyboard_inputs %}true{% else %}false{% endif %};
+    waitForInputs = {% if experiment.wait_for_inputs %}true{% else %}false{% endif %};
+    inputsMapping = {{ agent.keyboard_inputs|safe }}
+    inputsType = "{{ agent.inputs_type }}";
+    expectedFPS = {{ experiment.target_fps }};
     inputsForwarded = [];
-    experiment_type = "{{ experiment_type }}";
-    experiment_train = "{{ experiment_train }}"; 
   </script>
   <script src="{% static 'experiment' %}/js/inputListener.js"></script>
   <script type="module" src="{% static 'experiment' %}/js/websocket.js"></script>
   <script src="{% static 'experiment' %}/js/mobileControls.js"></script>
 
-  <section class="text-center">
-    <div class="container">
-      <br>
-      <div class="row justify-content-between">
-        <div class="col-auto">
-          <p class="fs-5"><a href="config" class="btn btn-info"><i class="bi bi-arrow-left"></i> Config</a></p>
-        </div>
-        <div class="col-auto" id="evaluate-col" hidden>
-          <p class="fs-5"><a href="evaluate" class="btn btn-success">Evaluate <i class="bi bi-arrow-right"></i></a></p>
-        </div>
-      </div>
-      <h1>{{ experiment_name }} - room <i>{{ room_name }}</i></h1>
-      <h2 id="sub-title">Step 0</h2>
-    </div>
-  </section>
-
   <br>
   <div class="container">
-    <div id="loading_div" class="d-flex align-items-center">
-      <strong>Your game is loading...</strong> &nbsp;&nbsp;&nbsp;
-      <div class="spinner-border ml-auto" role="status" aria-hidden="true"></div>
-    </div>
-
     <div class="row mt-3">
-      <div class="col-md-8 d-flex justify-content-center">
-        <div class="game-container" style="width: 40%;">
-          <img id="image" style="visibility: hidden;" class="img-fluid rounded img-thumbnail w-100">
+      <div class="col-md-8 justify-content-center">
+        <div id="loading_div">
+          <strong>Please wait, the experiment will start soon...</strong> &nbsp;&nbsp;&nbsp;
+          <div class="spinner-border ml-auto" role="status" aria-hidden="true"></div>
         </div>
+        <img id="image" style="display: none; max-height: 80vh; object-fit: contain;" class="img-fluid rounded img-thumbnail w-100">
       </div>
 
       <div class="col-md-4">
         <div class="card border-secondary controls-card">
           <div class="card-header bg-light">
-            <h5 class="card-title mb-0">Controls</h5>
+            <h5 class="card-title mb-0 text-black">Controls</h5>
           </div>
           <div class="card-body">
             <p class="card-text">Use the following keys to control:</p>
             <div class="d-flex justify-content-around mb-3" id="desktop-controls">
-              {% for input in inputsListened %}
+              {% for input in agent.keyboard_inputs %}
                 {% if input == "ArrowLeft" %}
                   <div class="text-center key-feedback-container">
                     <span class="key-feedback" data-feedback="ArrowLeft"></span>
@@ -83,11 +68,25 @@
                 {% endif %}
               {% endfor %}
             </div>
-            {% if experiment_type == "action" %}
-              <p class="card-text">These keys will override the agent's actions.</p>
+            {% if agent.multiple_keyboard_inputs %}
+              <p class="card-text">You can used multiple keys at the same time.</p>
             {% else %}
-              <p class="card-text">These keys will override the agent's reward.</p>
+              <p class="card-text">Only one key can be pressed at a time.</p>
             {% endif %}
+            <div id="waiting_for_input" class="alert alert-info mt-1 mb-0" style="display: none;">
+              <i class="bi bi-hand-index-thumb"></i> Waiting for your input... Press a key to continue.
+            </div>
+          </div>
+        </div>
+
+        <div class="card border-secondary mt-2">
+          <button class="card-header bg-light card-title text-start text-black w-100 border-0 rounded-1" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDetails" aria-expanded="false" aria-controls="collapseDetails">
+            <i class="bi bi-chevron-down me-2"></i>Details
+          </button>
+          <div class="collapse" id="collapseDetails">
+            <div class="card-body m-3" style="max-height: 300px; overflow-y: auto;" id="details">
+              <li>Loading experiment</li>
+            </div>
           </div>
         </div>
       </div>
@@ -97,10 +96,10 @@
   <!-- Mobile Controls -->
   <div id="mobile-controls" class="mobile-controls" style="display: none;">
     <div class="text-center mb-2">
-      <small class="text-muted">Touch Controls</small>
+      <small class="text-black">Touch Controls</small>
     </div>
     <div class="d-flex justify-content-center" id="mobile-control-buttons">
-      {% for input in inputsListened %}
+      {% for input in agent.keyboard_inputs %}
         {% if input == "ArrowLeft" %}
           <button class="mobile-control-btn" data-key="ArrowLeft">←</button>
         {% elif input == "ArrowRight" %}

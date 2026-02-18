@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from .decorators import consent_required
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -8,18 +9,6 @@ from mysite.settings import REGISTRATION_KEY, DEMO
 from .forms import LoginForm, RegisterForm, ConsentForm, ProfileInfoForm, ProfilePasswordForm
 from .models import Consent, Participant
 
-
-def has_consented(user):
-    """Check if user has given consent."""
-    if not user.is_authenticated:
-        return False
-    try:
-        participant = Participant.objects.get(user=user)
-        return participant.agreed_at and not participant.withdrawn_at
-    except Participant.DoesNotExist:
-        participant = Participant(user=user)
-        participant.save()
-        return False
 
 
 def login_(request):
@@ -34,10 +23,8 @@ def login_(request):
                 login(request, user)
 
     if request.user.is_authenticated:
-        # Check if user has consented, if not redirect to consent page
-        if not has_consented(request.user):
-            return redirect('/accounts/consent/')
-        return redirect(request.GET.get('next', '/'))
+        # Redirect to next page or home
+        return redirect(request.GET.get('next', '/accounts/profile/'))
     
     # Create empty config form
     form = LoginForm()
@@ -91,9 +78,7 @@ def register_(request):
         error = "Passwords do not match."
         
     if request.user.is_authenticated:
-        # Check if user has consented, if not redirect to consent page
-        if not has_consented(request.user):
-            return redirect('/accounts/consent/')
+        # Redirect to next page or home
         return redirect(request.GET.get('next', '/'))
 
     return render(request, "registration/login.html", {'form': form, 'view': 'register', 'error': error, 'DEMO': DEMO, 'REGISTRATION_KEY': REGISTRATION_KEY})

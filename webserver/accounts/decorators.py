@@ -1,6 +1,6 @@
 from functools import wraps
 from django.shortcuts import redirect
-from .models import Consent
+from .models import Consent, Participant
 
 
 def consent_required(view_func):
@@ -16,10 +16,12 @@ def consent_required(view_func):
         
         # Check if user has consented
         try:
-            consent = Consent.objects.get(user=request.user)
-            if not consent.agreed:
+            participant = Participant.objects.get(user=request.user)
+            if not participant.agreed_at or participant.withdrawn_at:
                 return redirect(f'/accounts/consent/?next={request.path}')
-        except Consent.DoesNotExist:
+        except Participant.DoesNotExist:
+            participant = Participant(user=request.user)
+            participant.save()
             return redirect(f'/accounts/consent/?next={request.path}')
         
         return view_func(request, *args, **kwargs)

@@ -7,34 +7,50 @@
   <section class="text-center">
     <div class="container">
       <br>
-      {% if saved %}
-        <h2 class="text-end"><a href="run" id="playButton" class="btn btn-info">Play <i class="bi bi-arrow-right"></i></a></h2>
-      {% endif %}
-      <h1>{{ experiment_name }} experiment</h1>
+      <h1>{{ experiment.name }}</h1>
     </div>
   </section>
   
   <br>
 
   <div class="container">
-    <div class="row align-items-center">
-        <form method="post">
-          {% csrf_token %}
-          {{ form|crispy }}      
-          <br>
-          {% if saved %}
-            <button type="submit" class="btn btn-success">Saved</button>
-          {% else %}
-            <button type="submit" class="btn btn-primary">Save</button>
-          {% endif %}
-        </form>
-    </div>
-  </div>
-
-  <div class="container mt-3">
-    <div class="row">
-      <div class="col text-center">
-        <small class="text-muted">{{ form.doc_link.value|safe }}</small>
+    <div class="row align-items-top">
+      <div class="col-md-6">
+        <div class="card shadow-sm">
+          <form method="post">
+            <div class="card-body">
+              <h5 class="card-title">Experiment settings</h5>
+              {% if error_message %}
+                <p class="alert alert-danger">{{ error_message }}</p>
+              {% elif saved and request.session.session %}
+                <p class="alert alert-success">Settings saved</p>
+              {% else %}
+                <p class="alert alert-warning">Please save to continue</p>
+              {% endif %}
+                <div class="card-text">
+                    {% csrf_token %}
+                    {{ form|crispy }}    
+                </div>
+            </div>
+            <div class="card-footer">
+              {% if saved and request.session.session and not error_message %}
+                <button type="submit" class="btn btn-primary">Modify</button>
+                <a href="run/{{ request.session.room }}" id="playButton" class="btn btn-success">Start experiment <i class="bi bi-arrow-right"></i></a>
+              {% else %}
+                <button type="submit" class="btn btn-primary">Save to continue</button>
+              {% endif %}
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">Experiment details</h5>
+            <br>
+            <p class="card-text">{{ experiment.long_description|safe }}</p>
+          </div>
+        </div>
       </div>
     </div>
   </div>

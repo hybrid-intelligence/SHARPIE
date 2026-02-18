@@ -21,17 +21,17 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
 # is populated before importing code that may import ORM models.
 django_asgi_app = get_asgi_application()
 
-from experiment import websocket
+from experiment import websocket as experiment_websocket
+from runner import websocket as runner_websocket
 
 application = ProtocolTypeRouter(
     {
         "http": django_asgi_app,
-        "websocket": AllowedHostsOriginValidator(
+        "websocket": SessionMiddlewareStack(
             AuthMiddlewareStack(
                 URLRouter([
-                        re_path(r"^experiment/(?P<link>\w+)/evaluate$", websocket.EvaluateConsumer.as_asgi()),
-                        re_path(r"^experiment/(?P<link>\w+)/run$", websocket.RunConsumer.as_asgi()),
-                        re_path(r"^experiment/queue$", websocket.QueueConsumer.as_asgi()),
+                        re_path(r"^experiment/(?P<link>\w+)/run/(?P<room>.+)$", experiment_websocket.RunConsumer.as_asgi()),
+                        re_path(r"^runner/connection$", runner_websocket.ConnectionConsumer.as_asgi()),
                     ]
                 )
             )
