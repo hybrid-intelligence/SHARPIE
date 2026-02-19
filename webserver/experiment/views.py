@@ -87,6 +87,12 @@ def config_(request, link):
     if len(experiment_roles) == 1:
         form.fields['room'].initial = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
 
+    # Actively check if the user has a session that is currently running or pending
+    if 'session' in request.session.keys():
+        try:
+            session = Session.objects.get(id=request.session['session'], status__in=['not_ready', 'ready', 'pending', 'running'])
+        except Session.DoesNotExist:
+            request.session['session'] = None
 
     # Check if all the required fields have been saved in the user session variable
     saved = all((k in request.session.keys() or not form.fields[k].required) for k in form.fields.keys())
