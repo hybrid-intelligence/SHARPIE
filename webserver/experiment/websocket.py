@@ -107,18 +107,9 @@ class RunConsumer(WebsocketConsumer):
                 self.episode.save()
                 # If all episodes have been completed
                 if len(self.session.episodes.filter(completed=True)) >= self.session.experiment.number_of_episodes:
-                    self.session.status = 'completed'
-                    self.session.end_time = Now()
                     message["completed"] = True
                     if self.session.experiment.redirect_url:
                         message["redirect"] = self.session.experiment.redirect_url
-                # If some episodes have been aborted
-                elif len(self.session.episodes.all()) >= self.session.experiment.number_of_episodes:
-                    self.session.status = 'aborted'
-                    self.session.end_time = Now()
-                # Otherwise, put the session status as ready
-                else:
-                    self.session.status = 'ready'
             # Forward message to participants
             message["type"] = "websocket.message"
             message["from"] = self.channel_name
@@ -185,7 +176,19 @@ class RunConsumer(WebsocketConsumer):
             if self.records_buffer:
                 Record.objects.bulk_create(self.records_buffer)
             # Reset the session
+            self.session.refresh_from_db()
             self.session.connected_participants = 0
+            # If all episodes have been completed
+            if len(self.session.episodes.filter(completed=True)) >= self.session.experiment.number_of_episodes:
+                self.session.status = 'completed'
+                self.session.end_time = Now()
+            # If some episodes have been aborted
+            elif len(self.session.episodes.all()) >= self.session.experiment.number_of_episodes:
+                self.session.status = 'aborted'
+                self.session.end_time = Now()
+            # Otherwise, put the session status as ready
+            else:
+                self.session.status = 'ready'
             self.session.save()
 
         # If this is a participant (not a runner) and the session is completed or aborted,
