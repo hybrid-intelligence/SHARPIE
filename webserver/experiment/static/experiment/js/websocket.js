@@ -84,30 +84,52 @@ websocket.onmessage = function(e) {
 
     // Showing detailled info
     document.getElementById("details").innerHTML += "<li>Step "+data.step;
+    const defaultAction = inputsMapping['default'];
 
     // We send back the inputs
     // If waitForInputs is True, wait until a non-default action is provided
-    const action = inputsMappingFunction(inputsForwarded);
-    const defaultAction = inputsMapping['default'];
-
     if (waitForInputs) {
-        // Show waiting indicator
-        document.getElementById("waiting_for_input").style.display = "block";
+        // Show waiting indicator and wait for user input
+        if (textualInputs) {
+            var waitingElement = document.getElementById("waiting_for_input_text");
+        } else {
+            var waitingElement = document.getElementById("waiting_for_input_keyboard");
+        }
+        waitingElement.style.display = "block";
+        
         // Wait for user to provide a non-default action
         const checkInterval = setInterval(() => {
-            const currentAction = inputsMappingFunction(inputsForwarded);
+            var currentAction;
+            if(textualInputs){
+                currentAction = document.getElementById("instruction-input").value;
+            } else {
+                currentAction = inputsMappingFunction(inputsForwarded);
+            }
+
             if (currentAction !== defaultAction) {
                 // Send the action
                 websocket.send(JSON.stringify({type: 'broadcast', action: currentAction}));
                 // Hide waiting indicator
-                document.getElementById("waiting_for_input").style.display = "none";
+                if (waitingElement) {
+                    waitingElement.style.display = "none";
+                }
                 // Clear the interval and input forward list
                 clearInterval(checkInterval);
                 clearAllVisualFeedback();
                 inputsForwarded = [];
+                // Clear text input after sending
+                if (textualInputs) {
+                    document.getElementById("instruction-input").value = '';
+                }
             }
         }, 100); // Check every 100ms
     } else {
+        var action;
+        if(textualInputs){
+            action = document.getElementById("instruction-input").value;
+        } else {
+            action = inputsMappingFunction(inputsForwarded);
+        }
         websocket.send(JSON.stringify({type: 'broadcast', action: action}));
     }
 

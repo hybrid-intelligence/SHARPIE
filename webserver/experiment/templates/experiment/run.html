@@ -12,6 +12,7 @@
     inputsListened = [{% for input in agent.keyboard_inputs %}"{{ input }}",{% endfor %}];
     multipleInputs = {% if agent.multiple_keyboard_inputs %}true{% else %}false{% endif %};
     waitForInputs = {% if experiment.wait_for_inputs %}true{% else %}false{% endif %};
+    textualInputs = {% if agent.textual_inputs %}true{% else %}false{% endif %};
     inputsMapping = {{ agent.keyboard_inputs|safe }}
     inputsType = "{{ agent.inputs_type }}";
     expectedFPS = {{ experiment.target_fps }};
@@ -33,6 +34,7 @@
       </div>
 
       <div class="col-md-4">
+        {% if agent.keyboard_inputs and agent.keyboard_inputs|length > 1 %}
         <div class="card border-secondary controls-card">
           <div class="card-header bg-light">
             <h5 class="card-title mb-0 text-black">Controls</h5>
@@ -69,15 +71,37 @@
               {% endfor %}
             </div>
             {% if agent.multiple_keyboard_inputs %}
-              <p class="card-text">You can used multiple keys at the same time.</p>
+              <p class="card-text">You can use multiple keys at the same time.</p>
             {% else %}
               <p class="card-text">Only one key can be pressed at a time.</p>
             {% endif %}
-            <div id="waiting_for_input" class="alert alert-info mt-1 mb-0" style="display: none;">
+            <div id="waiting_for_input_keyboard" class="alert alert-info mt-1 mb-0" style="display: none;">
               <i class="bi bi-hand-index-thumb"></i> Waiting for your input... Press a key to continue.
             </div>
           </div>
         </div>
+        {% endif %}
+
+        {% if agent.textual_inputs %}
+        <div class="card border-secondary mt-2">
+          <div class="card-header bg-light">
+            <h5 class="card-title mb-0 text-black">Text Input</h5>
+          </div>
+          <div class="card-body">
+            <p class="card-text">Enter your instruction:</p>
+            <input
+              type="text"
+              id="instruction-input"
+              class="form-control"
+              placeholder="Type your instruction..."
+              autocomplete="off"
+            >
+            <div id="waiting_for_input_text" class="alert alert-info mt-2 mb-0" style="display: none;">
+              <i class="bi bi-hourglass-split"></i> Waiting for your input...
+            </div>
+          </div>
+        </div>
+        {% endif %}
 
         <div class="card border-secondary mt-2">
           <button class="card-header bg-light card-title text-start text-black w-100 border-0 rounded-1" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDetails" aria-expanded="false" aria-controls="collapseDetails">
@@ -94,6 +118,7 @@
   </div>
 
   <!-- Mobile Controls -->
+  {% if agent.keyboard_inputs and agent.keyboard_inputs|length > 1 %}
   <div id="mobile-controls" class="mobile-controls" style="display: none;">
     <div class="text-center mb-2">
       <small class="text-black">Touch Controls</small>
@@ -112,4 +137,5 @@
       {% endfor %}
     </div>
   </div>
+  {% endif %}
 {% endblock %}
