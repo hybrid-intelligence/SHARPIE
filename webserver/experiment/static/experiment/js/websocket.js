@@ -57,6 +57,14 @@ function inputsMappingFunction(inputs){
         return result[0];
 }
 
+// Store submitted text instruction (for textual inputs)
+var submittedInstruction = null;
+
+// Listen for instruction submit event
+document.addEventListener('instruction-submit', function(e) {
+    submittedInstruction = e.detail.instruction;
+});
+
 // When the server finishes a step and replies
 websocket.onmessage = function(e) {
     const data = JSON.parse(e.data);
@@ -84,6 +92,7 @@ websocket.onmessage = function(e) {
 
     // Showing detailled info
     document.getElementById("details").innerHTML += "<li>Step "+data.step;
+
     const defaultAction = inputsMapping['default'];
 
     // We send back the inputs
@@ -95,18 +104,20 @@ websocket.onmessage = function(e) {
         } else {
             var waitingElement = document.getElementById("waiting_for_input_keyboard");
         }
-        waitingElement.style.display = "block";
-        
+        if (waitingElement) {
+            waitingElement.style.display = "block";
+        }
         // Wait for user to provide a non-default action
         const checkInterval = setInterval(() => {
             var currentAction;
             if(textualInputs){
-                currentAction = document.getElementById("instruction-input").value;
+                // Use submitted instruction instead of reading from input field
+                currentAction = submittedInstruction;
             } else {
                 currentAction = inputsMappingFunction(inputsForwarded);
             }
 
-            if (currentAction !== defaultAction) {
+            if (currentAction !== defaultAction && currentAction !== null) {
                 // Send the action
                 websocket.send(JSON.stringify({type: 'broadcast', action: currentAction}));
                 // Hide waiting indicator
@@ -117,16 +128,18 @@ websocket.onmessage = function(e) {
                 clearInterval(checkInterval);
                 clearAllVisualFeedback();
                 inputsForwarded = [];
-                // Clear text input after sending
+                // Clear submitted instruction after sending
                 if (textualInputs) {
-                    document.getElementById("instruction-input").value = '';
+                    submittedInstruction = null;
                 }
             }
         }, 100); // Check every 100ms
     } else {
         var action;
         if(textualInputs){
-            action = document.getElementById("instruction-input").value;
+            // For non-wait mode, still use submitted instruction
+            action = submittedInstruction !== null ? submittedInstruction : defaultAction;
+            submittedInstruction = null;
         } else {
             action = inputsMappingFunction(inputsForwarded);
         }
