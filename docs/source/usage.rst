@@ -38,6 +38,7 @@ Create a database file (SQLite by default) and add an admin user:
 .. code-block:: console
 
    cd webserver
+   python manage.py makemigrations accounts experiment data runner
    python manage.py migrate
    python manage.py createsuperuser
 
@@ -76,6 +77,7 @@ If you already have a release of SHARPIE installed, you can upgrade it by downlo
 .. code-block:: console
 
    cd webserver
+   python manage.py makemigrations accounts experiment data runner
    python manage.py migrate
 
 This will look at the migrations files under /accounts and /experiment, and apply any new migrations that are available to your database.
