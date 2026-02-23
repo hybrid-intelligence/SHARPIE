@@ -63,8 +63,8 @@ def receive_message(websocket, agents_settings):
             if 'error' in message.keys():
                 logging.info(f"Message from room: {message['error']}")
                 exit(1)
-
-            actions[message['role']] = message['action']
+            if 'action' in message.keys():
+                actions[message['role']] = message['action']
     return actions
 
 
@@ -231,14 +231,7 @@ def run_episode(websocket, environment_settings, agents_settings, experiment_set
         step_count = send_message(websocket, env, step_count, terminated, truncated, obs, actions, reward)
         # Wait for inputs from participants
         participant_inputs = receive_message(websocket, agents_settings)
-        # Override reward for agents with inputs_type == 'reward'
-        for agent_name, participant_input in participant_inputs.items():
-            if agents_settings[agent_name].get('inputs_type') == 'reward':
-                if isinstance(reward, dict):
-                    reward[agent_name] = participant_input
-                else:
-                    reward = participant_input
-
+        
         # Get actions from policies (handles 'actions' and 'other' inputs_type)
         actions = get_policy_actions(obs, policy_modules, participant_inputs, agents_settings)
         # Override action for agents with inputs_type == 'actions'
@@ -255,6 +248,16 @@ def run_episode(websocket, environment_settings, agents_settings, experiment_set
                     actions = participant_input
         # Perform a step in the environment
         obs, reward, terminated, truncated, info = env.step(actions)
+        
+        # Override reward for agents with inputs_type == 'reward'
+        print("participant_inputs:", participant_inputs)
+        for agent_name, participant_input in participant_inputs.items():
+            if agents_settings[agent_name].get('inputs_type') == 'reward':
+                if isinstance(reward, dict):
+                    reward[agent_name] = participant_input
+                else:
+                    reward = participant_input
+        print("reward overriden: ", reward)
 
         # Train policies based on checkpoint_interval
         for agent_name, checkpoint_interval in policy_checkpoint_intervals.items():
