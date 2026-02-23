@@ -38,6 +38,7 @@ Create a database file (SQLite by default) and add an admin user:
 .. code-block:: console
 
    cd webserver
+   python manage.py makemigrations accounts experiment data runner
    python manage.py migrate
    python manage.py createsuperuser
 
@@ -51,12 +52,12 @@ Start the web server:
    cd webserver
    python manage.py runserver
 
-In another terminal, start the runner:
+Go to the admin interface and add a new runner with the desired connection key (e.g., "secret"). In another terminal, start the runner:
 
 .. code-block:: console
 
    cd runner
-   python manage.py runserver
+   python manage.py runserver --connection-key=secret
 
 You can access the website at http://localhost:8000 and manage the authorized users from http://localhost:8000/admin with the username and password that you set at the end of the installation. For now there is no experiment available but you can find some examples ready to use in our `galery <https://github.com/hybrid-intelligence/SHARPIE_Gallery/>`_!
 
@@ -76,6 +77,7 @@ If you already have a release of SHARPIE installed, you can upgrade it by downlo
 .. code-block:: console
 
    cd webserver
+   python manage.py makemigrations accounts experiment data runner
    python manage.py migrate
 
 This will look at the migrations files under /accounts and /experiment, and apply any new migrations that are available to your database.

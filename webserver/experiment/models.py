@@ -7,6 +7,16 @@ from accounts.models import Participant
 import os
 
 
+def default_policy_filepaths():
+    return dict(policy='policy.py')
+
+
+def default_keyboard_inputs():
+    return dict(default=0)
+
+
+def default_environment_filepaths():
+    return dict(environment='environment.py')
 
 
 class Policy(models.Model):
@@ -16,7 +26,7 @@ class Policy(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
 
-    filepaths = models.JSONField('List of files needed by the policy', default=lambda: dict(policy='policy.py'), help_text='Those should be located under the top runner folder. You can also specify files under subfolders like <folder>/<filename>.py. <a href="/experiment/download/policy_template" target="_blank">Download policy template</a>, your policy file should define a variable called "policy" that implements the logic of the policy.')
+    filepaths = models.JSONField('List of files needed by the policy', default=default_policy_filepaths, help_text='Those should be located under the top runner folder. You can also specify files under subfolders like <folder>/<filename>.py. <a href="/experiment/download/policy_template" target="_blank">Download policy template</a>, your policy file should define a variable called "policy" that implements the logic of the policy.')
     checkpoint_interval = models.IntegerField(default=0, help_text='Checkpoint interval (in steps) at which the policy is saved. Can also be 0 (never) or -2 (at the end of each episode).')
     
     metadata = models.JSONField(null=True, blank=True)
@@ -70,7 +80,7 @@ class Agent(models.Model):
     policy = models.ForeignKey(Policy, on_delete=models.DO_NOTHING, null=True, blank=True)
     participant = models.BooleanField('Can the participant act?', default=False)
 
-    keyboard_inputs = models.JSONField('Inputs captured from the participant, with mapping', default=lambda: dict(default=0))
+    keyboard_inputs = models.JSONField('Inputs captured from the participant, with mapping', default=default_keyboard_inputs)
     multiple_keyboard_inputs = models.BooleanField('Allow multiple inputs from users', default=False)
     inputs_type = models.CharField('How will the inputs be used in the environment?', choices=[('actions', 'To determine the agent\'s actions'), ('reward', 'To be used as reward'), ('other', 'To be given to the agent policy in a different way')], default='actions')
     textual_inputs = models.BooleanField('Allow textual inputs from users', default=False)
@@ -92,7 +102,7 @@ class Environment(models.Model):
     name = models.CharField(max_length=255, null=False)
     description = models.TextField(null=True, blank=True)
 
-    filepaths = models.JSONField('List of files needed by the environment', default=lambda: dict(environment='environment.py'), help_text='Those should be located under the top runner folder. You can also specify files under subfolders like <folder>/<filename>.py. <a href="/experiment/download/environment_template" target="_blank">Download environment template</a>, your environment file should define a variable called "environment" that implements the logic of the environment.')
+    filepaths = models.JSONField('List of files needed by the environment', default=default_environment_filepaths, help_text='Those should be located under the top runner folder. You can also specify files under subfolders like <folder>/<filename>.py. <a href="/experiment/download/environment_template" target="_blank">Download environment template</a>, your environment file should define a variable called "environment" that implements the logic of the environment.')
 
     metadata = models.JSONField(null=True, blank=True)
 
