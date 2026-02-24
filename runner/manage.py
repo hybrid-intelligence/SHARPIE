@@ -67,65 +67,6 @@ def receive_message(websocket, agents_settings):
                 actions[message['role']] = message['action']
     return actions
 
-
-
-
-
-
-def train_policies(policy_modules, policy_checkpoint_intervals, prev_obs, actions, obs, reward, terminated, truncated, agents_settings):
-    """
-    Train policies based on their checkpoint_interval settings.
-
-    Args:
-        policy_modules: Dictionary mapping agent names to their policy modules
-        policy_checkpoint_intervals: Dictionary mapping agent names to checkpoint intervals
-        prev_obs: Previous observation(s) before the step
-        actions: Actions taken
-        obs: Current observation(s) after the step
-        reward: Reward(s) received
-        terminated: Whether the episode has ended
-        truncated: Whether the episode was truncated
-        agents_settings: Dictionary of agent settings
-    """
-    for agent_name, policy_module in policy_modules.items():
-        checkpoint_interval = policy_checkpoint_intervals[agent_name]
-
-        # Determine if training should occur based on checkpoint_interval
-        # Note: step_count is managed by the caller for interval checking
-        # This function is called when training should occur
-        if checkpoint_interval == 0:
-            # Never train
-            continue
-
-        # Get the reward for this agent (handle both single and multi-agent rewards)
-        if isinstance(reward, dict):
-            agent_reward = reward.get(agent_name, 0)
-        else:
-            agent_reward = reward
-
-        # Get the observation for this agent
-        if isinstance(obs, dict):
-            agent_next_obs = obs.get(agent_name, obs)
-        else:
-            agent_next_obs = obs
-
-        # Get previous observation for this agent
-        if isinstance(prev_obs, dict):
-            agent_prev_obs = prev_obs.get(agent_name, prev_obs)
-        else:
-            agent_prev_obs = prev_obs
-
-        # Get action for this agent
-        agent_action = actions.get(agent_name, 0)
-
-        # Try to call update() method (from policy template)
-        if hasattr(policy_module, 'update'):
-            try:
-                policy_module.update(agent_prev_obs, agent_action, agent_reward, terminated or truncated, agent_next_obs)
-            except Exception as e:
-                logging.warning(f"Policy update failed for {agent_name}: {e}")
-
-
 def get_policy_actions(obs, policy_modules, participant_inputs=None, agents_settings=None):
     """
     Get actions from policies for all agents that have policies.
@@ -160,11 +101,6 @@ def get_policy_actions(obs, policy_modules, participant_inputs=None, agents_sett
     return actions
 
 
-
-
-
-
-
 def load_episode(websocket):
     # Ask for settings
     websocket.send(json.dumps({'type': 'private', 'message': 'settings'}))
@@ -186,109 +122,161 @@ def load_episode(websocket):
     experiment_settings = json.loads(websocket.recv())
     return environment_settings, agents_settings, experiment_settings
 
-
-
-def run_episode(websocket, environment_settings, agents_settings, experiment_settings):
-    # Load the module from the file path
-    spec = importlib.util.spec_from_file_location("environment", environment_settings['files']['environment']['path'])
+def load_environment(env_config):
+    spec = importlib.util.spec_from_file_location("environment", env_config['files']['environment']['path'])
     env_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(env_module)
-    # Load the module from the file path
+    return env_module.environment
+
+def load_policies(agents_settings):
     policy_modules = {}
-    policy_checkpoint_intervals = {}
+    policy_intervals = {}
     for agent_name, agent_config in agents_settings.items():
-          if 'policy' in agent_config:
-              policy_file_path = agent_config['policy']['files']['policy']['path']
-              # Add the directory of the policy file to sys.path so related scripts can be imported
-              policy_dir = os.path.dirname(os.path.abspath(policy_file_path))
-              if policy_dir not in sys.path:
-                  sys.path.insert(0, policy_dir)
-              spec = importlib.util.spec_from_file_location(f"policy", policy_file_path)
-              policy_module = importlib.util.module_from_spec(spec)
-              spec.loader.exec_module(policy_module)
-              policy_modules[agent_name] = policy_module.policy
-              # Store checkpoint interval for training
-              policy_checkpoint_intervals[agent_name] = agent_config['policy'].get('checkpoint_interval', 0)
+        if 'policy' in agent_config:
+            path = agent_config['policy']['files']['policy']['path']
+            policy_dir = os.path.dirname(os.path.abspath(path))
+            if policy_dir not in sys.path:
+                sys.path.insert(0, policy_dir)
+            
+            spec = importlib.util.spec_from_file_location(f"policy_{agent_name}", path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            
+            policy_modules[agent_name] = module.policy
+            policy_intervals[agent_name] = agent_config['policy'].get('checkpoint_interval', 0)
+    return policy_modules, policy_intervals
 
-    # Initialize environment
-    env = env_module.environment
-    obs, info = env.reset()
+def override_actions(agents_settings, participant_inputs, policy_actions):
+    """Applies human overrides to policy-suggested actions."""
+    final_actions = policy_actions.copy() if isinstance(policy_actions, dict) else policy_actions
+    
+    for agent_name, p_input in participant_inputs.items():
+        if agents_settings[agent_name].get('inputs_type') == 'actions':
+            default_val = agents_settings[agent_name].get('keyboard_inputs', {}).get('default', 0)
+            # Only override if the participant actually provided a non-default input
+            if agent_name in final_actions and p_input != default_val:
+                continue
+            if isinstance(final_actions, dict):
+                final_actions[agent_name] = p_input
+            else:
+                final_actions = p_input
+    return final_actions
 
-    # Initialize variables
+def override_rewards(agents_settings, participant_inputs, env_reward):
+    """Replaces environment rewards with human feedback where configured."""
+    final_reward = env_reward.copy() if isinstance(env_reward, dict) else env_reward
+    
+    for agent_name, p_input in participant_inputs.items():
+        if agents_settings[agent_name].get('inputs_type') == 'reward':
+            if isinstance(final_reward, dict):
+                final_reward[agent_name] = p_input
+            else:
+                final_reward = p_input
+    return final_reward
+
+def get_agent_data(agent_name, data, default=0):
+    """Safely extracts agent-specific data from potentially nested structures."""
+    if isinstance(data, dict):
+        return data.get(agent_name, default)
+    return data
+
+def update_single_agent(agent_name, policy_module, s, a, r, s_prime, done):
+    """Executes the update call for a single policy module."""
+    if not hasattr(policy_module, 'update'):
+        return
+
+    # Extract agent-specific slices of the transition
+    agent_s = get_agent_data(agent_name, s)
+    agent_a = get_agent_data(agent_name, a)
+    agent_r = get_agent_data(agent_name, r)
+    agent_s_prime = get_agent_data(agent_name, s_prime)
+
+    try:
+        policy_module.update(agent_s, agent_a, agent_r, done, agent_s_prime)
+    except Exception as e:
+        logging.warning(f"Policy update failed for {agent_name}: {e}")
+
+def train_policies(policy_modules, intervals, step, s, a, r, term, trunc, settings):
+    """
+    Coordinates training for all agents. 
+    Determines eligibility based on intervals and delegates the update.
+    """
+    done = term or trunc
+    
+    for agent_name, policy_module in policy_modules.items():
+        interval = intervals.get(agent_name, 0)
+
+        # 1. Eligibility Check
+        should_train = False
+        if interval == -2 and done:
+            should_train = True
+        elif interval > 0 and step % interval == 0:
+            should_train = True
+        
+        # 2. Execution
+        if should_train:
+            update_single_agent(agent_name, policy_module, s, a, r, s_prime=r, done=done)
+
+def run_episode(websocket, environment_settings, agents_settings, experiment_settings):
+    # 1. Initialization
+    env = load_environment(environment_settings)
+    policy_modules, checkpoint_intervals = load_policies(agents_settings)
+    
+    current_obs, info = env.reset()
     step_count = 0
-    terminated = False
-    truncated = False
-    reward = 0
-    # Get initial actions for agents
-    actions = {}
-    # Store previous observation for training
-    prev_obs = obs
+    terminated = truncated = False
+    
+    # Buffers to track the transition waiting for human feedback
+    last_obs = current_obs
+    last_actions = {}
+    last_env_reward = 0
 
-    while not terminated and not truncated:
+    # 2. Episode Loop
+    while not (terminated or truncated):
         start_time = time.time()
 
-        # Send data to server
-        step_count = send_message(websocket, env, step_count, terminated, truncated, obs, actions, reward)
-        # Wait for inputs from participants
+        # Update UI with current state (result of the previous step)
+        step_count = send_message(websocket, env, step_count, terminated, truncated, 
+                                 current_obs, last_actions, last_env_reward)
+        
+        # Capture Human Input (Feedback for the transition that just happened)
         participant_inputs = receive_message(websocket, agents_settings)
         
-        # Get actions from policies (handles 'actions' and 'other' inputs_type)
-        actions = get_policy_actions(obs, policy_modules, participant_inputs, agents_settings)
-        # Override action for agents with inputs_type == 'actions'
-        for agent_name, participant_input in participant_inputs.items():
-            if agents_settings[agent_name].get('inputs_type') == 'actions':
-                # Get the default input value from the agent's keyboard_inputs mapping
-                default_input = agents_settings[agent_name]['keyboard_inputs'].get('default', 0)
-                # Do not override policy action if default is provided from participant
-                if agent_name in actions and participant_input == default_input:
-                    continue
-                if isinstance(actions, dict):
-                    actions[agent_name] = participant_input
-                else:
-                    actions = participant_input
-        # Perform a step in the environment
-        obs, reward, terminated, truncated, info = env.step(actions)
+        # --- PHASE A: Resolve Reward and Train ---
+        # The human's reward input evaluates the S_t -> A_t -> S_t+1 transition
+        final_reward = override_rewards(agents_settings, participant_inputs, last_env_reward)
+
+        if step_count > 0:
+            train_policies(
+                policy_modules, checkpoint_intervals, step_count, last_obs, last_actions, final_reward, terminated, truncated, agents_settings)
+
+        # --- PHASE B: Act and Step ---
+        # Prepare for the next transition
+        last_obs = current_obs
         
-        # Override reward for agents with inputs_type == 'reward'
-        print("participant_inputs:", participant_inputs)
-        for agent_name, participant_input in participant_inputs.items():
-            if agents_settings[agent_name].get('inputs_type') == 'reward':
-                if isinstance(reward, dict):
-                    reward[agent_name] = participant_input
-                else:
-                    reward = participant_input
-        print("reward overriden: ", reward)
+        # Determine Actions (Policy first, then Human Override)
+        raw_policy_actions = get_policy_actions(current_obs, policy_modules, participant_inputs, agents_settings)
+        last_actions = override_actions(agents_settings, participant_inputs, raw_policy_actions)
+        
+        # Advance Environment
+        current_obs, last_env_reward, terminated, truncated, info = env.step(last_actions)
 
-        # Train policies based on checkpoint_interval
-        for agent_name, checkpoint_interval in policy_checkpoint_intervals.items():
-            if checkpoint_interval == 0:
-                # Never train
-                continue
-            elif checkpoint_interval == -2:
-                # Train at end of episode only
-                if terminated or truncated:
-                    train_policies(policy_modules, policy_checkpoint_intervals, prev_obs, actions, obs, reward, terminated, truncated, agents_settings)
-                    break
-            elif checkpoint_interval > 0 and step_count % checkpoint_interval == 0:
-                # Train every N steps
-                train_policies(policy_modules, policy_checkpoint_intervals, prev_obs, actions, obs, reward, terminated, truncated, agents_settings)
-                break
-
-        # Store current observation as previous for next step
-        prev_obs = obs
-
-        loop_time = time.time() - start_time
-        target_frame_time = 1.0 / (experiment_settings['target_fps'] * 1.1)    # Add a small buffer to account for sleep overhead
-        # If wait_for_inputs is enabled add a forced pause
+        # --- PHASE C: Timing ---
+        target_fps = experiment_settings['target_fps']
         if experiment_settings['wait_for_inputs']:
-            forced_pause = 1.0 / experiment_settings['target_fps']
-            time.sleep(forced_pause)
-        # Sleep to maintain target FPS (only if wait_for_inputs is not enabled)
+            time.sleep(1.0 / target_fps)
         else:
-            time.sleep(max(0, target_frame_time - loop_time)) 
+            loop_time = time.time() - start_time
+            time.sleep(max(0, (1.0 / (target_fps * 1.1)) - loop_time))
 
-    # Send final message to server indicating termination
-    send_message(websocket, env, step_count, terminated, truncated, obs, actions, reward)
+    # 3. Finalization
+    # Send the final state to server/UI and check for final end-of-episode training
+    final_reward = override_rewards(agents_settings, {}, last_env_reward) 
+    send_message(websocket, env, step_count, terminated, truncated, current_obs, last_actions, final_reward)
+    
+    train_policies(
+        policy_modules, checkpoint_intervals, step_count, last_obs, last_actions, final_reward, terminated, truncated, agents_settings
+    )
 
 
 def start_experiment(hostname, port, connection_key, link, room):
