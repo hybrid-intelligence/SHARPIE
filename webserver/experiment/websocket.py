@@ -1,6 +1,10 @@
 import json
 import os
+import base64
+import pickle
+import lzma
 
+import numpy as np
 from asgiref.sync import async_to_sync
 from django.db.models.functions import Now
 from django.utils import timezone
@@ -9,6 +13,26 @@ from channels.generic.websocket import WebsocketConsumer
 from accounts.models import Participant
 from runner.models import Runner
 from data.models import Session, Episode, Record
+
+
+
+def decode_data(data):
+    """Decode data that may contain LZMA-compressed pickled arrays.
+
+    Recursively processes dictionaries and lists, converting any
+    compressed arrays back to numpy arrays.
+    """
+    if isinstance(data, dict):
+        # Check if this is a LZMA-compressed array
+        if data.get("__lzma__") is True:
+            compressed = base64.b64decode(data["data"])
+            return pickle.loads(lzma.decompress(compressed))
+        # Otherwise, recursively process dictionary values
+        return {k: decode_data(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [decode_data(v) for v in data]
+    else:
+        return data
 
 
 
@@ -96,9 +120,9 @@ class RunConsumer(WebsocketConsumer):
                     Record(
                         episode=self.episode,
                         step_index=message["step"],
-                        state=message["observations"],
-                        action=message["actions"],
-                        reward=message["rewards"]
+                        state=decode_data(message["observations"]),
+                        action=decode_data(message["actions"]),
+                        reward=decode_data(message["rewards"])
                     )
                 )
             # Update the episode and session status
@@ -115,6 +139,10 @@ class RunConsumer(WebsocketConsumer):
             message["from"] = self.channel_name
             if self.role:
                 message["role"] = self.role
+            # For now, we don't forward extra info to participants, but we can change this in the future if needed
+            message["observations"] = []
+            message["actions"] = []
+            message["rewards"] = []
             async_to_sync(self.channel_layer.group_send)(
                 f"{self.link}_{self.room}", message
             )
