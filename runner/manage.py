@@ -20,13 +20,15 @@ from websockets.exceptions import ConnectionClosedError
 
 
 def sanitize_data(data):
-    if isinstance(data, np.int64):
-        return data.item()
-    elif isinstance(data, np.ndarray):
+    """Convert numpy types to JSON-serializable Python types."""
+    if isinstance(data, np.ndarray):
         return data.tolist()
+    elif isinstance(data, np.generic):
+        # Covers all numpy scalar types (np.int64, np.float32, np.bool_, etc.)
+        return data.item()
     elif isinstance(data, dict):
         return {k: sanitize_data(v) for k, v in data.items()}
-    elif isinstance(data, list):
+    elif isinstance(data, (list, tuple)):
         return [sanitize_data(v) for v in data]
     else:
         return data
