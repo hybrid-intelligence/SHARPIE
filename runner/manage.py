@@ -4,6 +4,8 @@
 
 import numpy as np
 import base64
+import pickle
+import lzma
 import cv2
 import time
 import json
@@ -19,14 +21,37 @@ from websockets.exceptions import ConnectionClosedError
 
 
 
+import pickle
+
+
+# Threshold for converting arrays to base64 (in number of elements)
+BASE64_THRESHOLD = 50
+
+
 def sanitize_data(data):
-    if isinstance(data, np.int64):
+    """Convert numpy types to JSON-serializable Python types.
+
+    Large numpy arrays (>= BASE64_THRESHOLD elements) are compressed with LZMA,
+    pickled, and base64 encoded. Small arrays are converted to lists.
+    """
+    if isinstance(data, np.ndarray):
+        if data.size >= BASE64_THRESHOLD:
+            # Large array: pickle, compress with LZMA, then base64 encode
+            pickled = pickle.dumps(data)
+            compressed = lzma.compress(pickled)
+            return {
+                "__lzma__": True,
+                "data": base64.b64encode(compressed).decode('utf-8')
+            }
+        else:
+            # Small array: convert to list
+            return data.tolist()
+    elif isinstance(data, np.generic):
+        # Covers all numpy scalar types (np.int64, np.float32, np.bool_, etc.)
         return data.item()
-    elif isinstance(data, np.ndarray):
-        return data.tolist()
     elif isinstance(data, dict):
         return {k: sanitize_data(v) for k, v in data.items()}
-    elif isinstance(data, list):
+    elif isinstance(data, (list, tuple)):
         return [sanitize_data(v) for v in data]
     else:
         return data
