@@ -6,10 +6,12 @@
   <!-- Load external CSS -->
   <link rel="stylesheet" href="{% static 'experiment/css/controls.css' %}">
 
+  {{ key_display_map|json_script:"key-display-map" }}
   <script>
     // Websocket and input settings from Django context
     ws_setting = "{{ ws_setting }}";
-    inputsListened = [{% for input in agent.keyboard_inputs %}"{{ input }}",{% endfor %}];
+    inputsListened = [{% for input in agent.keyboard_inputs %}{% if input != "default" %}"{{ input }}",{% endif %}{% endfor %}];
+    keyDisplayMap = JSON.parse(document.getElementById('key-display-map').textContent);
     multipleInputs = {% if agent.multiple_keyboard_inputs %}true{% else %}false{% endif %};
     waitForInputs = {% if experiment.wait_for_inputs %}true{% else %}false{% endif %};
     inputsMapping = {{ agent.keyboard_inputs|safe }}
@@ -39,33 +41,13 @@
           </div>
           <div class="card-body">
             <p class="card-text">Use the following keys to control:</p>
-            <div class="d-flex justify-content-around mb-3" id="desktop-controls">
-              {% for input in agent.keyboard_inputs %}
-                {% if input == "ArrowLeft" %}
-                  <div class="text-center key-feedback-container">
-                    <span class="key-feedback" data-feedback="ArrowLeft"></span>
-                    <kbd class="keyboard-key" data-key="ArrowLeft">←</kbd>
-                    <div>Left</div>
-                  </div>
-                {% elif input == "ArrowRight" %}
-                  <div class="text-center key-feedback-container">
-                    <span class="key-feedback" data-feedback="ArrowRight"></span>
-                    <kbd class="keyboard-key" data-key="ArrowRight">→</kbd>
-                    <div>Right</div>
-                  </div>
-                {% elif input == "ArrowUp" %}
-                  <div class="text-center key-feedback-container">
-                    <span class="key-feedback" data-feedback="ArrowUp"></span>
-                    <kbd class="keyboard-key" data-key="ArrowUp">↑</kbd>
-                    <div>Up</div>
-                  </div>
-                {% elif input == "ArrowDown" %}
-                  <div class="text-center key-feedback-container">
-                    <span class="key-feedback" data-feedback="ArrowDown"></span>
-                    <kbd class="keyboard-key" data-key="ArrowDown">↓</kbd>
-                    <div>Down</div>
-                  </div>
-                {% endif %}
+            <div class="d-flex justify-content-around flex-wrap mb-3" id="desktop-controls">
+              {% for input, display in key_display_map.items %}
+                <div class="text-center key-feedback-container">
+                  <span class="key-feedback" data-feedback="{{ input }}"></span>
+                  <kbd class="keyboard-key" data-key="{{ input }}">{{ display.symbol }}</kbd>
+                  <div>{{ display.label }}</div>
+                </div>
               {% endfor %}
             </div>
             {% if agent.multiple_keyboard_inputs %}
@@ -98,17 +80,9 @@
     <div class="text-center mb-2">
       <small class="text-black">Touch Controls</small>
     </div>
-    <div class="d-flex justify-content-center" id="mobile-control-buttons">
-      {% for input in agent.keyboard_inputs %}
-        {% if input == "ArrowLeft" %}
-          <button class="mobile-control-btn" data-key="ArrowLeft">←</button>
-        {% elif input == "ArrowRight" %}
-          <button class="mobile-control-btn" data-key="ArrowRight">→</button>
-        {% elif input == "ArrowUp" %}
-          <button class="mobile-control-btn" data-key="ArrowUp">↑</button>
-        {% elif input == "ArrowDown" %}
-          <button class="mobile-control-btn" data-key="ArrowDown">↓</button>
-        {% endif %}
+    <div class="d-flex justify-content-center flex-wrap" id="mobile-control-buttons">
+      {% for input, display in key_display_map.items %}
+        <button class="mobile-control-btn" data-key="{{ input }}">{{ display.symbol }}</button>
       {% endfor %}
     </div>
   </div>

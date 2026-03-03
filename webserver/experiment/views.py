@@ -120,7 +120,11 @@ def run_(request, link, room):
 
     # Look for the role of the participant and find the inputs that are listened
     agent = session.experiment.agents.get(role=request.session['role'])
-    return render(request, "experiment/run.html", {'ws_setting': settings.WS_SETTING, "session": session, 'agent': agent, 'experiment': session.experiment})
+    key_display_map = agent.get_keyboard_input_display_map()
+    return render(request, "experiment/run.html", {
+        'ws_setting': settings.WS_SETTING, "session": session, 'agent': agent,
+        'experiment': session.experiment, 'key_display_map': key_display_map
+    })
 
 @staff_member_required
 def download_policy_template(request):
