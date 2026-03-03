@@ -80,17 +80,26 @@ def send_message(websocket, env, step_count, terminated, truncated, obs, actions
     return step_count
 
 def receive_message(websocket, agents_settings):
-    actions = {}
-    for agent_name, agent_config in agents_settings.items():
-        # If the participant is supposed to give some input
-        if agent_config['participant']:
-            message = json.loads(websocket.recv())
-            if 'error' in message.keys():
-                logging.info(f"Message from room: {message['error']}")
-                exit(1)
-            if 'action' in message.keys():
-                actions[message['role']] = message['action']
-    return actions
+    """Receive actions from all participant-controlled agents.
+
+    Server batches all participant actions into a single message with
+    'batch_actions' key, which significantly reduces message overhead
+    for large numbers of participants.
+    """
+    # Count how many participant inputs we expect
+    num_participants = sum(1 for cfg in agents_settings.values() if cfg['participant'])
+
+    if num_participants == 0:
+        return {}
+
+    # Wait for batched actions message
+    message = json.loads(websocket.recv())
+
+    if 'error' in message:
+        logging.error(f"Message from room: {message['error']}")
+        exit(1)
+
+    return message.get('batch_actions', {})
 
 def get_policy_actions(obs, policy_modules, participant_inputs=None, agents_settings=None):
     """
@@ -151,7 +160,13 @@ def load_environment(env_config):
     spec = importlib.util.spec_from_file_location("environment", env_config['files']['environment']['path'])
     env_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(env_module)
-    return env_module.environment
+
+    # If environment is a class, instantiate it with metadata params
+    env = env_module.environment
+    if callable(env):
+        init_params = env_config.get('metadata', {}) or {}
+        return env(**init_params)
+    return env
 
 def load_policies(agents_settings):
     policy_modules = {}
