@@ -14,6 +14,15 @@ NETWORK_PRESETS = {
     "global": 0.200,     # same planet (<200ms)
 }
 
+# Image size presets (height, width, channels)
+IMAGE_SIZE_PRESETS = {
+    "64x64": (64, 64, 3),           # 12 KB per frame
+    "128x128": (128, 128, 3),       # 49 KB per frame
+    "256x256": (256, 256, 3),       # 196 KB per frame
+    "512x512": (512, 512, 3),       # 786 KB per frame
+    "1024x1024": (1024, 1024, 3),   # 3 MB per frame
+}
+
 
 @dataclass
 class BenchmarkConfig:
@@ -26,6 +35,7 @@ class BenchmarkConfig:
     target_fps: float = 24.0
     action_interval: float = 0.01  # Seconds between actions (0 = no artificial delay)
     network_latency: float = 0.0  # Simulated network latency in seconds
+    image_size: tuple = (64, 64, 3)  # Render size (height, width, channels)
     verbose: bool = False
     output_dir: str = "benchmark/results"
     cleanup: bool = True  # Delete test users after benchmark
@@ -77,6 +87,31 @@ class NetworkLatencySuite:
             port=self.port,
             runner_connection_key=self.runner_connection_key,
             network_latency=latency,
+            verbose=self.verbose,
+        )
+
+
+@dataclass
+class ImageSizeSuite:
+    """Test suite for measuring impact of image size on throughput."""
+    image_size_presets: List[str] = field(default_factory=lambda: ["64x64", "128x128", "256x256", "512x512", "1024x1024"])
+    num_participants: int = 1  # Fixed number of participants
+    steps_per_participant: int = 100
+    host: str = "localhost"
+    port: int = 8000
+    runner_connection_key: str = ""
+    verbose: bool = False
+
+    def get_config(self, image_size_preset: str) -> BenchmarkConfig:
+        """Get a benchmark config for a specific image size preset."""
+        image_size = IMAGE_SIZE_PRESETS.get(image_size_preset, (64, 64, 3))
+        return BenchmarkConfig(
+            num_participants=self.num_participants,
+            num_steps=self.steps_per_participant,
+            host=self.host,
+            port=self.port,
+            runner_connection_key=self.runner_connection_key,
+            image_size=image_size,
             verbose=self.verbose,
         )
 

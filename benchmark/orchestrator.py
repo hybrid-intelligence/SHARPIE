@@ -62,7 +62,7 @@ from experiment.models import Experiment, Environment, Agent, Policy
 from data.models import Session
 from runner.models import Runner
 
-from .config import BenchmarkConfig, BENCHMARK_EXPERIMENT, AIAgentConfig, AI_AGENT_EXPERIMENT, NetworkLatencySuite
+from .config import BenchmarkConfig, BENCHMARK_EXPERIMENT, AIAgentConfig, AI_AGENT_EXPERIMENT, NetworkLatencySuite, ImageSizeSuite
 from .participant_simulator import ParticipantSimulator, ParticipantMetrics
 from .metrics import aggregate_metrics, save_results, AggregateMetrics
 
@@ -83,12 +83,18 @@ class BenchmarkOrchestrator:
         self.test_session: Optional[Session] = None
         self.experiment: Optional[Experiment] = None
         self.room_id: str = ""
-        # Build benchmark ID with latency info if present
+        # Build benchmark ID with latency and image size info
         latency_suffix = ""
         if config.network_latency > 0:
             latency_ms = int(config.network_latency * 1000)
             latency_suffix = f"_l{latency_ms}ms"
-        self.benchmark_id: str = f"benchmark_{config.num_participants}p{latency_suffix}_{uuid.uuid4().hex[:8]}"
+        # Add image size suffix if not default (64x64)
+        image_suffix = ""
+        default_size = (64, 64, 3)
+        if config.image_size != default_size:
+            h, w, _ = config.image_size
+            image_suffix = f"_{h}x{w}"
+        self.benchmark_id: str = f"benchmark_{config.num_participants}p{latency_suffix}{image_suffix}_{uuid.uuid4().hex[:8]}"
         self.runner: Optional[Runner] = None
 
     async def setup(self) -> None:
@@ -143,7 +149,7 @@ class BenchmarkOrchestrator:
 
     @sync_to_async
     def _setup_environment(self):
-        """Create no-op environment in database with metadata for max_steps."""
+        """Create no-op environment in database with metadata for max_steps and render_size."""
         import shutil
 
         runner_env_path = os.path.join(
@@ -158,18 +164,24 @@ class BenchmarkOrchestrator:
             os.makedirs(os.path.dirname(runner_env_path), exist_ok=True)
             shutil.copy(benchmark_env_path, runner_env_path)
 
-        # Create or get environment with metadata for max_steps
+        # Create or get environment with metadata for max_steps and render_size
         env, created = Environment.objects.get_or_create(
             name="NoOp Benchmark Environment",
             defaults={
                 "description": "Minimal environment for measuring infrastructure overhead",
                 "filepaths": {"environment": "noop_environment.py"},
-                "metadata": {"max_steps": self.config.num_steps},
+                "metadata": {
+                    "max_steps": self.config.num_steps,
+                    "render_size": list(self.config.image_size),
+                },
             }
         )
         # Update metadata if environment already exists
         if not created:
-            env.metadata = {"max_steps": self.config.num_steps}
+            env.metadata = {
+                "max_steps": self.config.num_steps,
+                "render_size": list(self.config.image_size),
+            }
             env.save()
         self.environment = env
 
@@ -775,6 +787,22 @@ async def run_network_latency_suite(suite_config: NetworkLatencySuite) -> List[A
         config = suite_config.get_config(latency_preset)
         latency_ms = NETWORK_PRESETS.get(latency_preset, 0.0) * 1000
         print(f"\nRunning benchmark with {latency_preset} latency ({latency_ms:.1f}ms)...")
+        metrics = await run_benchmark(config)
+        results.append(metrics)
+
+    return results
+
+
+async def run_image_size_suite(suite_config: ImageSizeSuite) -> List[AggregateMetrics]:
+    """Run the image size test suite."""
+    from .config import IMAGE_SIZE_PRESETS
+    results = []
+
+    for image_size_preset in suite_config.image_size_presets:
+        config = suite_config.get_config(image_size_preset)
+        image_size = IMAGE_SIZE_PRESETS.get(image_size_preset, (64, 64, 3))
+        h, w, _ = image_size
+        print(f"\nRunning benchmark with {image_size_preset} image size ({h}x{w})...")
         metrics = await run_benchmark(config)
         results.append(metrics)
 
