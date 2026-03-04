@@ -1,44 +1,33 @@
 import json
-import os
-import base64
-import pickle
-import lzma
 
-import numpy as np
-from asgiref.sync import async_to_sync
+from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.db import database_sync_to_async
 from django.db.models.functions import Now
-from django.utils import timezone
-from channels.generic.websocket import WebsocketConsumer
 
 from accounts.models import Participant
 from runner.models import Runner
 from data.models import Session, Episode, Record
+from .consumer_helpers import RunConsumerHelpers, decode_data
 
 
+# Store runner channel names per room for direct messaging
+# Key: (link, room), Value: channel_name
+_runner_channels = {}
 
-def decode_data(data):
-    """Decode data that may contain LZMA-compressed pickled arrays.
+# Action batching: collect actions and send as a single message
+# Key: (link, room), Value: {"actions": {role: action, ...}, "count": N, "expected": M}
+_action_buffers = {}
 
-    Recursively processes dictionaries and lists, converting any
-    compressed arrays back to numpy arrays.
+
+class RunConsumer(RunConsumerHelpers, AsyncWebsocketConsumer):
+    """WebSocket consumer for experiment execution.
+
+    Handles communication between participants, runners, and the experiment.
+    Participants send actions; runners broadcast state updates.
     """
-    if isinstance(data, dict):
-        # Check if this is a LZMA-compressed array
-        if data.get("__lzma__") is True:
-            compressed = base64.b64decode(data["data"])
-            return pickle.loads(lzma.decompress(compressed))
-        # Otherwise, recursively process dictionary values
-        return {k: decode_data(v) for k, v in data.items()}
-    elif isinstance(data, list):
-        return [decode_data(v) for v in data]
-    else:
-        return data
 
-
-
-
-class RunConsumer(WebsocketConsumer):
-    def verify_runner(self):
+    async def verify_runner(self):
+        """Verify if the connection is from an authenticated runner."""
         connection_key = None
         # Check if the authorization is available in the headers
         for h in self.scope['headers']:
@@ -52,193 +41,243 @@ class RunConsumer(WebsocketConsumer):
 
         # Try to get the runner from the connection key
         try:
-            runner = Runner.objects.get(connection_key=connection_key)
+            runner = await database_sync_to_async(Runner.objects.get)(connection_key=connection_key)
             return runner
         except Runner.DoesNotExist:
             # Incorrect connection key
-            self.close(code=1008)
+            await self.close(code=1008)
 
         return None
 
-    def connect(self):
+    async def connect(self):
+        """Handle WebSocket connection."""
         # Get the experiment link and room from the URL
         self.link = self.scope["url_route"]["kwargs"]["link"]
         self.room = self.scope["url_route"]["kwargs"]["room"]
         # Check if it is the runner or not
-        self.runner = self.verify_runner()
+        self.runner = await self.verify_runner()
         # If it is not a runner, it should be an authenticated participant
         if not self.runner and not self.scope['user'].is_authenticated:
-            self.close(code=1003)
+            await self.close(code=1003)
+            return
         # Retrieve the correct sessions and episode
-        self.session = Session.objects.get(experiment__link=self.link, room=self.room, status__in=['not_ready', 'ready', 'pending', 'running'])
-        # Retrieve the correct episode
-        try:
-            self.episode = Episode.objects.get(session=self.session, ended_at__isnull=True)
-        except Episode.DoesNotExist:
-            # Create a new episode
-            self.episode = Episode.objects.create(session=self.session)
+        self.session = await database_sync_to_async(
+            Session.objects.get
+        )(experiment__link=self.link, room=self.room, status__in=['not_ready', 'ready', 'pending', 'running'])
+        # Retrieve the correct episode (handle race condition with get_or_create)
+        self.episode, _ = await database_sync_to_async(
+            Episode.objects.get_or_create
+        )(session=self.session, ended_at__isnull=True)
         if self.runner:
             self.role = None
         # If it is not a runner, we can retrieve the participant role
         else:
             self.role = self.scope["session"]["role"]
-            self.session.connected_participants += 1
-            # If all participants connected, we can set the session status to 'pending'
-            if self.session.connected_participants == len(self.session.participants.all()):
+            # Atomically increment connected_participants and check if all connected
+            all_connected = await database_sync_to_async(self._do_increment)()
+            if all_connected:
                 self.session.status = 'pending'
-            self.session.save()
+                await database_sync_to_async(self.session.save)(update_fields=['status'])
         # Initialize in-memory record storage (only for runner)
         if self.runner:
             self.records_buffer = []
         else:
             self.records_buffer = None
 
-        self.accept()
+        await self.accept()
         # Join room group
-        async_to_sync(self.channel_layer.group_add)(
-            f"{self.link}_{self.room}", self.channel_name
+        await self.channel_layer.group_add(
+            f"{self.link}_{self.room}",
+            self.channel_name
         )
+        # Store runner channel for direct messaging
+        if self.runner:
+            _runner_channels[(self.link, self.room)] = self.channel_name
+            # Initialize action buffer with expected participant count
+            num_participants = await database_sync_to_async(
+                self.session.participants.count
+            )()
+            _action_buffers[(self.link, self.room)] = {
+                "actions": {},
+                "expected": num_participants
+            }
 
+    async def websocket_message(self, event):
+        """Forward WebSocket message to client."""
+        if event['from'] != self.channel_name:
+            await self.send(json.dumps(event))
 
-
-
-    # Send message
-    def websocket_message(self, event):
-        # Forward message
-        if(event['from'] != self.channel_name):
-            self.send(json.dumps(event))
-
-    # Receive message from WebSocket and forward it to group
-    def receive(self, text_data=None):
+    async def receive(self, text_data=None):
+        """Handle incoming WebSocket message."""
         message = json.loads(text_data)
         if message["type"] == 'broadcast':
-            # Update the step count and store record in memory
-            if "step" in message:
-                # Store in memory instead of creating it immediately
-                self.episode.duration_steps = message["step"]
-                self.records_buffer.append(
-                    Record(
-                        episode=self.episode,
-                        step_index=message["step"],
-                        state=decode_data(message["observations"]),
-                        action=decode_data(message["actions"]),
-                        reward=decode_data(message["rewards"])
-                    )
+            await self._handle_broadcast(message)
+        elif message.get("type") == 'private' and message.get("message") == 'action':
+            await self._handle_action(message)
+        elif message.get("message") == 'settings':
+            await self._handle_settings()
+
+    async def _handle_broadcast(self, message):
+        """Handle broadcast message from runner."""
+        # Update the step count and store record in memory
+        if "step" in message:
+            # Store in memory instead of creating it immediately
+            self.episode.duration_steps = message["step"]
+            self.records_buffer.append(
+                Record(
+                    episode=self.episode,
+                    step_index=message["step"],
+                    state=decode_data(message["observations"]),
+                    action=decode_data(message["actions"]),
+                    reward=decode_data(message["rewards"])
                 )
-            # Update the episode and session status
-            if "terminated" in message and (message["terminated"] or message["truncated"]):
-                self.episode.completed = True
-                self.episode.save()
-                # If all episodes have been completed
-                if len(self.session.episodes.filter(completed=True)) >= self.session.experiment.number_of_episodes:
-                    message["completed"] = True
-                    if self.session.experiment.redirect_url:
-                        message["redirect"] = self.session.experiment.redirect_url
-            # Forward message to participants
-            message["type"] = "websocket.message"
-            message["from"] = self.channel_name
-            if self.role:
-                message["role"] = self.role
-            # For now, we don't forward extra info to participants, but we can change this in the future if needed
-            message["observations"] = []
-            message["actions"] = []
-            message["rewards"] = []
-            async_to_sync(self.channel_layer.group_send)(
-                f"{self.link}_{self.room}", message
             )
+        # Update the episode and session status
+        if "terminated" in message and (message["terminated"] or message["truncated"]):
+            self.episode.completed = True
+            await database_sync_to_async(self.episode.save)()
+            # Check if all episodes completed - need to query database
+            episode_info = await database_sync_to_async(self._fetch_episode_info)()
+            if episode_info['completed_count'] >= episode_info['number_of_episodes']:
+                message["completed"] = True
+                if episode_info['redirect_url']:
+                    message["redirect"] = episode_info['redirect_url']
+        # Forward message to participants
+        message["type"] = "websocket.message"
+        message["from"] = self.channel_name
+        if self.role:
+            message["role"] = self.role
+        # For now, we don't forward extra info to participants
+        message["observations"] = []
+        message["actions"] = []
+        message["rewards"] = []
+        await self.channel_layer.group_send(
+            f"{self.link}_{self.room}",
+            message
+        )
 
-        elif message["message"] == 'settings':
-            # Send environment settings
-            message = {'files': {}}
-            for name, filepath in self.session.experiment.environment.filepaths.items():
-                # Try to find the file and last modification date
-                #modification_time = os.path.getmtime(os.path.join('..','runner',filepath))
-                # Send file if it is not running on the same machine
-                if self.runner.ip_address != '127.0.0.1':
-                    with open(os.path.join('..','runner',filepath), 'r') as file:
-                        code = file.read()   
-                    message['files'][name] = {'path': filepath, 'content': code}
-                else:
-                    message['files'][name] = {'path': filepath, 'content': None}
-            self.send(json.dumps(message))
-            # Send agents settings
-            message = {}
-            for agent in self.session.experiment.agents.all():
-                message[agent.role] = {'participant': agent.participant,
-                                       'keyboard_inputs': agent.keyboard_inputs,
-                                       'multiple_keyboard_inputs': agent.multiple_keyboard_inputs,
-                                       'textual_inputs': agent.textual_inputs,
-                                       'inputs_type': agent.inputs_type}
-                if agent.policy:
-                    message[agent.role]['policy'] = {'checkpoint_interval': agent.policy.checkpoint_interval}
-                    message[agent.role]['policy']['files'] = {}
-                    for name, filepath in agent.policy.filepaths.items():
-                        # Try to find the file and last modification date
-                        #modification_time = os.path.getmtime(os.path.join('..','runner',filepath))
-                        # Send file if it is not running on the same machine
-                        if self.runner.ip_address != '127.0.0.1':
-                            with open(os.path.join('..','runner',filepath), 'r') as file:
-                                code = file.read()   
-                            message[agent.role]['policy']['files'][name] = {'path': filepath, 'content': code}
-                        else:
-                            message[agent.role]['policy']['files'][name] = {'path': filepath, 'content': None}
-            self.send(json.dumps(message))
-            # Send experiment settings
-            message = {'conda_environment': self.session.experiment.conda_environment,
-                       'target_fps': self.session.experiment.target_fps,
-                       'wait_for_inputs': self.session.experiment.wait_for_inputs}
-            self.send(json.dumps(message))
+    async def _handle_action(self, message):
+        """Handle action message from participant with batching."""
+        # Only participants should send actions, not the runner
+        if not self.runner and self.role:
+            # Get or create action buffer for this room
+            room_key = (self.link, self.room)
+            buffer = _action_buffers.get(room_key)
 
+            if buffer is None:
+                # Initialize buffer if not exists (fallback)
+                num_participants = await database_sync_to_async(
+                    self.session.participants.count
+                )()
+                buffer = {"actions": {}, "expected": num_participants}
+                _action_buffers[room_key] = buffer
 
+            # Add action to buffer
+            buffer["actions"][self.role] = message.get("action")
 
-    def disconnect(self, close_code):
+            # Check if we have all expected actions
+            if len(buffer["actions"]) >= buffer["expected"]:
+                # Send batched actions to runner
+                runner_channel = _runner_channels.get(room_key)
+                if runner_channel:
+                    batch_message = {
+                        "type": "websocket.message",
+                        "from": self.channel_name,
+                        "batch_actions": buffer["actions"],
+                    }
+                    await self.channel_layer.send(
+                        runner_channel,
+                        batch_message
+                    )
+                # Clear buffer for next round
+                buffer["actions"] = {}
+
+    async def _handle_settings(self):
+        """Handle settings request from runner."""
+        # Fetch all needed data from database synchronously
+        settings_data = await database_sync_to_async(self._fetch_settings_data)()
+
+        # Send environment settings
+        await self.send(json.dumps(settings_data['environment']))
+
+        # Send agents settings
+        await self.send(json.dumps(settings_data['agents']))
+
+        # Send experiment settings
+        await self.send(json.dumps(settings_data['experiment']))
+
+    async def disconnect(self, close_code):
+        """Handle WebSocket disconnection."""
+        # Check if session exists (may have been deleted by cleanup or error)
+        if not hasattr(self, 'session') or self.session is None:
+            return
+
         # If the episode has ended, we free up the runner instance
         if self.runner:
-            self.runner.status = 'idle'
-            self.runner.session = None
-            self.runner.save()
+            # Remove runner channel from registry
+            _runner_channels.pop((self.link, self.room), None)
+            # Remove action buffer
+            _action_buffers.pop((self.link, self.room), None)
+            try:
+                self.runner.status = 'idle'
+                self.runner.session = None
+                await database_sync_to_async(self.runner.save)()
+            except Exception:
+                pass  # Runner may have been deleted
+
             # Update the episode
-            self.episode.ended_at = Now()
-            self.episode.save()
+            if hasattr(self, 'episode') and self.episode:
+                try:
+                    self.episode.ended_at = Now()
+                    await database_sync_to_async(self.episode.save)()
+                except Exception:
+                    pass  # Episode may have been deleted or session FK missing
+
             # Bulk create all records from the buffer
             if self.records_buffer:
-                Record.objects.bulk_create(self.records_buffer)
-            # Reset the session
-            self.session.refresh_from_db()
-            self.session.connected_participants = 0
-            # If all episodes have been completed
-            if len(self.session.episodes.filter(completed=True)) >= self.session.experiment.number_of_episodes:
-                self.session.status = 'completed'
-                self.session.end_time = Now()
-            # If some episodes have been aborted
-            elif len(self.session.episodes.all()) >= self.session.experiment.number_of_episodes:
-                self.session.status = 'aborted'
-                self.session.end_time = Now()
-            # Otherwise, put the session status as ready
-            else:
-                self.session.status = 'ready'
-            self.session.save()
+                try:
+                    await database_sync_to_async(Record.objects.bulk_create)(self.records_buffer)
+                except Exception:
+                    pass  # Records may fail if episode was deleted
+
+            # Reset the session - use sync helper
+            try:
+                await database_sync_to_async(self._do_session_update)()
+            except Exception:
+                # Session may have been deleted
+                return
 
         # If this is a participant (not a runner) and the session is completed or aborted,
         # we need to update their session to reflect they're no longer in that session
         if not self.runner and hasattr(self, 'session'):
             # Refresh the session from the database to get the latest status
-            self.session.refresh_from_db()
-            # Check if session status is completed or aborted
-            if self.session.status in ['completed', 'aborted']:
-                # Update the user's session to indicate they're no longer in this session
-                self.scope["session"]["session"] = None
-                self.scope["session"].save()
+            try:
+                await database_sync_to_async(self.session.refresh_from_db)()
+            except Exception:
+                # Session may have been deleted
+                pass
+            else:
+                # Check if session status is completed or aborted
+                if self.session.status in ['completed', 'aborted']:
+                    # Update the user's session to indicate they're no longer in this session
+                    self.scope["session"]["session"] = None
+                    try:
+                        await database_sync_to_async(self.scope["session"].save)()
+                    except Exception:
+                        pass  # Session may have been deleted
 
         # Leave room group
-        async_to_sync(self.channel_layer.group_discard)(
-            f"{self.link}_{self.room}", self.channel_name
+        await self.channel_layer.group_discard(
+            f"{self.link}_{self.room}",
+            self.channel_name
         )
         # Broadcast disconnect message
-        message = {}
-        message["type"] = "websocket.message"
-        message["from"] = self.channel_name
-        message["error"] = "A user has disconnected"
-        async_to_sync(self.channel_layer.group_send)(
-            f"{self.link}_{self.room}", message
+        message = {
+            "type": "websocket.message",
+            "from": self.channel_name,
+            "error": "A user has disconnected"
+        }
+        await self.channel_layer.group_send(
+            f"{self.link}_{self.room}",
+            message
         )
