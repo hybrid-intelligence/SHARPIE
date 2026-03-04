@@ -7,10 +7,11 @@ import os
 
 # Network latency presets (in seconds)
 NETWORK_PRESETS = {
-    "machine": 0.0001,    # localhost/same computer (<0.1ms)
-    "lab": 0.005,        # LAN/same room (~5ms, range 1-10ms)
-    "regional": 0.050,   # same continent (~50ms)
-    "global": 0.200,     # same planet (~200ms)
+    "machine": 0.0001,   # localhost/same computer (<0.1ms)
+    "lab": 0.010,        # LAN/same room (<10ms)
+    "national": 0.020,   # same country (<20ms)
+    "regional": 0.050,   # same continent (<50ms)
+    "global": 0.200,     # same planet (<200ms)
 }
 
 
@@ -58,7 +59,7 @@ class ScalabilitySuite:
 @dataclass
 class NetworkLatencySuite:
     """Test suite for measuring impact of network latency."""
-    latency_presets: List[str] = field(default_factory=lambda: ["machine", "lab", "regional", "global"])
+    latency_presets: List[str] = field(default_factory=lambda: ["machine", "lab", "national", "regional", "global"])
     num_participants: int = 10  # Fixed number of participants
     steps_per_participant: int = 100
     host: str = "localhost"
