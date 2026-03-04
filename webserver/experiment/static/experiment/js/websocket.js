@@ -31,16 +31,26 @@ function average(arr) {
     return sum / arr.length;
 }
 
+// Web Worker for async image decoding (disabled - using data URL directly for reliability)
+// The data URL approach is simpler and works across all browsers without COOP issues
+
+function decodeImageSync(image){
+    // Use data URL directly - browser handles decoding natively
+    return 'data:image/jpeg;base64,' + image;
+}
+
 function decodeImage(image){
-    // Decode base64 image bytes
-    const byteCharacters = atob(image);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
+    // Use data URL directly - simple and reliable
+    if (!image) {
+        console.error("decodeImage: image is undefined or null");
+        return;
     }
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: 'image/jpeg' });
-    return URL.createObjectURL(blob);
+    const startTime = performance.now();
+    const url = decodeImageSync(image);
+    document.getElementById("image").src = url;
+    document.getElementById("image").style.display = "block";
+    document.getElementById("loading_div").style.display = "none";
+    console.log(`Image set (data URL), size: ${(image.length/1024).toFixed(1)}KB, elapsed: ${(performance.now()-startTime).toFixed(1)}ms`);
 }
 
 function inputsMappingFunction(inputs){
@@ -65,6 +75,10 @@ document.addEventListener('instruction-submit', function(e) {
     submittedInstruction = e.detail.instruction;
 });
 
+function sendAction(action) {
+    websocket.send(JSON.stringify({type: 'broadcast', action: action}));
+}
+
 // When the server finishes a step and replies
 websocket.onmessage = function(e) {
     const data = JSON.parse(e.data);
@@ -78,12 +92,14 @@ websocket.onmessage = function(e) {
         websocket.close();
     }
 
-    const image_scr = decodeImage(data.image);
+    // Debug: log received data keys
+    if (!data.image) {
+        console.error("No image in message. Keys:", Object.keys(data));
+        return;
+    }
 
-    document.getElementById("image").src = image_scr;
-    // We set the image visible and hide the loading icon
-    document.getElementById("image").style.display = "block";
-    document.getElementById("loading_div").style.display = "none";
+    // Decode and display image
+    decodeImage(data.image);
 
     // Logging what is the actual frame rate on the browser
     let currentTime = Date.now();
@@ -119,7 +135,7 @@ websocket.onmessage = function(e) {
 
             if (currentAction !== defaultAction && currentAction !== null) {
                 // Send the action
-                websocket.send(JSON.stringify({type: 'broadcast', action: currentAction}));
+                sendAction(currentAction);
                 // Hide waiting indicator
                 if (waitingElement) {
                     waitingElement.style.display = "none";
@@ -143,7 +159,7 @@ websocket.onmessage = function(e) {
         } else {
             action = inputsMappingFunction(inputsForwarded);
         }
-        websocket.send(JSON.stringify({type: 'broadcast', action: action}));
+        sendAction(action);
     }
 
     // If the game is over
@@ -157,12 +173,12 @@ websocket.onmessage = function(e) {
             setTimeout(function() {
                 window.location.href = data.redirect;
             }, 5000);
-        } 
+        }
         else if(data.completed){
             document.getElementById("image").style.display = "none";
             document.getElementById("loading_div").style.display = "block";
             document.getElementById("loading_div").innerHTML = "<h3>Thanks for participating! This experiment is completed.</h3>";
-        } 
+        }
         else {
             // Replace the subtitle text by adding "game over" and a restart button
             document.getElementById("image").style.display = "none";
@@ -171,7 +187,7 @@ websocket.onmessage = function(e) {
             document.getElementById("loading_div").innerHTML = "<h3>Episode finished!</h3><br><h4>Ready to " + restart_button + " ?</h4>";
         }
         websocket.close();
-    } 
+    }
 };
 
 

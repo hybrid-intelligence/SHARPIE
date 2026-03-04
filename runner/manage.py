@@ -60,9 +60,10 @@ def send_message(websocket, env, step_count, terminated, truncated, obs, actions
     frame = env.render()
     step_count += 1
 
-    # Encode numpy frame as base64, makes it more compact for transfer
-    _, buffer = cv2.imencode('.jpeg', frame.astype(np.uint8))
-    image_base64 = base64.b64encode(buffer).decode('utf-8')
+    # Encode numpy frame as JPEG (faster than WebP)
+    _, buffer = cv2.imencode('.jpg', frame.astype(np.uint8), [cv2.IMWRITE_JPEG_QUALITY, 85])
+    # Convert numpy array to bytes before base64 encoding
+    image_base64 = base64.b64encode(buffer.tobytes()).decode('utf-8')
 
     # Create message to send to server
     group_message = {
@@ -265,7 +266,7 @@ def run_episode(websocket, environment_settings, agents_settings, experiment_set
     current_obs, info = env.reset()
     step_count = 0
     terminated = truncated = False
-    
+
     # Buffers to track the transition waiting for human feedback
     last_obs = current_obs
     last_actions = {}
@@ -281,7 +282,7 @@ def run_episode(websocket, environment_settings, agents_settings, experiment_set
         
         # Capture Human Input (Feedback for the transition that just happened)
         participant_inputs = receive_message(websocket, agents_settings)
-        
+
         # --- PHASE A: Resolve Reward and Train ---
         # The human's reward input evaluates the S_t -> A_t -> S_t+1 transition
         final_reward = override_rewards(agents_settings, participant_inputs, last_env_reward)
@@ -293,11 +294,11 @@ def run_episode(websocket, environment_settings, agents_settings, experiment_set
         # --- PHASE B: Act and Step ---
         # Prepare for the next transition
         last_obs = current_obs
-        
+
         # Determine Actions (Policy first, then Human Override)
         raw_policy_actions = get_policy_actions(current_obs, policy_modules, participant_inputs, agents_settings)
         last_actions = override_actions(agents_settings, participant_inputs, raw_policy_actions)
-        
+
         # Advance Environment
         current_obs, last_env_reward, terminated, truncated, info = env.step(last_actions)
 
