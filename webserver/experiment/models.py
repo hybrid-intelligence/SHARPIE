@@ -207,3 +207,13 @@ class Experiment(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class ConnectionCheckerConfig(models.Model):
+    """Singleton config for connection quality checks. Edit in admin."""
+    bandwidth_threshold = models.FloatField(default=1.0, help_text='Minimum acceptable bandwidth (Mbps)')
+    latency_threshold = models.IntegerField(default=200, help_text='Maximum acceptable latency (ms)')
+    test_image_size = models.IntegerField(default=100000, help_text='Test image size for bandwidth test (bytes)')
+
+    def __str__(self):
+        return f'Bandwidth≥{self.bandwidth_threshold}Mbps, Latency≤{self.latency_threshold}ms'

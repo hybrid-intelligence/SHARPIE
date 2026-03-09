@@ -82,8 +82,7 @@
           playButton.style.opacity = '0.6';
           
           try {
-            // Check connection quality
-            const checker = new ConnectionChecker();
+            const checker = new ConnectionChecker({{ connection_checker_config|safe }});
             const result = await checker.checkConnectionQuality();
             
             // If poor connection detected, show warning
