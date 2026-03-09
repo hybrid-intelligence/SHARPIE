@@ -1,8 +1,8 @@
 class ConnectionChecker {
-    constructor() {
-        this.bandwidthThreshold = 1.0; // Mbps - minimum acceptable bandwidth
-        this.latencyThreshold = 200; // ms - maximum acceptable latency
-        this.testImageSize = 100000; // bytes - size of test image for bandwidth test
+    constructor(config = {}) {
+        this.bandwidthThreshold = config.bandwidthThreshold ?? 1.0;
+        this.latencyThreshold = config.latencyThreshold ?? 200;
+        this.testImageSize = config.testImageSize ?? 100000;
     }
 
     /**

@@ -1,3 +1,4 @@
+import json
 import string
 import random
 import os
@@ -102,7 +103,18 @@ def config_(request, link):
         form = ConfigForm(initial=initial_data)
         form.fields['role'].choices = experiment_roles
 
-    return render(request, "experiment/config.html", {'form': form, 'error_message': error_message, 'saved': saved, 'experiment': experiment})
+    config, _ = models.ConnectionCheckerConfig.objects.get_or_create(pk=1, defaults={
+        'bandwidth_threshold': 1.0, 'latency_threshold': 200, 'test_image_size': 100000
+    })
+    connection_checker_config = json.dumps({
+        'bandwidthThreshold': config.bandwidth_threshold,
+        'latencyThreshold': config.latency_threshold,
+        'testImageSize': config.test_image_size
+    })
+    return render(request, "experiment/config.html", {
+        'form': form, 'error_message': error_message, 'saved': saved, 'experiment': experiment,
+        'connection_checker_config': connection_checker_config
+    })
 
 
 
@@ -120,7 +132,11 @@ def run_(request, link, room):
 
     # Look for the role of the participant and find the inputs that are listened
     agent = session.experiment.agents.get(role=request.session['role'])
-    return render(request, "experiment/run.html", {'ws_setting': settings.WS_SETTING, "session": session, 'agent': agent, 'experiment': session.experiment})
+    key_display_map = agent.get_keyboard_input_display_map()
+    return render(request, "experiment/run.html", {
+        'ws_setting': settings.WS_SETTING, "session": session, 'agent': agent,
+        'experiment': session.experiment, 'key_display_map': key_display_map
+    })
 
 @staff_member_required
 def download_policy_template(request):
