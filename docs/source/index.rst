@@ -20,6 +20,7 @@ Contents
 .. toctree::
 
    overview
+   data_model
    usage
    faq
    glossary
