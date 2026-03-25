@@ -130,8 +130,8 @@ Prerequisites:
     parser.add_argument(
         "--target-fps",
         type=float,
-        default=24.0,
-        help="Target FPS for experiment (default: 24.0)",
+        default=30.0,
+        help="Target FPS for experiment (default: 30.0)",
     )
     parser.add_argument(
         "--action-interval",

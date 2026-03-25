@@ -32,7 +32,7 @@ class BenchmarkConfig:
     host: str = "localhost"
     port: int = 8000
     runner_connection_key: str = ""  # Connection key for the runner
-    target_fps: float = 24.0
+    target_fps: float = 30.0
     action_interval: float = 0.01  # Seconds between actions (0 = no artificial delay)
     network_latency: float = 0.0  # Simulated network latency in seconds
     image_size: tuple = (64, 64, 3)  # Render size (height, width, channels)
@@ -123,7 +123,7 @@ BENCHMARK_EXPERIMENT = {
     "short_description": "Infrastructure overhead benchmark",
     "long_description": "Measures SHARPIE's capacity for hosting large-scale crowdsourced studies.",
     "environment_file": "noop_environment.py",
-    "target_fps": 24.0,
+    "target_fps": 30.0,
     "wait_for_inputs": False,  # Wait for participant actions
     "number_of_episodes": 1,
 }
@@ -135,11 +135,10 @@ AI_AGENT_EXPERIMENT = {
     "short_description": "AI agent overhead benchmark",
     "long_description": "Measures SHARPIE's capacity for running many AI agents with policies.",
     "environment_file": "noop_environment.py",
-    "target_fps": 24.0,
+    "target_fps": 30.0,
     "wait_for_inputs": False,
     "number_of_episodes": 1,
 }
-
 
 @dataclass
 class AIAgentConfig:
@@ -149,7 +148,7 @@ class AIAgentConfig:
     host: str = "localhost"
     port: int = 8000
     runner_connection_key: str = ""
-    target_fps: float = 24.0
+    target_fps: float = 30.0
     verbose: bool = False
     output_dir: str = "benchmark/results"
     cleanup: bool = True
@@ -176,3 +175,5 @@ class AIAgentScalabilitySuite:
             runner_connection_key=self.runner_connection_key,
             verbose=self.verbose,
         )
+
+
