@@ -31,6 +31,10 @@ Navigate to the SHARPIE directory and install the required packages:
 .. code-block:: console
 
    cd SHARPIE
+   pip install -r requirements.txt   # This includes django-extensions and pygraphviz
+
+   # If pygraphviz fails to install, install system dependencies first:
+   sudo apt-get install graphviz libgraphviz-dev
    pip install -r requirements.txt
 
 Create a database file (SQLite by default) and add an admin user:
@@ -41,6 +45,18 @@ Create a database file (SQLite by default) and add an admin user:
    python manage.py makemigrations accounts experiment data runner
    python manage.py migrate
    python manage.py createsuperuser
+
+Generating the data model diagram
+-----------------------------------
+
+To regenerate the data model documentation diagram after making changes to the Django models:
+
+.. code-block:: console
+
+   cd webserver
+   python manage.py graph_models accounts experiment data runner -o ../docs/source/_static/data_model.png
+
+This requires `django-extensions` and `pygraphviz` to be installed, which are included in the project's requirements.
 
 Run in development mode
 ----------------
