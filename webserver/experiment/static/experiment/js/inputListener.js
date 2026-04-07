@@ -31,8 +31,13 @@ function showFeedback(key) {
     feedbackElement.classList.remove(...ALL_FEEDBACK_CLASSES);
 
     // Unified feedback: show label from config (works for both action and reward experiments)
-    feedbackElement.textContent = (typeof keyDisplayMap !== 'undefined' && keyDisplayMap && keyDisplayMap[key])
-        ? keyDisplayMap[key].label : key;
+    var displayLabel = key;
+    if (typeof keyDisplayMap !== 'undefined' && keyDisplayMap && keyDisplayMap[key] && keyDisplayMap[key].label) {
+        displayLabel = keyDisplayMap[key].label;
+    } else if (key === ' ') {
+        displayLabel = 'Space';
+    }
+    feedbackElement.textContent = displayLabel;
     feedbackElement.classList.add(FeedbackClass.ACTION);
 
     feedbackElement.classList.add(FeedbackClass.SHOW);

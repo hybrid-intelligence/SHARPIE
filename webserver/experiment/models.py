@@ -100,6 +100,10 @@ class Agent(models.Model):
         # Validate keyboard_inputs: must be a dict of strings
         if not isinstance(self.keyboard_inputs, dict):
             raise ValidationError({'keyboard_inputs': 'Keyboard inputs must be a dict.'})
+        
+        # Validate keyboard_input_display: must be a dict if provided
+        if self.keyboard_input_display and not isinstance(self.keyboard_input_display, dict):
+            raise ValidationError({'keyboard_input_display': 'Keyboard input display must be a dict or null.'})
 
     def get_keyboard_input_display_map(self):
         """
