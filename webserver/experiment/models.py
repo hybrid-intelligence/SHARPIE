@@ -81,8 +81,14 @@ class Agent(models.Model):
     participant = models.BooleanField('Can the participant act?', default=False)
 
     keyboard_inputs = models.JSONField('Inputs captured from the participant, with mapping', default=default_keyboard_inputs)
+    keyboard_input_display = models.JSONField(
+        'Display config for each key: {key: {"symbol": "←", "label": "Left"}}',
+        default=dict,
+        blank=True,
+        help_text='Optional. Maps key names to display config. E.g. {"Enter": {"symbol": "↵", "label": "Enter"}}. Keys not listed use the key name.'
+    )
     multiple_keyboard_inputs = models.BooleanField('Allow multiple inputs from users', default=False)
-    inputs_type = models.CharField('How will the inputs be used in the environment?', choices=[('actions', 'To determine the agent\'s actions'), ('reward', 'To be used as reward'), ('other', 'To be given to the agent policy in a different way')], default='actions')
+    inputs_type = models.CharField('How will the inputs be used in the environment?', max_length=20, choices=[('actions', 'To determine the agent\'s actions'), ('reward', 'To be used as reward'), ('other', 'To be given to the agent policy in a different way')], default='actions')
     textual_inputs = models.BooleanField('Allow textual inputs from users', default=False)
     
     metadata = models.JSONField(null=True, blank=True)
@@ -95,6 +101,29 @@ class Agent(models.Model):
         if not isinstance(self.keyboard_inputs, dict):
             raise ValidationError({'keyboard_inputs': 'Keyboard inputs must be a dict.'})
         
+        # Validate keyboard_input_display: must be a dict if provided
+        if self.keyboard_input_display and not isinstance(self.keyboard_input_display, dict):
+            raise ValidationError({'keyboard_input_display': 'Keyboard input display must be a dict or null.'})
+
+    def get_keyboard_input_display_map(self):
+        """
+        Returns display config for each key in keyboard_inputs (except default).
+        Uses keyboard_input_display when set, else key name (Space for ' ').
+        """
+        display_config = self.keyboard_input_display or {}
+        result = {}
+        for key in self.keyboard_inputs:
+            if key == 'default':
+                continue
+            cfg = display_config.get(key, {}) if isinstance(display_config, dict) else {}
+            symbol = cfg.get('symbol') if isinstance(cfg, dict) else None
+            label = cfg.get('label') if isinstance(cfg, dict) else None
+            result[key] = {
+                'symbol': symbol if symbol is not None else ('Space' if key == ' ' else key),
+                'label': label if label is not None else ('Space' if key == ' ' else key),
+            }
+        return result
+
 class Environment(models.Model):
     """
     A simulated Markov decision process (MDP) adhering to the Gymnasium API with a tensor actions and rewards to support multi-agent and multi-objective settings.

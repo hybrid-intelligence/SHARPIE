@@ -29,6 +29,8 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
   color: #212529;
   transition: all 0.1s ease;
+  unicode-bidi: isolate;
+  direction: ltr;
 }
 
 .keyboard-key.pressed {
@@ -39,11 +41,19 @@
   box-shadow: 0 0 10px rgba(0, 123, 255, 0.6);
 }
 
+/* Desktop controls - 4-5 keys on one line with consistent spacing */
+#desktop-controls {
+  gap: 12px;
+  row-gap: 8px;
+}
+
 /* Visual feedback container */
 .key-feedback-container {
   position: relative;
   display: inline-block;
   padding-top: 30px;
+  unicode-bidi: isolate;
+  direction: ltr;
 }
 
 .key-feedback {
@@ -66,20 +76,7 @@
   opacity: 1;
 }
 
-/* Reward feedback styles */
-.key-feedback.reward-positive {
-  background-color: #28a745;
-  color: white;
-  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.5);
-}
-
-.key-feedback.reward-negative {
-  background-color: #dc3545;
-  color: white;
-  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.5);
-}
-
-/* Action feedback styles */
+/* Feedback styles (unified for action and reward experiments) */
 .key-feedback.action {
   background-color: #17a2b8;
   color: white;

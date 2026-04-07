@@ -1,20 +1,12 @@
 // Feedback CSS class constants
 const FeedbackClass = Object.freeze({
     SHOW: 'show',
-    REWARD_POSITIVE: 'reward-positive',
-    REWARD_NEGATIVE: 'reward-negative',
     ACTION: 'action'
 });
 
 const ALL_FEEDBACK_CLASSES = Object.freeze(Object.values(FeedbackClass));
 
-// Key display name mappings
-const KEY_DISPLAY_NAMES = Object.freeze({
-    'ArrowLeft': 'Left',
-    'ArrowRight': 'Right',
-    'ArrowUp': 'Up',
-    'ArrowDown': 'Down'
-});
+// Key display uses keyDisplayMap from backend (config-driven, no hardcoding)
 
 // Visual feedback functions
 function showKeyPressed(key) {
@@ -38,23 +30,15 @@ function showFeedback(key) {
     // Clear existing classes
     feedbackElement.classList.remove(...ALL_FEEDBACK_CLASSES);
 
-    if (inputsType === 'reward') {
-        // Reward-based: show positive/negative indicator
-        // TODO: Display actual configured reward values from admin settings.
-        // This requires passing reward config from backend to frontend, possibly via
-        // template context or API endpoint. May need model changes for configurable rewards.
-        if (key === 'ArrowUp') {
-            feedbackElement.textContent = '+';
-            feedbackElement.classList.add(FeedbackClass.REWARD_POSITIVE);
-        } else if (key === 'ArrowDown') {
-            feedbackElement.textContent = '−';  // minus sign
-            feedbackElement.classList.add(FeedbackClass.REWARD_NEGATIVE);
-        }
-    } else {
-        // Action-based: show key name
-        feedbackElement.textContent = KEY_DISPLAY_NAMES[key] || key;
-        feedbackElement.classList.add(FeedbackClass.ACTION);
+    // Unified feedback: show label from config (works for both action and reward experiments)
+    var displayLabel = key;
+    if (typeof keyDisplayMap !== 'undefined' && keyDisplayMap && keyDisplayMap[key] && keyDisplayMap[key].label) {
+        displayLabel = keyDisplayMap[key].label;
+    } else if (key === ' ') {
+        displayLabel = 'Space';
     }
+    feedbackElement.textContent = displayLabel;
+    feedbackElement.classList.add(FeedbackClass.ACTION);
 
     feedbackElement.classList.add(FeedbackClass.SHOW);
 
