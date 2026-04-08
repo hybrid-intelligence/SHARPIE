@@ -11,15 +11,10 @@ See [DEPENDENCIES_PIP.md](DEPENDENCIES_PIP.md) for the list of Python packages a
 To regenerate the Python dependencies license report after changing requirements:
 
 ```bash
-pip install pip-licenses
-pip install -r requirements.txt
-pip install -r docs/requirements.txt
-pip-licenses --from=classifier --format=markdown --output-file=DEPENDENCIES_PIP.md
+python scripts/generate_dependencies.py
 git add DEPENDENCIES_PIP.md
 git commit -m "Update dependencies license report"
 ```
-
-This requires `pip-licenses` to be installed. You can run the GitHub Actions workflow manually to generate and download the report as an artifact.
 
 ## System Dependencies
 
