@@ -81,10 +81,18 @@ Run in production mode
 ------------------
 
 For the web server:
-Start by looking at the `deployment checklist <https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/>`_ from Django. We recommenf using the `example setup <https://channels.readthedocs.io/en/latest/deploying.html#example-setups>`_ with Nginx and Supervisor from the Channels documentation.
+Start by looking at the `deployment checklist <https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/>`_ from Django. We recommend using the `example setup <https://channels.readthedocs.io/en/latest/deploying.html#example-setups>`_ with Nginx and Supervisor from the Channels documentation.
+
+You can find an example supervisor configuration file in `deployment/webserver_supervisor.conf`. This configuration creates the `/run/daphne` directory before starting Daphne to prevent socket failures on systems that periodically clean `/run`. Modify the paths to match your configuration and copy it to `/etc/supervisor/conf.d/`. Then, run::
+
+   sudo supervisorctl reread
+   sudo supervisorctl update
 
 For the runner:
-We recommend using `supervisor <http://supervisord.org/>`_ to manage the runner process. You can find an example configuration file in `runner/runner_supervisor.conf`. You can modify the paths mentioned in the file to match your configuration and copy it to `/etc/supervisor/conf.d/`. Then, run: `sudo supervisorctl reread`_ and `sudo supervisorctl update`_ to apply the changes.
+We recommend using `supervisor <http://supervisord.org/>`_ to manage the runner process. You can find an example configuration file in `deployment/runner_supervisor.conf`. You can modify the paths mentioned in the file to match your configuration and copy it to `/etc/supervisor/conf.d/`. Then, run::
+
+   sudo supervisorctl reread
+   sudo supervisorctl update
 
 Updating your installation
 ------------------
