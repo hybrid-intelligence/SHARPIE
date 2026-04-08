@@ -10,9 +10,9 @@ To regenerate this file after changing requirements, run:
 |------------------------|-----------|-------------------------|
 | Django                 | 5.2.11    | BSD-3-Clause            |
 | Sphinx                 | 7.1.2     | BSD License             |
-| Twisted                | 25.5.0    | UNKNOWN                 |
+| Twisted                | 25.5.0    | MIT License             |
 | channels               | 4.3.2     | BSD License             |
-| channels_redis         | 4.3.0     | UNKNOWN                 |
+| channels_redis         | 4.3.0     | BSD                     |
 | crispy-bootstrap4      | 2026.2    | MIT                     |
 | django-crispy-forms    | 2.6       | MIT                     |
 | django-extensions      | 4.1       | MIT                     |
