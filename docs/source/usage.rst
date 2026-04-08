@@ -88,6 +88,13 @@ You can find an example supervisor configuration file in `deployment/webserver_s
    sudo supervisorctl reread
    sudo supervisorctl update
 
+For Nginx configuration:
+You can find an example configuration file in `deployment/nginx.conf`. This configuration includes WebSocket proxy support and SSL setup. Copy it to `/etc/nginx/sites-available/`, create a symlink to `/etc/nginx/sites-enabled/`, and reload Nginx::
+
+   sudo ln -s /etc/nginx/sites-available/nginx.conf /etc/nginx/sites-enabled/
+   sudo nginx -t
+   sudo systemctl reload nginx
+
 For the runner:
 We recommend using `supervisor <http://supervisord.org/>`_ to manage the runner process. You can find an example configuration file in `deployment/runner_supervisor.conf`. You can modify the paths mentioned in the file to match your configuration and copy it to `/etc/supervisor/conf.d/`. Then, run::
 
