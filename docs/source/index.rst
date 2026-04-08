@@ -22,5 +22,6 @@ Contents
    overview
    data_model
    usage
+   dependencies
    faq
    glossary
