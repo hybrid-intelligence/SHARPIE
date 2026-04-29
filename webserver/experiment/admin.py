@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Experiment, Policy, Agent, Environment
+from .models import Experiment, Policy, Agent, Environment, ConnectionCheckerConfig
 
 class ExperimentAdmin(admin.ModelAdmin):
     list_display = ('name', 'enabled')
@@ -23,7 +23,17 @@ class EnvironmentAdmin(admin.ModelAdmin):
     list_display = ('name', 'filepaths')
     search_fields = ('name',)
 
+class ConnectionCheckerConfigAdmin(admin.ModelAdmin):
+    list_display = ('bandwidth_threshold', 'latency_threshold', 'test_image_size')
+
+    def has_add_permission(self, request):
+        return not self.model.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 admin.site.register(Experiment, ExperimentAdmin)
 admin.site.register(Policy, PolicyAdmin)
 admin.site.register(Agent, AgentAdmin)
 admin.site.register(Environment, EnvironmentAdmin)
+admin.site.register(ConnectionCheckerConfig, ConnectionCheckerConfigAdmin)

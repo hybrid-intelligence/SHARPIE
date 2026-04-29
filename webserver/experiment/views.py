@@ -1,3 +1,4 @@
+import json
 import string
 import random
 import os
@@ -102,7 +103,16 @@ def config_(request, link):
         form = ConfigForm(initial=initial_data)
         form.fields['role'].choices = experiment_roles
 
-    return render(request, "experiment/config.html", {'form': form, 'error_message': error_message, 'saved': saved, 'experiment': experiment})
+    config, _ = models.ConnectionCheckerConfig.objects.get_or_create(pk=1)
+    connection_checker_config = json.dumps({
+        'bandwidthThreshold': config.bandwidth_threshold,
+        'latencyThreshold': config.latency_threshold,
+        'testImageSize': config.test_image_size
+    })
+    return render(request, "experiment/config.html", {
+        'form': form, 'error_message': error_message, 'saved': saved, 'experiment': experiment,
+        'connection_checker_config': connection_checker_config
+    })
 
 
 
