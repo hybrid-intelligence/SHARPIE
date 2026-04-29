@@ -215,5 +215,13 @@ class ConnectionCheckerConfig(models.Model):
     latency_threshold = models.IntegerField(default=200, help_text='Maximum acceptable latency (ms)')
     test_image_size = models.IntegerField(default=100000, help_text='Test image size for bandwidth test (bytes)')
 
+    def save(self, *args, **kwargs):
+        if not self.pk and ConnectionCheckerConfig.objects.exists():
+            raise ValidationError('Only one ConnectionCheckerConfig instance is allowed.')
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError('Cannot delete ConnectionCheckerConfig.')
+
     def __str__(self):
         return f'Bandwidth≥{self.bandwidth_threshold}Mbps, Latency≤{self.latency_threshold}ms'

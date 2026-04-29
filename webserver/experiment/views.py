@@ -103,9 +103,7 @@ def config_(request, link):
         form = ConfigForm(initial=initial_data)
         form.fields['role'].choices = experiment_roles
 
-    config, _ = models.ConnectionCheckerConfig.objects.get_or_create(pk=1, defaults={
-        'bandwidth_threshold': 1.0, 'latency_threshold': 200, 'test_image_size': 100000
-    })
+    config, _ = models.ConnectionCheckerConfig.objects.get_or_create(pk=1)
     connection_checker_config = json.dumps({
         'bandwidthThreshold': config.bandwidth_threshold,
         'latencyThreshold': config.latency_threshold,
