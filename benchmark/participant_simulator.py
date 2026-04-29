@@ -311,7 +311,7 @@ class ParticipantSimulator:
                 self.log(f"Completed {step_count} steps")
 
     async def _send_action(self, ws, step: int):
-        """Send a random action to the server."""
+        """Send a hardcoded no-op action (action=0) to the server."""
         await asyncio.sleep(self.action_interval)
 
         # Participant sends action to be received by the runner

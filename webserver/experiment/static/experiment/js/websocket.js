@@ -31,14 +31,6 @@ function average(arr) {
     return sum / arr.length;
 }
 
-// Web Worker for async image decoding (disabled - using data URL directly for reliability)
-// The data URL approach is simpler and works across all browsers without COOP issues
-
-function decodeImageSync(image){
-    // Use data URL directly - browser handles decoding natively
-    return 'data:image/jpeg;base64,' + image;
-}
-
 function decodeImage(image){
     // Use data URL directly - simple and reliable
     if (!image) {
@@ -46,7 +38,7 @@ function decodeImage(image){
         return;
     }
     const startTime = performance.now();
-    const url = decodeImageSync(image);
+    const url = 'data:image/jpeg;base64,' + image;
     document.getElementById("image").src = url;
     document.getElementById("image").style.display = "block";
     document.getElementById("loading_div").style.display = "none";

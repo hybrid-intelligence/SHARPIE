@@ -7,10 +7,10 @@ Manages the complete benchmark lifecycle:
 3. Cleanup: Remove test data
 
 Prerequisites:
-- SHARPIE webserver running (python manage.py runserver)
+- SHARPIE webserver running (run `python manage.py runserver` from webserver/)
 - Redis server running (redis-server)
 - A runner registered in Django admin with a connection key
-- The runner actively polling (python manage.py --connection-key=KEY)
+- The runner actively polling (run `python manage.py --connection-key=KEY` from runner/)
 
 The benchmark flow:
 1. Orchestrator creates session with status='ready'
@@ -23,6 +23,7 @@ The benchmark flow:
 
 import asyncio
 import os
+import shutil
 import sys
 import uuid
 from typing import List, Tuple, Optional
@@ -150,8 +151,6 @@ class BenchmarkOrchestrator:
     @sync_to_async
     def _setup_environment(self):
         """Create no-op environment in database with metadata for max_steps and render_size."""
-        import shutil
-
         runner_env_path = os.path.join(
             os.path.dirname(__file__), '..', 'runner', 'noop_environment.py'
         )
@@ -497,22 +496,20 @@ class AIAgentOrchestrator:
         """Verify that a runner with the given connection key exists and is idle."""
         try:
             runner = Runner.objects.get(connection_key=self.config.runner_connection_key)
-            if runner.status != 'idle':
-                raise RuntimeError(
-                    f"Runner '{runner.connection_key}' is not idle (status: {runner.status})."
-                )
-            self.runner = runner
-            print(f"[{self.benchmark_id}] Verified runner: {runner.connection_key}")
         except Runner.DoesNotExist:
             raise RuntimeError(
                 f"No runner found with connection key '{self.config.runner_connection_key}'."
             )
+        if runner.status != 'idle':
+            raise RuntimeError(
+                f"Runner '{runner.connection_key}' is not idle (status: {runner.status})."
+            )
+        self.runner = runner
+        print(f"[{self.benchmark_id}] Verified runner: {runner.connection_key}")
 
     @sync_to_async
     def _setup_environment(self):
         """Create no-op environment in database."""
-        import shutil
-
         runner_env_path = os.path.join(
             os.path.dirname(__file__), '..', 'runner', 'noop_environment.py'
         )
@@ -540,8 +537,6 @@ class AIAgentOrchestrator:
     @sync_to_async
     def _setup_policy(self):
         """Create random policy in database and copy file to runner directory."""
-        import shutil
-
         # Copy policy file to runner directory
         runner_policy_path = os.path.join(
             os.path.dirname(__file__), '..', 'runner', 'random_policy.py'
