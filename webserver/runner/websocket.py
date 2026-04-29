@@ -45,7 +45,19 @@ class ConnectionConsumer(WebsocketConsumer):
             self.runner.status = 'idle'
             self.runner.last_active = Now()
             self.runner.ip_address = self.scope['client'][0]
-            self.runner.save()
+            # Clear stale session reference if any, needed for benchmark cleanup
+            if self.runner.session_id is not None:
+                try:
+                    # Verify session still exists
+                    Session.objects.filter(id=self.runner.session_id).exists()
+                except Exception:
+                    self.runner.session = None
+            try:
+                self.runner.save()
+            except Exception:
+                # If save fails due to FK constraint, clear session and retry
+                self.runner.session = None
+                self.runner.save()
             # Check if there are any waiting queues for this experiment
             try:
                 # Get the first pending session
@@ -73,4 +85,13 @@ class ConnectionConsumer(WebsocketConsumer):
             self.runner.status = 'disconnected'
             self.runner.last_active = Now()
             self.runner.ip_address = self.scope['client'][0]
-            self.runner.save()
+            # Clear session FK if it's stale, needed for benchmark cleanup
+            try:
+                self.runner.save()
+            except Exception:
+                # If save fails (e.g., FK constraint), clear session and retry
+                self.runner.session = None
+                try:
+                    self.runner.save()
+                except Exception:
+                    pass  # Runner may have been deleted

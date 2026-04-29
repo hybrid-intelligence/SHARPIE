@@ -60,9 +60,10 @@ def send_message(websocket, env, step_count, terminated, truncated, obs, actions
     frame = env.render()
     step_count += 1
 
-    # Encode numpy frame as base64, makes it more compact for transfer
-    _, buffer = cv2.imencode('.jpeg', frame.astype(np.uint8))
-    image_base64 = base64.b64encode(buffer).decode('utf-8')
+    # Encode numpy frame as JPEG (faster than WebP)
+    _, buffer = cv2.imencode('.jpg', frame.astype(np.uint8), [cv2.IMWRITE_JPEG_QUALITY, 85])
+    # Convert numpy array to bytes before base64 encoding
+    image_base64 = base64.b64encode(buffer.tobytes()).decode('utf-8')
 
     # Create message to send to server
     group_message = {
@@ -80,17 +81,26 @@ def send_message(websocket, env, step_count, terminated, truncated, obs, actions
     return step_count
 
 def receive_message(websocket, agents_settings):
-    actions = {}
-    for agent_name, agent_config in agents_settings.items():
-        # If the participant is supposed to give some input
-        if agent_config['participant']:
-            message = json.loads(websocket.recv())
-            if 'error' in message.keys():
-                logging.info(f"Message from room: {message['error']}")
-                exit(1)
-            if 'action' in message.keys():
-                actions[message['role']] = message['action']
-    return actions
+    """Receive actions from all participant-controlled agents.
+
+    Server batches all participant actions into a single message with
+    'batch_actions' key, which significantly reduces message overhead
+    for large numbers of participants.
+    """
+    # Count how many participant inputs we expect
+    num_participants = sum(1 for cfg in agents_settings.values() if cfg['participant'])
+
+    if num_participants == 0:
+        return {}
+
+    # Wait for batched actions message
+    message = json.loads(websocket.recv())
+
+    if 'error' in message:
+        logging.error(f"Message from room: {message['error']}")
+        exit(1)
+
+    return message.get('batch_actions', {})
 
 def get_policy_actions(obs, policy_modules, participant_inputs=None, agents_settings=None):
     """
@@ -151,7 +161,13 @@ def load_environment(env_config):
     spec = importlib.util.spec_from_file_location("environment", env_config['files']['environment']['path'])
     env_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(env_module)
-    return env_module.environment
+
+    # If environment is a class, instantiate it with metadata params
+    env = env_module.environment
+    if callable(env):
+        init_params = env_config.get('metadata', {}) or {}
+        return env(**init_params)
+    return env
 
 def load_policies(agents_settings):
     policy_modules = {}
@@ -250,7 +266,7 @@ def run_episode(websocket, environment_settings, agents_settings, experiment_set
     current_obs, info = env.reset()
     step_count = 0
     terminated = truncated = False
-    
+
     # Buffers to track the transition waiting for human feedback
     last_obs = current_obs
     last_actions = {}
@@ -266,7 +282,7 @@ def run_episode(websocket, environment_settings, agents_settings, experiment_set
         
         # Capture Human Input (Feedback for the transition that just happened)
         participant_inputs = receive_message(websocket, agents_settings)
-        
+
         # --- PHASE A: Resolve Reward and Train ---
         # The human's reward input evaluates the S_t -> A_t -> S_t+1 transition
         final_reward = override_rewards(agents_settings, participant_inputs, last_env_reward)
@@ -278,11 +294,11 @@ def run_episode(websocket, environment_settings, agents_settings, experiment_set
         # --- PHASE B: Act and Step ---
         # Prepare for the next transition
         last_obs = current_obs
-        
+
         # Determine Actions (Policy first, then Human Override)
         raw_policy_actions = get_policy_actions(current_obs, policy_modules, participant_inputs, agents_settings)
         last_actions = override_actions(agents_settings, participant_inputs, raw_policy_actions)
-        
+
         # Advance Environment
         current_obs, last_env_reward, terminated, truncated, info = env.step(last_actions)
 
