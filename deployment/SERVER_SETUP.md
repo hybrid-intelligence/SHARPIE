@@ -176,42 +176,6 @@ Replace placeholder paths:
 - Change `/path/to/venv` to `/var/www/sharpie/venv`
 - Change `/your/log/` to `/var/www/sharpie/logs/`
 
-Example for `sharpie-web.conf`:
-
-```ini
-[fcgi-program:sharpie-web]
-socket=tcp://localhost:8000
-directory=/var/www/sharpie/webserver/
-environment=PATH=/var/www/sharpie/venv/bin
-command=/var/www/sharpie/venv/bin/daphne -u /run/daphne/daphne%(process_num)d.sock --fd 0 --access-log - --proxy-headers mysite.asgi:application
-numprocs=1
-process_name=sharpie-web%(process_num)d
-autostart=true
-autorestart=true
-stdout_logfile=/var/www/sharpie/logs/asgi.log
-redirect_stderr=true
-
-# Create required directory for socket
-[program:daphne-socket-dir]
-command=/bin/mkdir -p /run/daphne
-autostart=true
-autorestart=false
-startsecs=0
-```
-
-Example for `sharpie-runner.conf`:
-
-```ini
-[program:sharpie-runner]
-directory=/var/www/sharpie
-environment=PATH=/var/www/sharpie/venv/bin
-command=/var/www/sharpie/venv/bin/python websocket.py
-autostart=true
-autorestart=true
-stdout_logfile=/var/www/sharpie/logs/runner.log
-redirect_stderr=true
-```
-
 Create log directory and apply configuration:
 
 ```bash
@@ -305,24 +269,6 @@ source venv/bin/activate
 pip install psycopg2-binary
 ```
 
-Create environment file for Django settings:
-
-```bash
-# On the server as sharpie-deploy
-sudo su - sharpie-deploy
-cd /var/www/sharpie/webserver
-nano .env
-```
-
-Add your production settings:
-
-```env
-DEBUG=False
-SECRET_KEY=your-very-secure-secret-key-here
-ALLOWED_HOSTS=your-domain.com,www.your-domain.com
-DATABASE_URL=postgres://sharpie:your-secure-password@localhost/sharpie
-```
-
 ## Step 10: Initial Database Setup
 
 ```bash
@@ -343,7 +289,27 @@ python manage.py createsuperuser
 exit
 ```
 
-## Step 11: Verify Setup
+## Step 11: Configure Environment Variables
+
+Create environment file for Django settings:
+
+```bash
+# On the server as sharpie-deploy
+sudo su - sharpie-deploy
+cd /var/www/sharpie/webserver
+nano .env
+```
+
+Add your production settings:
+
+```env
+DEBUG=False
+SECRET_KEY=your-very-secure-secret-key-here
+ALLOWED_HOSTS=your-domain.com,www.your-domain.com
+DATABASE_URL=postgres://sharpie:your-secure-password@localhost/sharpie
+```
+
+## Step 12: Verify Setup
 
 ```bash
 # Check supervisor status
@@ -420,32 +386,6 @@ redis-cli ping
 # Check Redis logs
 sudo journalctl -u redis-server
 ```
-
-## Security Recommendations
-
-1. **Firewall**: Use UFW to restrict access
-   ```bash
-   sudo ufw allow ssh
-   sudo ufw allow 'Nginx Full'
-   sudo ufw enable
-   ```
-
-2. **Disable root SSH login**: Edit `/etc/ssh/sshd_config`
-   ```
-   PermitRootLogin no
-   ```
-
-3. **Use SSH key authentication only**:
-   ```
-   PasswordAuthentication no
-   ```
-
-4. **Keep system updated**:
-   ```bash
-   sudo apt-get update && sudo apt-get upgrade
-   ```
-
-5. **Regular backups**: Set up database and file backups
 
 ## Next Steps
 
