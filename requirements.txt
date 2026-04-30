@@ -10,3 +10,4 @@ django-extensions
 pygraphviz
 pydot
 aiohttp
+django-environ

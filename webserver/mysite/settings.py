@@ -11,36 +11,38 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Initialize environment
+env = environ.Env()
+environ.Env.read_env(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-n135)#u&k!m6k%dg4&&ek=_yj^d13y0q&j617hf9!&$t5y6x=_'
+SECRET_KEY = env('SECRET_KEY', default='django-insecure-n135)#u&k!m6k%dg4&&ek=_yj^d13y0q&j617hf9!&$t5y6x=_')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-PROD = False
+DEBUG = env.bool('DEBUG', default=True)
+PROD = env.bool('PROD', default=False)
 # Useful to add some information only for the self-hosted version at sharpie.science.uu.nl
-DEMO = False
+DEMO = env.bool('DEMO', default=False)
 
-HTTPS = False
-if HTTPS:
-    WS_SETTING = 'wss'
-else:
-    WS_SETTING = 'ws'
+HTTPS = env.bool('HTTPS', default=False)
+WS_SETTING = 'wss' if HTTPS else 'ws'
 
-ALLOWED_HOSTS = ['*'] 
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
 
 # Registering key
 # Set to True to enable all user registration
 # Set to False to disable new user registration
 # Set to a string value to require a registration key for new user registration
-REGISTRATION_KEY = 'sharpie'
+REGISTRATION_KEY = env('REGISTRATION_KEY', default='sharpie')
 
 
 # Application definition
@@ -103,10 +105,7 @@ TEMPLATES = [
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': env.db_url(default=f'sqlite://{BASE_DIR / "db.sqlite3"}')
 }
 
 

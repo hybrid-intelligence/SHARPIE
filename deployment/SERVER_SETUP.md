@@ -304,8 +304,12 @@ Add your production settings:
 
 ```env
 DEBUG=False
+PROD=True
+DEMO=True
+HTTPS=True
 SECRET_KEY=your-very-secure-secret-key-here
 ALLOWED_HOSTS=your-domain.com,www.your-domain.com
+REGISTRATION_KEY=your-registration-key
 DATABASE_URL=postgres://sharpie:your-secure-password@localhost/sharpie
 ```
 
