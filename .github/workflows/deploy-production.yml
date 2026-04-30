@@ -1,0 +1,56 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: |
+          python webserver/manage.py test accounts
+          python webserver/manage.py test experiment
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PRODUCTION_HOST }}
+          username: ${{ secrets.PRODUCTION_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          script: |
+            cd /var/www/sharpie
+            git pull origin main
+
+            source venv/bin/activate
+            pip install -r requirements.txt
+
+            cd webserver
+            python manage.py migrate
+            python manage.py collectstatic --noinput
+
+            supervisorctl restart sharpie-web
+            supervisorctl restart sharpie-runner
+
+      - name: Health check
+        run: |
+          sleep 10
+          curl -f ${{ secrets.PRODUCTION_URL }}/health || exit 1
