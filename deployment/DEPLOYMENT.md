@@ -1,5 +1,7 @@
 # SHARPIE Deployment Guide
 
+> **Note:** This document is intended for the development team maintaining the official SHARPIE deployment. If you are setting up a self-hosted instance, the steps may still be useful as a reference, but you will need to adapt them to your environment.
+
 This document describes the CI/CD pipeline for automated deployment to production.
 
 ## Overview
@@ -120,8 +122,6 @@ These must be installed on the server:
 | Package | Purpose |
 |---------|---------|
 | `redis-server` | WebSocket channels backend for Django Channels |
-| `graphviz` | Data model diagram generation |
-| `libgraphviz-dev` | Development files for pygraphviz |
 
 ### Python Dependencies
 

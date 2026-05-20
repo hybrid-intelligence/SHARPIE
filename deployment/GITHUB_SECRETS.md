@@ -1,5 +1,7 @@
 # GitHub Secrets Configuration
 
+> **Note:** This document is intended for the development team maintaining the official SHARPIE deployment. If you are setting up a self-hosted instance, you can follow these steps to configure your own GitHub repository secrets.
+
 This guide explains how to configure GitHub Secrets for the CI/CD pipeline.
 
 ## Overview

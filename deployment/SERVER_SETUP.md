@@ -7,6 +7,7 @@ This guide covers the one-time setup required on your production server before t
 - Ubuntu/Debian-based server (adjust commands for other distributions)
 - Root or sudo access
 - Domain name pointing to your server (for SSL)
+- GitHub Secrets already configured (see [GITHUB_SECRETS.md](GITHUB_SECRETS.md))
 
 ## Step 1: Create Deployment User
 
@@ -67,9 +68,6 @@ sudo apt-get install -y python3 python3-pip python3-venv
 sudo apt-get install -y redis-server
 sudo systemctl enable redis-server
 sudo systemctl start redis-server
-
-# Install Graphviz (required for pygraphviz)
-sudo apt-get install -y graphviz libgraphviz-dev
 
 # Install Supervisor (process manager)
 sudo apt-get install -y supervisor
@@ -307,7 +305,9 @@ DEBUG=False
 PROD=True
 DEMO=True
 HTTPS=True
-SECRET_KEY=your-very-secure-secret-key-here
+SECRET_KEY=
+# IMPORTANT: Generate a secure secret key before running the application
+# Generate one with: python -c "from secrets import token_urlsafe; print(token_urlsafe(50))"
 ALLOWED_HOSTS=your-domain.com,www.your-domain.com
 REGISTRATION_KEY=your-registration-key
 DATABASE_URL=postgres://sharpie:your-secure-password@localhost/sharpie
@@ -396,5 +396,11 @@ sudo journalctl -u redis-server
 After server setup is complete:
 1. Configure GitHub Secrets (see [GITHUB_SECRETS.md](GITHUB_SECRETS.md))
 2. Push to `main` branch to trigger first deployment
-3. Monitor the deployment in GitHub Actions
-4. Verify the application is working correctly
+3. Monitor the deployment in GitHub Actions:
+   - Go to your repository on GitHub
+   - Click the **Actions** tab
+   - Click on the running workflow to view logs in real-time
+4. Verify the application is working correctly:
+   - Visit `https://your-domain.com` in a browser
+   - Check the health endpoint: `curl https://your-domain.com/health`
+   - Check service status on server: `supervisorctl status`
