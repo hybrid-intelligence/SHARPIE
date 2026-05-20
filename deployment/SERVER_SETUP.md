@@ -144,6 +144,16 @@ Replace placeholder paths:
 - Change `/path/to/venv` to `/var/www/sharpie/venv`
 - Change `/your/log/` to `/var/www/sharpie/logs/`
 
+```bash
+# Edit runner config
+sudo nano /etc/supervisor/conf.d/sharpie-runner.conf
+```
+
+Replace placeholder paths:
+- Change `/my/app/path` to `/var/www/sharpie`
+- Change `/path/to/venv` to `/var/www/sharpie/venv`
+- Change `/your/log/` to `/var/www/sharpie/logs/`
+
 Create log directory and apply configuration:
 
 ```bash
