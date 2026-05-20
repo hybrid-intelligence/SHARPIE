@@ -15,6 +15,7 @@ To regenerate this file after changing requirements, run:
 | channels_redis         | 4.3.0     | BSD                     |
 | crispy-bootstrap4      | 2026.2    | MIT                     |
 | django-crispy-forms    | 2.6       | MIT                     |
+| django-environ         | 0.11.2    | MIT License             |
 | django-extensions      | 4.1       | MIT                     |
 | myst-parser            | 3.0.1     | MIT License             |
 | opencv-python-headless | 4.13.0.92 | Apache Software License |
