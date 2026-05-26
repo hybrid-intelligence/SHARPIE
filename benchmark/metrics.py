@@ -186,6 +186,7 @@ def aggregate_metrics(
     participant_metrics: List[ParticipantMetrics],
     benchmark_id: str,
     target_steps: int,
+    include_timing_samples: bool = False,
 ) -> AggregateMetrics:
     """
     Aggregate metrics from multiple participants.
@@ -194,6 +195,7 @@ def aggregate_metrics(
         participant_metrics: List of per-participant metrics
         benchmark_id: Unique identifier for this benchmark run
         target_steps: Target number of steps per participant
+        include_timing_samples: Whether to include raw timing samples (default: False)
 
     Returns:
         AggregateMetrics: Combined statistics
@@ -287,7 +289,7 @@ def aggregate_metrics(
         avg_wait_time_seconds=round(avg_wait_time, 3),
         max_wait_time_seconds=round(max_wait_time, 3),
         avg_gameplay_duration_seconds=round(avg_gameplay_duration, 3),
-        participants=[m.to_dict() for m in participant_metrics],
+        participants=[m.to_dict(include_timing_samples) for m in participant_metrics],
     )
 
 
@@ -334,20 +336,21 @@ def save_multi_trial_results(
     results: MultiTrialResults,
     output_dir: str,
     filename: Optional[str] = None,
+    save_raw: bool = False,
 ) -> str:
     """
     Save multi-trial results to JSON with full detail.
     
-    Output includes:
-    - Per-trial aggregated metrics (FPS, RTT, throughput, etc.)
-    - Per-trial detailed participant data (timing samples, errors, etc.)
-    - Cross-trial summary statistics
-
+    Creates:
+    - Main summary file with aggregated statistics
+    - (Optional) Separate raw data files with per-participant timing samples
+    
     Args:
         results: Multi-trial results container
         output_dir: Directory to save results
         filename: Optional filename (default: config_name.json)
-
+        save_raw: Whether to save raw participant data (default: False)
+    
     Returns:
         str: Path to saved file
     """
@@ -356,6 +359,7 @@ def save_multi_trial_results(
     if filename is None:
         filename = f"{results.config_name}.json"
 
+    base_filename = results.config_name
     filepath = os.path.join(output_dir, filename)
 
     # Compute summary statistics
@@ -387,7 +391,58 @@ def save_multi_trial_results(
     with open(filepath, "w") as f:
         json.dump(output, f, indent=2)
 
+    # Save raw participant data to separate files if requested
+    if save_raw:
+        raw_files = save_raw_participant_data(
+            results.trials,
+            output_dir,
+            base_filename,
+        )
+        print(f"Raw participant data saved: {len(raw_files)} file(s)")
+
     return filepath
+
+
+def save_raw_participant_data(
+    trial_results: List[TrialResult],
+    output_dir: str,
+    base_filename: str,
+) -> List[str]:
+    """
+    Save raw per-participant timing data to separate JSON files.
+    
+    Creates one file per trial with detailed participant data.
+    
+    Args:
+        trial_results: List of trial results
+        output_dir: Directory to save files
+        base_filename: Base name for files (e.g., "benchmark_10p")
+    
+    Returns:
+        List of file paths created
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    file_paths = []
+    
+    for trial in trial_results:
+        filename = f"{base_filename}_trial_{trial.trial_number}_raw.json"
+        filepath = os.path.join(output_dir, filename)
+        
+        output = {
+            "trial_number": trial.trial_number,
+            "seed_used": trial.seed_used,
+            "benchmark_id": trial.metrics.benchmark_id,
+            "timestamp": trial.metrics.timestamp,
+            "num_participants": trial.metrics.num_participants,
+            "participants": trial.metrics.participants,
+        }
+        
+        with open(filepath, 'w') as f:
+            json.dump(output, f, indent=2)
+        
+        file_paths.append(filepath)
+    
+    return file_paths
 
 
 def print_comparison_table(results: List[AggregateMetrics]) -> str:

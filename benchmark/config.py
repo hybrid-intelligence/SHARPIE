@@ -42,6 +42,7 @@ class BenchmarkConfig:
     runner_timeout: float = 30.0  # Seconds to wait for runner to pick up session
     trials: int = 1  # Number of trials to run
     seed: int = 42  # Base random seed for reproducibility
+    save_raw_data: bool = False  # Whether to include timing_samples in saved output
 
 
 @dataclass
@@ -56,6 +57,7 @@ class ScalabilitySuite:
     verbose: bool = False
     trials: int = 1  # Number of trials to run
     seed: int = 42  # Base random seed for reproducibility
+    save_raw_data: bool = False  # Whether to include timing_samples in saved output
 
     def get_config(self, num_participants: int) -> BenchmarkConfig:
         """Get a benchmark config for a specific participant count."""
@@ -69,6 +71,7 @@ class ScalabilitySuite:
             verbose=self.verbose,
             trials=self.trials,
             seed=self.seed,
+            save_raw_data=self.save_raw_data,
         )
 
 
@@ -84,6 +87,7 @@ class NetworkLatencySuite:
     verbose: bool = False
     trials: int = 1  # Number of trials to run
     seed: int = 42  # Base random seed for reproducibility
+    save_raw_data: bool = False  # Whether to include timing_samples in saved output
 
     def get_config(self, latency_preset: str) -> BenchmarkConfig:
         """Get a benchmark config for a specific latency preset."""
@@ -98,6 +102,7 @@ class NetworkLatencySuite:
             verbose=self.verbose,
             trials=self.trials,
             seed=self.seed,
+            save_raw_data=self.save_raw_data,
         )
 
 
@@ -113,6 +118,7 @@ class ImageSizeSuite:
     verbose: bool = False
     trials: int = 1  # Number of trials to run
     seed: int = 42  # Base random seed for reproducibility
+    save_raw_data: bool = False  # Whether to include timing_samples in saved output
 
     def get_config(self, image_size_preset: str) -> BenchmarkConfig:
         """Get a benchmark config for a specific image size preset."""
@@ -127,6 +133,7 @@ class ImageSizeSuite:
             verbose=self.verbose,
             trials=self.trials,
             seed=self.seed,
+            save_raw_data=self.save_raw_data,
         )
 
 
@@ -169,6 +176,7 @@ class AIAgentConfig:
     runner_timeout: float = 30.0
     trials: int = 1  # Number of trials to run
     seed: int = 42  # Base random seed for reproducibility
+    save_raw_data: bool = False  # Whether to include timing_samples in saved output
 
 
 @dataclass
@@ -182,6 +190,7 @@ class AIAgentScalabilitySuite:
     verbose: bool = False
     trials: int = 1  # Number of trials to run
     seed: int = 42  # Base random seed for reproducibility
+    save_raw_data: bool = False  # Whether to include timing_samples in saved output
 
     def get_config(self, num_agents: int) -> AIAgentConfig:
         """Get a benchmark config for a specific agent count."""
@@ -194,6 +203,7 @@ class AIAgentScalabilitySuite:
             verbose=self.verbose,
             trials=self.trials,
             seed=self.seed,
+            save_raw_data=self.save_raw_data,
         )
 
 

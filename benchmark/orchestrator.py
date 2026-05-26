@@ -359,6 +359,7 @@ class BenchmarkOrchestrator:
             participant_metrics,
             benchmark_id=self.benchmark_id,
             target_steps=self.config.num_steps,
+            include_timing_samples=self.config.save_raw_data,
         )
 
         print(f"[{self.benchmark_id}] Benchmark complete")
@@ -726,6 +727,7 @@ class AIAgentOrchestrator:
             [participant_metrics],
             benchmark_id=self.benchmark_id,
             target_steps=self.config.num_steps,
+            include_timing_samples=self.config.save_raw_data,
         )
 
         print(f"[{self.benchmark_id}] Benchmark complete")

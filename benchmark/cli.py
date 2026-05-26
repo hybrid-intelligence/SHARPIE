@@ -194,6 +194,12 @@ Prerequisites:
         action="store_true",
         help="Output results as JSON",
     )
+    parser.add_argument(
+        "--raw-data",
+        action="store_true",
+        default=False,
+        help="Save raw per-participant timing data to separate files (default: False)",
+    )
 
     args = parser.parse_args()
 
@@ -207,7 +213,7 @@ Prerequisites:
         run_ai_agent_scalability_suite, run_network_latency_suite, run_image_size_suite,
         TrialResult
     )
-    from benchmark.metrics import print_comparison_table, MultiTrialResults, save_multi_trial_results
+    from benchmark.metrics import print_comparison_table, MultiTrialResults
     import json
 
     async def run():
@@ -220,6 +226,7 @@ Prerequisites:
                 verbose=args.verbose,
                 trials=args.trials,
                 seed=args.seed,
+                save_raw_data=args.raw_data,
             )
             results = await run_scalability_suite(suite)
 
@@ -276,6 +283,7 @@ Prerequisites:
                 verbose=args.verbose,
                 trials=args.trials,
                 seed=args.seed,
+                save_raw_data=args.raw_data,
             )
             results = await run_ai_agent_scalability_suite(suite)
 
@@ -331,6 +339,7 @@ Prerequisites:
                 verbose=args.verbose,
                 trials=args.trials,
                 seed=args.seed,
+                save_raw_data=args.raw_data,
             )
             results = await run_network_latency_suite(suite)
 
@@ -385,6 +394,7 @@ Prerequisites:
                 verbose=args.verbose,
                 trials=args.trials,
                 seed=args.seed,
+                save_raw_data=args.raw_data,
             )
             results = await run_image_size_suite(suite)
 
@@ -449,6 +459,7 @@ Prerequisites:
                 runner_timeout=args.runner_timeout,
                 trials=args.trials,
                 seed=args.seed,
+                save_raw_data=args.raw_data,
             )
 
             trial_results = await run_benchmark(config)

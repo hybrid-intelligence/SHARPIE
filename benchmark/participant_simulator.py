@@ -28,6 +28,7 @@ class TimingSample:
     step: int
     action_sent_time: float
     obs_received_time: float
+    action_taken: int = 0
     image_size: int = 0
 
     @property
@@ -132,9 +133,13 @@ class ParticipantMetrics:
             return 0.0
         return len(self.errors) / total
 
-    def to_dict(self) -> dict:
-        """Convert metrics to dictionary for JSON serialization."""
-        return {
+    def to_dict(self, include_timing_samples: bool = False) -> dict:
+        """Convert metrics to dictionary for JSON serialization.
+        
+        Args:
+            include_timing_samples: Whether to include raw timing samples (default: False)
+        """
+        result = {
             "participant_id": self.participant_id,
             "steps_completed": self.steps_completed,
             "total_duration_seconds": round(self.total_duration, 3),
@@ -149,10 +154,25 @@ class ParticipantMetrics:
                 "p95_ms": round(self.p95_rtt * 1000, 2),
                 "p99_ms": round(self.p99_rtt * 1000, 2),
             },
-            "errors": len(self.errors),
+            "errors": self.errors,
             "error_rate": round(self.error_rate, 4),
             "connected": self.connected,
         }
+        
+        if include_timing_samples:
+            result["timing_samples"] = [
+                {
+                    "step": s.step,
+                    "action_sent_time": s.action_sent_time,
+                    "obs_received_time": s.obs_received_time,
+                    "rtt_seconds": s.rtt,
+                    "action_taken": s.action_taken,
+                    "image_size": s.image_size,
+                }
+                for s in self.samples
+            ]
+        
+        return result
 
 
 class ParticipantSimulator:
@@ -270,10 +290,16 @@ class ParticipantSimulator:
 
                             # Record timing for pending action
                             if self._pending_action is not None:
+                                # Extract image size for bandwidth tracking
+                                image_base64 = data.get("image", "")
+                                image_size_bytes = len(image_base64) if image_base64 else 0
+                                
                                 sample = TimingSample(
                                     step=self._pending_action["step"],
                                     action_sent_time=self._pending_action["sent_time"],
                                     obs_received_time=time.time(),
+                                    action_taken=self._pending_action["action"],
+                                    image_size=image_size_bytes,
                                 )
                                 self.metrics.samples.append(sample)
                                 self._pending_action = None
@@ -336,6 +362,7 @@ class ParticipantSimulator:
         self._pending_action = {
             "step": step,
             "sent_time": time.time(),
+            "action": random_action,
         }
 
         await ws.send_json(action)
