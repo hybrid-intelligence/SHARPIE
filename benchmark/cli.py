@@ -22,6 +22,9 @@ Usage:
     # Single benchmark with simulated network latency
     python ../benchmark/cli.py -n 10 --latency global --connection-key YOUR_KEY
 
+    # Export per-timestep data to CSV (requires --raw-data)
+    python ../benchmark/cli.py -n 10 --raw-data --format csv --connection-key YOUR_KEY
+
     # Custom options
     python ../benchmark/cli.py -n 50 -s 200 --host localhost --port 8000 --connection-key YOUR_KEY -v
 """
@@ -64,6 +67,7 @@ Examples:
   python -m benchmark.cli -n 1 --image-size 512x512 -k KEY   Run with 512x512 render size
   python -m benchmark.cli -n 50 -v -k KEY        Run with verbose output
   python -m benchmark.cli -n 10 -t 3 --seed 123 -k KEY   Run 3 trials with custom seed
+  python -m benchmark.cli -n 10 --raw-data --format csv -k KEY   Export per-timestep data to CSV
 
 Latency presets:
   machine   - localhost (<0.1ms)
@@ -200,8 +204,18 @@ Prerequisites:
         default=False,
         help="Save raw per-participant timing data to separate files (default: False)",
     )
+    parser.add_argument(
+        "--format",
+        choices=["json", "csv"],
+        default="json",
+        help="Output format: json (default) or csv (per-timestep raw data, requires --raw-data)",
+    )
 
     args = parser.parse_args()
+    
+    # Validate CSV format requires raw-data
+    if args.format == "csv" and not args.raw_data:
+        parser.error("--format csv requires --raw-data to collect timing samples")
 
     # Import after argument parsing to avoid slow startup
     from benchmark.config import (
@@ -213,7 +227,7 @@ Prerequisites:
         run_ai_agent_scalability_suite, run_network_latency_suite, run_image_size_suite,
         TrialResult
     )
-    from benchmark.metrics import print_comparison_table, MultiTrialResults
+    from benchmark.metrics import print_comparison_table, MultiTrialResults, save_results_csv, save_multi_trial_results_csv
     import json
 
     async def run():
@@ -230,7 +244,22 @@ Prerequisites:
             )
             results = await run_scalability_suite(suite)
 
-            if args.json:
+            if args.format == "csv":
+                # Save all trials to CSV
+                for config_trials in results:
+                    if config_trials:
+                        config_name = config_trials[0].metrics.benchmark_id
+                        output_dir = args.output_dir
+                        if not os.path.isabs(output_dir):
+                            output_dir = os.path.join(os.path.dirname(os.getcwd()), output_dir)
+                        csv_path = save_multi_trial_results_csv(
+                            config_trials,
+                            suite.seed,
+                            output_dir,
+                            f"scalability_{config_trials[0].metrics.num_participants}p",
+                        )
+                        print(f"CSV saved to {csv_path}")
+            elif args.json:
                 # Serialize as list of config results, each containing trials
                 output = []
                 for config_trials in results:
@@ -287,7 +316,21 @@ Prerequisites:
             )
             results = await run_ai_agent_scalability_suite(suite)
 
-            if args.json:
+            if args.format == "csv":
+                for config_trials in results:
+                    if config_trials:
+                        config_name = config_trials[0].metrics.benchmark_id
+                        output_dir = args.output_dir
+                        if not os.path.isabs(output_dir):
+                            output_dir = os.path.join(os.path.dirname(os.getcwd()), output_dir)
+                        csv_path = save_multi_trial_results_csv(
+                            config_trials,
+                            suite.seed,
+                            output_dir,
+                            f"ai_agents_{config_trials[0].metrics.num_participants}a",
+                        )
+                        print(f"CSV saved to {csv_path}")
+            elif args.json:
                 output = []
                 for config_trials in results:
                     config_name = config_trials[0].metrics.benchmark_id if config_trials else "unknown"
@@ -343,7 +386,21 @@ Prerequisites:
             )
             results = await run_network_latency_suite(suite)
 
-            if args.json:
+            if args.format == "csv":
+                for config_trials in results:
+                    if config_trials:
+                        config_name = config_trials[0].metrics.benchmark_id
+                        output_dir = args.output_dir
+                        if not os.path.isabs(output_dir):
+                            output_dir = os.path.join(os.path.dirname(os.getcwd()), output_dir)
+                        csv_path = save_multi_trial_results_csv(
+                            config_trials,
+                            suite.seed,
+                            output_dir,
+                            f"network_latency_{config_name}",
+                        )
+                        print(f"CSV saved to {csv_path}")
+            elif args.json:
                 output = []
                 for config_trials in results:
                     config_name = config_trials[0].metrics.benchmark_id if config_trials else "unknown"
@@ -398,7 +455,21 @@ Prerequisites:
             )
             results = await run_image_size_suite(suite)
 
-            if args.json:
+            if args.format == "csv":
+                for config_trials in results:
+                    if config_trials:
+                        config_name = config_trials[0].metrics.benchmark_id
+                        output_dir = args.output_dir
+                        if not os.path.isabs(output_dir):
+                            output_dir = os.path.join(os.path.dirname(os.getcwd()), output_dir)
+                        csv_path = save_multi_trial_results_csv(
+                            config_trials,
+                            suite.seed,
+                            output_dir,
+                            f"image_size_{config_name}",
+                        )
+                        print(f"CSV saved to {csv_path}")
+            elif args.json:
                 output = []
                 for config_trials in results:
                     config_name = config_trials[0].metrics.benchmark_id if config_trials else "unknown"
@@ -464,7 +535,18 @@ Prerequisites:
 
             trial_results = await run_benchmark(config)
 
-            if args.json:
+            if args.format == "csv":
+                output_dir = args.output_dir
+                if not os.path.isabs(output_dir):
+                    output_dir = os.path.join(os.path.dirname(os.getcwd()), output_dir)
+                csv_path = save_multi_trial_results_csv(
+                    trial_results,
+                    config.seed,
+                    output_dir,
+                    trial_results[0].metrics.benchmark_id if trial_results else "benchmark",
+                )
+                print(f"CSV saved to {csv_path}")
+            elif args.json:
                 # Output all trials
                 output = {
                     "config": {

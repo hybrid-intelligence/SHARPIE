@@ -354,12 +354,19 @@ class BenchmarkOrchestrator:
         tasks = [sim.run() for sim in simulators]
         participant_metrics: List[ParticipantMetrics] = await asyncio.gather(*tasks)
 
+        # Format image size as string
+        h, w, _ = self.config.image_size
+        image_size_str = f"{h}x{w}"
+
         # Aggregate metrics
         metrics = aggregate_metrics(
             participant_metrics,
             benchmark_id=self.benchmark_id,
             target_steps=self.config.num_steps,
             include_timing_samples=self.config.save_raw_data,
+            num_agents=0,  # This is a participant benchmark
+            network_latency_ms=self.config.network_latency * 1000,  # Convert to ms
+            image_size=image_size_str,
         )
 
         print(f"[{self.benchmark_id}] Benchmark complete")
@@ -728,6 +735,9 @@ class AIAgentOrchestrator:
             benchmark_id=self.benchmark_id,
             target_steps=self.config.num_steps,
             include_timing_samples=self.config.save_raw_data,
+            num_agents=self.config.num_agents,  # This is an AI agent benchmark
+            network_latency_ms=0.0,  # No simulated latency for AI agents
+            image_size="64x64",  # Default for AI agent benchmarks
         )
 
         print(f"[{self.benchmark_id}] Benchmark complete")

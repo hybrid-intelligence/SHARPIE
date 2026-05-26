@@ -5,6 +5,7 @@ Provides functions to combine metrics from multiple participants,
 compute aggregate statistics, and generate reports.
 """
 
+import csv
 import json
 import os
 import statistics
@@ -112,7 +113,10 @@ class AggregateMetrics:
     benchmark_id: str
     timestamp: str
     num_participants: int
+    num_agents: int = 0
     target_steps: int
+    network_latency_ms: float = 0.0
+    image_size: str = "64x64"
     total_steps_completed: int
     total_errors: int
 
@@ -187,6 +191,9 @@ def aggregate_metrics(
     benchmark_id: str,
     target_steps: int,
     include_timing_samples: bool = False,
+    num_agents: int = 0,
+    network_latency_ms: float = 0.0,
+    image_size: str = "64x64",
 ) -> AggregateMetrics:
     """
     Aggregate metrics from multiple participants.
@@ -196,6 +203,9 @@ def aggregate_metrics(
         benchmark_id: Unique identifier for this benchmark run
         target_steps: Target number of steps per participant
         include_timing_samples: Whether to include raw timing samples (default: False)
+        num_agents: Number of AI agents (0 for participant benchmarks)
+        network_latency_ms: Simulated network latency in milliseconds
+        image_size: Render size as string (e.g., "64x64", "512x512")
 
     Returns:
         AggregateMetrics: Combined statistics
@@ -205,7 +215,10 @@ def aggregate_metrics(
             benchmark_id=benchmark_id,
             timestamp=datetime.now().isoformat(),
             num_participants=0,
+            num_agents=num_agents,
             target_steps=target_steps,
+            network_latency_ms=network_latency_ms,
+            image_size=image_size,
             total_steps_completed=0,
             total_errors=0,
             avg_fps=0.0,
@@ -267,7 +280,10 @@ def aggregate_metrics(
         benchmark_id=benchmark_id,
         timestamp=datetime.now().isoformat(),
         num_participants=len(participant_metrics),
+        num_agents=num_agents,
         target_steps=target_steps,
+        network_latency_ms=network_latency_ms,
+        image_size=image_size,
         total_steps_completed=total_steps,
         total_errors=total_errors,
         avg_fps=statistics.mean(fps_values) if fps_values else 0,
@@ -443,6 +459,154 @@ def save_raw_participant_data(
         file_paths.append(filepath)
     
     return file_paths
+
+
+def save_results_csv(
+    metrics: AggregateMetrics,
+    output_dir: str,
+    filename: Optional[str] = None,
+) -> str:
+    """
+    Save per-timestep benchmark data to CSV.
+    
+    Each row = one timestep from one participant/agent.
+    Contains only per-step raw timing data.
+    
+    Columns: benchmark_id, participants, agents, seed, trial, latency_ms, image_size,
+             agent_id, timestep, action_sent_time, obs_received_time, rtt_ms,
+             action_taken, image_bytes
+    
+    Args:
+        metrics: Aggregated metrics (must include timing samples from --raw-data)
+        output_dir: Directory to save results
+        filename: Optional filename (default: {benchmark_id}.csv)
+    
+    Returns:
+        str: Path to saved CSV file
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    
+    if filename is None:
+        filename = f"{metrics.benchmark_id}.csv"
+    
+    filepath = os.path.join(output_dir, filename)
+    
+    with open(filepath, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow([
+            'benchmark_id',
+            'participants',
+            'agents',
+            'seed',
+            'trial',
+            'latency_ms',
+            'image_size',
+            'agent_id',
+            'timestep',
+            'action_sent_time',
+            'obs_received_time',
+            'rtt_ms',
+            'action_taken',
+            'image_bytes',
+        ])
+        
+        for participant_data in metrics.participants:
+            participant_id = participant_data.get('participant_id', 'unknown')
+            timing_samples = participant_data.get('timing_samples', [])
+            
+            for sample in timing_samples:
+                writer.writerow([
+                    metrics.benchmark_id,
+                    metrics.num_participants,
+                    metrics.num_agents,
+                    '',  # seed - not available in single AggregateMetrics
+                    '',  # trial - not available in single AggregateMetrics
+                    metrics.network_latency_ms,
+                    metrics.image_size,
+                    participant_id,
+                    sample.get('step', 0),
+                    sample.get('action_sent_time', 0),
+                    sample.get('obs_received_time', 0),
+                    round(sample.get('rtt_seconds', 0) * 1000, 3),
+                    sample.get('action_taken', 0),
+                    sample.get('image_size', 0),
+                ])
+    
+    return filepath
+
+
+def save_multi_trial_results_csv(
+    trial_results: List['TrialResult'],
+    base_seed: int,
+    output_dir: str,
+    base_filename: str,
+) -> str:
+    """
+    Save multi-trial per-timestep data to a single CSV file.
+    
+    Combines all trials into one file with trial column for filtering.
+    
+    Args:
+        trial_results: List of TrialResult objects from orchestrator
+        base_seed: Base random seed used for the benchmark
+        output_dir: Directory to save results
+        base_filename: Base name for the file (e.g., "benchmark_10p")
+    
+    Returns:
+        str: Path to saved CSV file
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    
+    filename = f"{base_filename}.csv"
+    filepath = os.path.join(output_dir, filename)
+    
+    with open(filepath, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow([
+            'benchmark_id',
+            'participants',
+            'agents',
+            'seed',
+            'trial',
+            'latency_ms',
+            'image_size',
+            'agent_id',
+            'timestep',
+            'action_sent_time',
+            'obs_received_time',
+            'rtt_ms',
+            'action_taken',
+            'image_bytes',
+        ])
+        
+        for trial in trial_results:
+            metrics = trial.metrics
+            
+            for participant_data in metrics.participants:
+                participant_id = participant_data.get('participant_id', 'unknown')
+                timing_samples = participant_data.get('timing_samples', [])
+                
+                for sample in timing_samples:
+                    writer.writerow([
+                        metrics.benchmark_id,
+                        metrics.num_participants,
+                        metrics.num_agents,
+                        trial.seed_used,
+                        trial.trial_number,
+                        metrics.network_latency_ms,
+                        metrics.image_size,
+                        participant_id,
+                        sample.get('step', 0),
+                        sample.get('action_sent_time', 0),
+                        sample.get('obs_received_time', 0),
+                        round(sample.get('rtt_seconds', 0) * 1000, 3),
+                        sample.get('action_taken', 0),
+                        sample.get('image_size', 0),
+                    ])
+    
+    return filepath
+    
+    return filepath
 
 
 def print_comparison_table(results: List[AggregateMetrics]) -> str:
