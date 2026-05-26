@@ -55,6 +55,7 @@ def main():
         epilog="""
 Examples:
   python -m benchmark.cli -n 10 -s 100 -k KEY    Run 10 participants for 100 steps
+  python -m benchmark.cli -n 10 -s 100 -t 5 -k KEY    Run 10 participants for 100 steps, 5 trials
   python -m benchmark.cli --suite scalability -k KEY  Run participant scalability suite
   python -m benchmark.cli --suite ai-agents -k KEY   Run AI agent scalability suite
   python -m benchmark.cli --suite network-latency -k KEY  Run network latency suite
@@ -62,6 +63,7 @@ Examples:
   python -m benchmark.cli -n 10 --latency global -k KEY   Run with 200ms simulated latency
   python -m benchmark.cli -n 1 --image-size 512x512 -k KEY   Run with 512x512 render size
   python -m benchmark.cli -n 50 -v -k KEY        Run with verbose output
+  python -m benchmark.cli -n 10 -t 3 --seed 123 -k KEY   Run 3 trials with custom seed
 
 Latency presets:
   machine   - localhost (<0.1ms)
@@ -168,6 +170,18 @@ Prerequisites:
         default=30.0,
         help="Seconds to wait for runner to pick up session (default: 30.0)",
     )
+    parser.add_argument(
+        "-t", "--trials",
+        type=int,
+        default=3,
+        help="Number of trials to run per configuration (default: 3)",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+        help="Base random seed for reproducibility (default: 42)",
+    )
 
     # Output options
     parser.add_argument(
@@ -190,9 +204,11 @@ Prerequisites:
     )
     from benchmark.orchestrator import (
         run_benchmark, run_scalability_suite, run_ai_agent_benchmark,
-        run_ai_agent_scalability_suite, run_network_latency_suite, run_image_size_suite
+        run_ai_agent_scalability_suite, run_network_latency_suite, run_image_size_suite,
+        TrialResult
     )
-    from benchmark.metrics import print_comparison_table
+    from benchmark.metrics import print_comparison_table, MultiTrialResults, save_multi_trial_results
+    import json
 
     async def run():
         if args.suite == "scalability":
@@ -202,17 +218,54 @@ Prerequisites:
                 port=args.port,
                 runner_connection_key=args.connection_key,
                 verbose=args.verbose,
+                trials=args.trials,
+                seed=args.seed,
             )
             results = await run_scalability_suite(suite)
 
             if args.json:
-                import json
-                print(json.dumps([r.to_dict() for r in results], indent=2))
+                # Serialize as list of config results, each containing trials
+                output = []
+                for config_trials in results:
+                    config_name = config_trials[0].metrics.benchmark_id if config_trials else "unknown"
+                    multi_trial = MultiTrialResults(
+                        config_name=config_name,
+                        total_trials=len(config_trials),
+                        base_seed=suite.seed,
+                        trials=config_trials,
+                    )
+                    output.append({
+                        "config_name": config_name,
+                        "trials": [
+                            {
+                                "trial_number": t.trial_number,
+                                "seed_used": t.seed_used,
+                                "metrics": t.metrics.to_dict(),
+                            }
+                            for t in config_trials
+                        ],
+                        "summary": multi_trial.get_summary().__dict__,
+                    })
+                print(json.dumps(output, indent=2))
             else:
                 print("\n" + "=" * 60)
                 print("SCALABILITY BENCHMARK RESULTS")
                 print("=" * 60)
-                print(print_comparison_table(results))
+                # Print summary for each config
+                for config_trials in results:
+                    if config_trials:
+                        config_name = config_trials[0].metrics.benchmark_id
+                        num_participants = config_trials[0].metrics.num_participants
+                        print(f"\n{num_participants} participants ({len(config_trials)} trials):")
+                        multi_trial = MultiTrialResults(
+                            config_name=config_name,
+                            total_trials=len(config_trials),
+                            base_seed=suite.seed,
+                            trials=config_trials,
+                        )
+                        summary = multi_trial.get_summary()
+                        print(f"  Avg FPS: {summary.avg_fps.mean:.2f} ± {summary.avg_fps.stddev:.2f}")
+                        print(f"  Median RTT: {summary.median_rtt_ms.mean:.2f} ± {summary.median_rtt_ms.stddev:.2f}ms")
 
         elif args.suite == "ai-agents":
             suite = AIAgentScalabilitySuite(
@@ -221,17 +274,52 @@ Prerequisites:
                 port=args.port,
                 runner_connection_key=args.connection_key,
                 verbose=args.verbose,
+                trials=args.trials,
+                seed=args.seed,
             )
             results = await run_ai_agent_scalability_suite(suite)
 
             if args.json:
-                import json
-                print(json.dumps([r.to_dict() for r in results], indent=2))
+                output = []
+                for config_trials in results:
+                    config_name = config_trials[0].metrics.benchmark_id if config_trials else "unknown"
+                    multi_trial = MultiTrialResults(
+                        config_name=config_name,
+                        total_trials=len(config_trials),
+                        base_seed=suite.seed,
+                        trials=config_trials,
+                    )
+                    output.append({
+                        "config_name": config_name,
+                        "trials": [
+                            {
+                                "trial_number": t.trial_number,
+                                "seed_used": t.seed_used,
+                                "metrics": t.metrics.to_dict(),
+                            }
+                            for t in config_trials
+                        ],
+                        "summary": multi_trial.get_summary().__dict__,
+                    })
+                print(json.dumps(output, indent=2))
             else:
                 print("\n" + "=" * 60)
                 print("AI AGENT SCALABILITY BENCHMARK RESULTS")
                 print("=" * 60)
-                print(print_comparison_table(results))
+                for config_trials in results:
+                    if config_trials:
+                        config_name = config_trials[0].metrics.benchmark_id
+                        num_agents = config_trials[0].metrics.num_participants
+                        print(f"\n{num_agents} AI agents ({len(config_trials)} trials):")
+                        multi_trial = MultiTrialResults(
+                            config_name=config_name,
+                            total_trials=len(config_trials),
+                            base_seed=suite.seed,
+                            trials=config_trials,
+                        )
+                        summary = multi_trial.get_summary()
+                        print(f"  Avg FPS: {summary.avg_fps.mean:.2f} ± {summary.avg_fps.stddev:.2f}")
+                        print(f"  Median RTT: {summary.median_rtt_ms.mean:.2f} ± {summary.median_rtt_ms.stddev:.2f}ms")
 
         elif args.suite == "network-latency":
             suite = NetworkLatencySuite(
@@ -241,17 +329,51 @@ Prerequisites:
                 port=args.port,
                 runner_connection_key=args.connection_key,
                 verbose=args.verbose,
+                trials=args.trials,
+                seed=args.seed,
             )
             results = await run_network_latency_suite(suite)
 
             if args.json:
-                import json
-                print(json.dumps([r.to_dict() for r in results], indent=2))
+                output = []
+                for config_trials in results:
+                    config_name = config_trials[0].metrics.benchmark_id if config_trials else "unknown"
+                    multi_trial = MultiTrialResults(
+                        config_name=config_name,
+                        total_trials=len(config_trials),
+                        base_seed=suite.seed,
+                        trials=config_trials,
+                    )
+                    output.append({
+                        "config_name": config_name,
+                        "trials": [
+                            {
+                                "trial_number": t.trial_number,
+                                "seed_used": t.seed_used,
+                                "metrics": t.metrics.to_dict(),
+                            }
+                            for t in config_trials
+                        ],
+                        "summary": multi_trial.get_summary().__dict__,
+                    })
+                print(json.dumps(output, indent=2))
             else:
                 print("\n" + "=" * 60)
                 print("NETWORK LATENCY BENCHMARK RESULTS")
                 print("=" * 60)
-                print(print_comparison_table(results))
+                for config_trials in results:
+                    if config_trials:
+                        config_name = config_trials[0].metrics.benchmark_id
+                        multi_trial = MultiTrialResults(
+                            config_name=config_name,
+                            total_trials=len(config_trials),
+                            base_seed=suite.seed,
+                            trials=config_trials,
+                        )
+                        summary = multi_trial.get_summary()
+                        print(f"\nConfig: {config_name} ({len(config_trials)} trials)")
+                        print(f"  Avg FPS: {summary.avg_fps.mean:.2f} ± {summary.avg_fps.stddev:.2f}")
+                        print(f"  Median RTT: {summary.median_rtt_ms.mean:.2f} ± {summary.median_rtt_ms.stddev:.2f}ms")
 
         elif args.suite == "image-size":
             suite = ImageSizeSuite(
@@ -261,17 +383,51 @@ Prerequisites:
                 port=args.port,
                 runner_connection_key=args.connection_key,
                 verbose=args.verbose,
+                trials=args.trials,
+                seed=args.seed,
             )
             results = await run_image_size_suite(suite)
 
             if args.json:
-                import json
-                print(json.dumps([r.to_dict() for r in results], indent=2))
+                output = []
+                for config_trials in results:
+                    config_name = config_trials[0].metrics.benchmark_id if config_trials else "unknown"
+                    multi_trial = MultiTrialResults(
+                        config_name=config_name,
+                        total_trials=len(config_trials),
+                        base_seed=suite.seed,
+                        trials=config_trials,
+                    )
+                    output.append({
+                        "config_name": config_name,
+                        "trials": [
+                            {
+                                "trial_number": t.trial_number,
+                                "seed_used": t.seed_used,
+                                "metrics": t.metrics.to_dict(),
+                            }
+                            for t in config_trials
+                        ],
+                        "summary": multi_trial.get_summary().__dict__,
+                    })
+                print(json.dumps(output, indent=2))
             else:
                 print("\n" + "=" * 60)
                 print("IMAGE SIZE BENCHMARK RESULTS")
                 print("=" * 60)
-                print(print_comparison_table(results))
+                for config_trials in results:
+                    if config_trials:
+                        config_name = config_trials[0].metrics.benchmark_id
+                        multi_trial = MultiTrialResults(
+                            config_name=config_name,
+                            total_trials=len(config_trials),
+                            base_seed=suite.seed,
+                            trials=config_trials,
+                        )
+                        summary = multi_trial.get_summary()
+                        print(f"\nConfig: {config_name} ({len(config_trials)} trials)")
+                        print(f"  Avg FPS: {summary.avg_fps.mean:.2f} ± {summary.avg_fps.stddev:.2f}")
+                        print(f"  Median RTT: {summary.median_rtt_ms.mean:.2f} ± {summary.median_rtt_ms.stddev:.2f}ms")
 
         else:
             # Single benchmark
@@ -291,15 +447,54 @@ Prerequisites:
                 output_dir=args.output_dir,
                 cleanup=not args.no_cleanup,
                 runner_timeout=args.runner_timeout,
+                trials=args.trials,
+                seed=args.seed,
             )
 
-            metrics = await run_benchmark(config)
+            trial_results = await run_benchmark(config)
 
             if args.json:
-                import json
-                print(json.dumps(metrics.to_dict(), indent=2))
+                # Output all trials
+                output = {
+                    "config": {
+                        "benchmark_id": trial_results[0].metrics.benchmark_id if trial_results else "unknown",
+                        "total_trials": len(trial_results),
+                        "base_seed": config.seed,
+                    },
+                    "trials": [
+                        {
+                            "trial_number": t.trial_number,
+                            "seed_used": t.seed_used,
+                            "metrics": t.metrics.to_dict(),
+                        }
+                        for t in trial_results
+                    ],
+                }
+                print(json.dumps(output, indent=2))
             else:
-                print("\n" + metrics.summary())
+                # Print summary for single benchmark
+                if len(trial_results) == 1:
+                    # Single trial, use existing format
+                    print("\n" + trial_results[0].metrics.summary())
+                else:
+                    # Multiple trials, print summary statistics
+                    print("\n" + "=" * 60)
+                    print(f"BENCHMARK RESULTS ({len(trial_results)} trials)")
+                    print("=" * 60)
+                    multi_trial = MultiTrialResults(
+                        config_name=trial_results[0].metrics.benchmark_id,
+                        total_trials=len(trial_results),
+                        base_seed=config.seed,
+                        trials=trial_results,
+                    )
+                    summary = multi_trial.get_summary()
+                    print(f"\nPerformance:")
+                    print(f"  Avg FPS: {summary.avg_fps.mean:.2f} ± {summary.avg_fps.stddev:.2f}")
+                    print(f"  Median RTT: {summary.median_rtt_ms.mean:.2f} ± {summary.median_rtt_ms.stddev:.2f}ms")
+                    print(f"  Throughput: {summary.total_messages_per_second.mean:.2f} ± {summary.total_messages_per_second.stddev:.2f} msg/s")
+                    print(f"\nAcross {len(trial_results)} trials:")
+                    for i, t in enumerate(trial_results):
+                        print(f"  Trial {i} (seed={t.seed_used}): FPS={t.metrics.avg_fps:.2f}, RTT={t.metrics.median_rtt_ms:.2f}ms")
 
     try:
         asyncio.run(run())

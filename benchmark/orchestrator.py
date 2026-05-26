@@ -27,6 +27,8 @@ import shutil
 import sys
 import uuid
 from typing import List, Tuple, Optional
+from dataclasses import dataclass
+import numpy as np
 
 # Path setup to avoid conflicts between:
 # - top-level 'runner' directory and 'webserver/runner' Django app
@@ -72,13 +74,23 @@ _BENCHMARK_DIR = os.path.dirname(os.path.abspath(__file__))
 _RESULTS_DIR = os.path.join(_BENCHMARK_DIR, 'results')
 
 
+@dataclass
+class TrialResult:
+    """Container for a single trial result."""
+    trial_number: int
+    metrics: 'AggregateMetrics'
+    seed_used: int
+
+
 class BenchmarkOrchestrator:
     """
     Orchestrates benchmark setup, execution, and cleanup.
     """
 
-    def __init__(self, config: BenchmarkConfig):
+    def __init__(self, config: BenchmarkConfig, seed: int = 42):
         self.config = config
+        self.seed = seed
+        self.rng = np.random.default_rng(seed)
         self.test_users: List[User] = []
         self.test_participants: List[Participant] = []
         self.test_session: Optional[Session] = None
@@ -321,7 +333,9 @@ class BenchmarkOrchestrator:
 
         # Create participant simulators
         simulators = []
-        for participant_id, session_cookie, role in cookies:
+        for i, (participant_id, session_cookie, role) in enumerate(cookies):
+            # Generate unique seed for each participant from orchestrator RNG
+            participant_seed = int(self.rng.integers(0, 2**31))
             simulator = ParticipantSimulator(
                 participant_id=participant_id,
                 session_cookie=session_cookie,
@@ -332,6 +346,7 @@ class BenchmarkOrchestrator:
                 connection_timeout=self.config.runner_timeout,
                 verbose=self.config.verbose,
                 network_latency=self.config.network_latency,
+                seed=participant_seed,
             )
             simulators.append(simulator)
 
@@ -419,21 +434,36 @@ class BenchmarkOrchestrator:
             await self.cleanup()
 
 
-async def run_benchmark(config: BenchmarkConfig) -> AggregateMetrics:
+async def run_benchmark(config: BenchmarkConfig) -> List[TrialResult]:
     """
-    Run a single benchmark with the given configuration.
+    Run benchmark multiple times with controlled seeds.
 
     Args:
         config: Benchmark configuration
 
     Returns:
-        AggregateMetrics: Combined metrics from all participants
+        List[TrialResult]: Results for each trial
     """
-    orchestrator = BenchmarkOrchestrator(config)
-    return await orchestrator.execute()
+    results = []
+    
+    for trial in range(config.trials):
+        # Generate trial-specific seed by offsetting base seed
+        trial_seed = config.seed + trial
+        
+        # Create orchestrator with trial-specific seed
+        orchestrator = BenchmarkOrchestrator(config, seed=trial_seed)
+        
+        metrics = await orchestrator.execute()
+        results.append(TrialResult(
+            trial_number=trial,
+            metrics=metrics,
+            seed_used=trial_seed
+        ))
+    
+    return results
 
 
-async def run_scalability_suite(suite_config) -> List[AggregateMetrics]:
+async def run_scalability_suite(suite_config) -> List[List[TrialResult]]:
     """
     Run the full scalability suite.
 
@@ -441,14 +471,14 @@ async def run_scalability_suite(suite_config) -> List[AggregateMetrics]:
         suite_config: ScalabilitySuite configuration
 
     Returns:
-        List[AggregateMetrics]: Results for each participant count
+        List[List[TrialResult]]: Results for each participant count (each with multiple trials)
     """
     results = []
 
     for num_participants in suite_config.participant_counts:
         config = suite_config.get_config(num_participants)
-        metrics = await run_benchmark(config)
-        results.append(metrics)
+        trial_results = await run_benchmark(config)
+        results.append(trial_results)
 
     return results
 
@@ -462,8 +492,10 @@ class AIAgentOrchestrator:
     the session start.
     """
 
-    def __init__(self, config: AIAgentConfig):
+    def __init__(self, config: AIAgentConfig, seed: int = 42):
         self.config = config
+        self.seed = seed
+        self.rng = np.random.default_rng(seed)
         self.test_user: Optional[User] = None
         self.test_participant: Optional[Participant] = None
         self.test_session: Optional[Session] = None
@@ -683,6 +715,7 @@ class AIAgentOrchestrator:
             connection_timeout=self.config.runner_timeout,
             verbose=self.config.verbose,
             send_actions=False,  # AI agents run policies, no participant input needed
+            seed=self.seed,
         )
 
         # Run the simulator (it just observes steps, no actions to send)
@@ -755,20 +788,62 @@ class AIAgentOrchestrator:
             await self.cleanup()
 
 
-async def run_ai_agent_benchmark(config: AIAgentConfig) -> AggregateMetrics:
-    """Run a single AI agent benchmark with the given configuration."""
-    orchestrator = AIAgentOrchestrator(config)
-    return await orchestrator.execute()
+async def run_ai_agent_benchmark(config: AIAgentConfig) -> List[TrialResult]:
+    """Run AI agent benchmark multiple times with controlled seeds."""
+    results = []
+    
+    for trial in range(config.trials):
+        trial_seed = config.seed + trial
+        orchestrator = AIAgentOrchestrator(config, seed=trial_seed)
+        metrics = await orchestrator.execute()
+        results.append(TrialResult(
+            trial_number=trial,
+            metrics=metrics,
+            seed_used=trial_seed
+        ))
+    
+    return results
 
 
-async def run_ai_agent_scalability_suite(suite_config) -> List[AggregateMetrics]:
+async def run_ai_agent_scalability_suite(suite_config) -> List[List[TrialResult]]:
     """Run the full AI agent scalability suite."""
     results = []
 
     for num_agents in suite_config.agent_counts:
         config = suite_config.get_config(num_agents)
-        metrics = await run_ai_agent_benchmark(config)
-        results.append(metrics)
+        trial_results = await run_ai_agent_benchmark(config)
+        results.append(trial_results)
+
+    return results
+
+
+async def run_network_latency_suite(suite_config) -> List[List[TrialResult]]:
+    """Run the network latency test suite."""
+    from .config import NETWORK_PRESETS
+    results = []
+
+    for latency_preset in suite_config.latency_presets:
+        config = suite_config.get_config(latency_preset)
+        latency_ms = NETWORK_PRESETS.get(latency_preset, 0.0) * 1000
+        print(f"\nRunning benchmark with {latency_preset} latency ({latency_ms:.1f}ms)...")
+        trial_results = await run_benchmark(config)
+        results.append(trial_results)
+
+    return results
+
+
+async def run_image_size_suite(suite_config) -> List[List[TrialResult]]:
+    """Run the image size test suite."""
+    from .config import IMAGE_SIZE_PRESETS
+    results = []
+
+    for image_size_preset in suite_config.image_size_presets:
+        config = suite_config.get_config(image_size_preset)
+        image_size = IMAGE_SIZE_PRESETS.get(image_size_preset, (64, 64, 3))
+        h, w, _ = image_size
+        print(f"\nRunning benchmark with {image_size_preset} image size ({h}x{w})...")
+        trial_results = await run_benchmark(config)
+        results.append(trial_results)
 
     return results
 

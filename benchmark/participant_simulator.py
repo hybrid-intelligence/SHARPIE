@@ -11,6 +11,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Optional
 import statistics
+import numpy as np
 
 try:
     import aiohttp
@@ -174,6 +175,7 @@ class ParticipantSimulator:
         verbose: bool = False,
         send_actions: bool = True,
         network_latency: float = 0.0,
+        seed: Optional[int] = None,
     ):
         """
         Initialize participant simulator.
@@ -189,6 +191,7 @@ class ParticipantSimulator:
             verbose: Enable verbose logging
             send_actions: Whether to send actions (False for passive observers)
             network_latency: Simulated network latency in seconds (added to each message)
+            seed: Random seed for reproducible action sequences
         """
         self.participant_id = participant_id
         self.session_cookie = session_cookie
@@ -200,6 +203,8 @@ class ParticipantSimulator:
         self.verbose = verbose
         self.send_actions = send_actions
         self.network_latency = network_latency
+        self.seed = seed
+        self.rng = np.random.default_rng(seed)
 
         self.metrics = ParticipantMetrics(
             participant_id=participant_id,
@@ -311,15 +316,20 @@ class ParticipantSimulator:
                 self.log(f"Completed {step_count} steps")
 
     async def _send_action(self, ws, step: int):
-        """Send a hardcoded no-op action (action=0) to the server."""
+        """Send a random action (controlled by seed) to the server."""
         await asyncio.sleep(self.action_interval)
+
+        # Choose random action from valid action space
+        # Overcooked-style actions: 0=up, 1=down, 2=left, 3=right, 4=interact
+        action_space = [0, 1, 2, 3, 4]
+        random_action = int(self.rng.choice(action_space))
 
         # Participant sends action to be received by the runner
         # The RunConsumer forwards private messages to the runner
         action = {
             "type": "private",
             "message": "action",
-            "action": 0,  # Default "no-op" action
+            "action": random_action,
             "role": self.role,
         }
 
@@ -329,4 +339,4 @@ class ParticipantSimulator:
         }
 
         await ws.send_json(action)
-        self.log(f"Sent action for step {step}")
+        self.log(f"Sent action {random_action} for step {step}")

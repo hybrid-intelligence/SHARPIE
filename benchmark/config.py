@@ -40,6 +40,8 @@ class BenchmarkConfig:
     output_dir: str = "benchmark/results"
     cleanup: bool = True  # Delete test users after benchmark
     runner_timeout: float = 30.0  # Seconds to wait for runner to pick up session
+    trials: int = 1  # Number of trials to run
+    seed: int = 42  # Base random seed for reproducibility
 
 
 @dataclass
@@ -52,6 +54,8 @@ class ScalabilitySuite:
     runner_connection_key: str = ""
     network_latency: float = 0.0  # Simulated network latency in seconds
     verbose: bool = False
+    trials: int = 1  # Number of trials to run
+    seed: int = 42  # Base random seed for reproducibility
 
     def get_config(self, num_participants: int) -> BenchmarkConfig:
         """Get a benchmark config for a specific participant count."""
@@ -63,6 +67,8 @@ class ScalabilitySuite:
             runner_connection_key=self.runner_connection_key,
             network_latency=self.network_latency,
             verbose=self.verbose,
+            trials=self.trials,
+            seed=self.seed,
         )
 
 
@@ -76,6 +82,8 @@ class NetworkLatencySuite:
     port: int = 8000
     runner_connection_key: str = ""
     verbose: bool = False
+    trials: int = 1  # Number of trials to run
+    seed: int = 42  # Base random seed for reproducibility
 
     def get_config(self, latency_preset: str) -> BenchmarkConfig:
         """Get a benchmark config for a specific latency preset."""
@@ -88,6 +96,8 @@ class NetworkLatencySuite:
             runner_connection_key=self.runner_connection_key,
             network_latency=latency,
             verbose=self.verbose,
+            trials=self.trials,
+            seed=self.seed,
         )
 
 
@@ -101,6 +111,8 @@ class ImageSizeSuite:
     port: int = 8000
     runner_connection_key: str = ""
     verbose: bool = False
+    trials: int = 1  # Number of trials to run
+    seed: int = 42  # Base random seed for reproducibility
 
     def get_config(self, image_size_preset: str) -> BenchmarkConfig:
         """Get a benchmark config for a specific image size preset."""
@@ -113,6 +125,8 @@ class ImageSizeSuite:
             runner_connection_key=self.runner_connection_key,
             image_size=image_size,
             verbose=self.verbose,
+            trials=self.trials,
+            seed=self.seed,
         )
 
 
@@ -153,6 +167,8 @@ class AIAgentConfig:
     output_dir: str = "benchmark/results"
     cleanup: bool = True
     runner_timeout: float = 30.0
+    trials: int = 1  # Number of trials to run
+    seed: int = 42  # Base random seed for reproducibility
 
 
 @dataclass
@@ -164,6 +180,8 @@ class AIAgentScalabilitySuite:
     port: int = 8000
     runner_connection_key: str = ""
     verbose: bool = False
+    trials: int = 1  # Number of trials to run
+    seed: int = 42  # Base random seed for reproducibility
 
     def get_config(self, num_agents: int) -> AIAgentConfig:
         """Get a benchmark config for a specific agent count."""
@@ -174,6 +192,8 @@ class AIAgentScalabilitySuite:
             port=self.port,
             runner_connection_key=self.runner_connection_key,
             verbose=self.verbose,
+            trials=self.trials,
+            seed=self.seed,
         )
 
 

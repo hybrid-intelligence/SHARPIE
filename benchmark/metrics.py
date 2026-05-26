@@ -11,8 +11,99 @@ import statistics
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from typing import List, Optional
+import numpy as np
 
 from .participant_simulator import ParticipantMetrics
+
+
+@dataclass
+class TrialResult:
+    """Container for a single trial result."""
+    trial_number: int
+    metrics: 'AggregateMetrics'
+    seed_used: int
+
+
+@dataclass
+class MetricStatistics:
+    """Statistics for a single metric across trials."""
+    mean: float
+    median: float
+    stddev: float
+    min_val: float
+    max_val: float
+    
+    def to_dict(self) -> dict:
+        return {
+            "mean": round(self.mean, 3),
+            "median": round(self.median, 3),
+            "stddev": round(self.stddev, 3),
+            "min": round(self.min_val, 3),
+            "max": round(self.max_val, 3),
+        }
+
+
+@dataclass
+class MultiTrialResults:
+    """Container for multi-trial benchmark results."""
+    config_name: str
+    total_trials: int
+    base_seed: int
+    trials: List[TrialResult]
+    
+    def get_summary(self) -> 'TrialStatisticsSummary':
+        """Compute statistics across all trials."""
+        return compute_multi_trial_statistics(self.trials)
+
+
+@dataclass
+class TrialStatisticsSummary:
+    """Summary statistics across multiple trials."""
+    avg_fps: MetricStatistics
+    median_rtt_ms: MetricStatistics
+    total_messages_per_second: MetricStatistics
+    error_rate: MetricStatistics
+    avg_gameplay_duration_seconds: MetricStatistics
+
+
+def compute_statistics(values: List[float]) -> MetricStatistics:
+    """Compute statistics across values."""
+    if not values:
+        return MetricStatistics(mean=0, median=0, stddev=0, min_val=0, max_val=0)
+    
+    return MetricStatistics(
+        mean=float(np.mean(values)),
+        median=float(np.median(values)),
+        stddev=float(np.std(values)),
+        min_val=float(np.min(values)),
+        max_val=float(np.max(values))
+    )
+
+
+def compute_multi_trial_statistics(trial_results: List[TrialResult]) -> TrialStatisticsSummary:
+    """Compute statistics across multiple trials."""
+    if not trial_results:
+        return TrialStatisticsSummary(
+            avg_fps=compute_statistics([]),
+            median_rtt_ms=compute_statistics([]),
+            total_messages_per_second=compute_statistics([]),
+            error_rate=compute_statistics([]),
+            avg_gameplay_duration_seconds=compute_statistics([]),
+        )
+    
+    avg_fps_values = [t.metrics.avg_fps for t in trial_results]
+    median_rtt_values = [t.metrics.median_rtt_ms for t in trial_results]
+    throughput_values = [t.metrics.total_messages_per_second for t in trial_results]
+    error_rate_values = [t.metrics.error_rate for t in trial_results]
+    duration_values = [t.metrics.avg_gameplay_duration_seconds for t in trial_results]
+    
+    return TrialStatisticsSummary(
+        avg_fps=compute_statistics(avg_fps_values),
+        median_rtt_ms=compute_statistics(median_rtt_values),
+        total_messages_per_second=compute_statistics(throughput_values),
+        error_rate=compute_statistics(error_rate_values),
+        avg_gameplay_duration_seconds=compute_statistics(duration_values),
+    )
 
 
 @dataclass
@@ -235,6 +326,66 @@ def save_results(
 
     with open(filepath, "w") as f:
         json.dump(metrics.to_dict(), f, indent=2)
+
+    return filepath
+
+
+def save_multi_trial_results(
+    results: MultiTrialResults,
+    output_dir: str,
+    filename: Optional[str] = None,
+) -> str:
+    """
+    Save multi-trial results to JSON with full detail.
+    
+    Output includes:
+    - Per-trial aggregated metrics (FPS, RTT, throughput, etc.)
+    - Per-trial detailed participant data (timing samples, errors, etc.)
+    - Cross-trial summary statistics
+
+    Args:
+        results: Multi-trial results container
+        output_dir: Directory to save results
+        filename: Optional filename (default: config_name.json)
+
+    Returns:
+        str: Path to saved file
+    """
+    os.makedirs(output_dir, exist_ok=True)
+
+    if filename is None:
+        filename = f"{results.config_name}.json"
+
+    filepath = os.path.join(output_dir, filename)
+
+    # Compute summary statistics
+    summary = results.get_summary()
+
+    output = {
+        "config": {
+            "config_name": results.config_name,
+            "total_trials": results.total_trials,
+            "base_seed": results.base_seed,
+        },
+        "trials": [
+            {
+                "trial_number": t.trial_number,
+                "seed_used": t.seed_used,
+                "metrics": t.metrics.to_dict(),
+            }
+            for t in results.trials
+        ],
+        "summary": {
+            "avg_fps": summary.avg_fps.to_dict(),
+            "median_rtt_ms": summary.median_rtt_ms.to_dict(),
+            "total_messages_per_second": summary.total_messages_per_second.to_dict(),
+            "error_rate": summary.error_rate.to_dict(),
+            "avg_gameplay_duration_seconds": summary.avg_gameplay_duration_seconds.to_dict(),
+        }
+    }
+
+    with open(filepath, "w") as f:
+        json.dump(output, f, indent=2)
 
     return filepath
 
