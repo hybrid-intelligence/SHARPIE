@@ -30,6 +30,8 @@ class TimingSample:
     obs_received_time: float
     action_taken: int = 0
     image_size: int = 0
+    bytes_sent: int = 0
+    bytes_received: int = 0
 
     @property
     def rtt(self) -> float:
@@ -49,6 +51,8 @@ class ParticipantMetrics:
     errors: list = field(default_factory=list)
     steps_completed: int = 0
     connected: bool = False
+    bytes_sent: int = 0  # Total bytes sent to server
+    bytes_received: int = 0  # Total bytes received from server
 
     @property
     def wait_time(self) -> float:
@@ -133,6 +137,20 @@ class ParticipantMetrics:
             return 0.0
         return len(self.errors) / total
 
+    @property
+    def upload_bandwidth_mbps(self) -> float:
+        """Upload bandwidth in MB/s during gameplay."""
+        if self.gameplay_duration <= 0:
+            return 0.0
+        return (self.bytes_sent / self.gameplay_duration) / (1024 * 1024)
+
+    @property
+    def download_bandwidth_mbps(self) -> float:
+        """Download bandwidth in MB/s during gameplay."""
+        if self.gameplay_duration <= 0:
+            return 0.0
+        return (self.bytes_received / self.gameplay_duration) / (1024 * 1024)
+
     def to_dict(self, include_timing_samples: bool = False) -> dict:
         """Convert metrics to dictionary for JSON serialization.
         
@@ -157,6 +175,10 @@ class ParticipantMetrics:
             "errors": self.errors,
             "error_rate": round(self.error_rate, 4),
             "connected": self.connected,
+            "bytes_sent": self.bytes_sent,
+            "bytes_received": self.bytes_received,
+            "upload_bandwidth_mbps": round(self.upload_bandwidth_mbps, 3),
+            "download_bandwidth_mbps": round(self.download_bandwidth_mbps, 3),
         }
         
         if include_timing_samples:
@@ -168,6 +190,8 @@ class ParticipantMetrics:
                     "rtt_seconds": s.rtt,
                     "action_taken": s.action_taken,
                     "image_size": s.image_size,
+                    "bytes_sent": s.bytes_sent,
+                    "bytes_received": s.bytes_received,
                 }
                 for s in self.samples
             ]
@@ -275,6 +299,9 @@ class ParticipantSimulator:
 
                 async for msg in ws:
                     if msg.type == aiohttp.WSMsgType.TEXT:
+                        received_bytes = len(msg.data.encode('utf-8'))
+                        self.metrics.bytes_received += received_bytes
+                        
                         data = json.loads(msg.data)
 
                         # Simulate network latency (server → client)
@@ -300,6 +327,8 @@ class ParticipantSimulator:
                                     obs_received_time=time.time(),
                                     action_taken=self._pending_action["action"],
                                     image_size=image_size_bytes,
+                                    bytes_sent=self._pending_action.get("bytes_sent", 0),
+                                    bytes_received=received_bytes,
                                 )
                                 self.metrics.samples.append(sample)
                                 self._pending_action = None
@@ -365,5 +394,9 @@ class ParticipantSimulator:
             "action": random_action,
         }
 
-        await ws.send_json(action)
+        message_json = json.dumps(action)
+        sent_bytes = len(message_json.encode('utf-8'))
+        self.metrics.bytes_sent += sent_bytes
+        self._pending_action["bytes_sent"] = sent_bytes
+        await ws.send_str(message_json)
         self.log(f"Sent action {random_action} for step {step}")

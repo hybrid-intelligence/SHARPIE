@@ -354,6 +354,11 @@ class BenchmarkOrchestrator:
         tasks = [sim.run() for sim in simulators]
         participant_metrics: List[ParticipantMetrics] = await asyncio.gather(*tasks)
 
+        # Calculate webserver bytes from Records BEFORE cleanup
+        webserver_bytes_by_step = {}
+        if hasattr(self, 'test_session') and self.test_session:
+            webserver_bytes_by_step = await self._calculate_webserver_bytes(self.test_session.id)
+
         # Format image size as string
         h, w, _ = self.config.image_size
         image_size_str = f"{h}x{w}"
@@ -367,6 +372,7 @@ class BenchmarkOrchestrator:
             num_agents=0,  # This is a participant benchmark
             network_latency_ms=self.config.network_latency * 1000,  # Convert to ms
             image_size=image_size_str,
+            webserver_bytes_by_step=webserver_bytes_by_step,
         )
 
         print(f"[{self.benchmark_id}] Benchmark complete")
@@ -426,6 +432,12 @@ class BenchmarkOrchestrator:
                     pass
 
         print(f"[{self.benchmark_id}] Cleanup complete")
+
+    @sync_to_async
+    def _calculate_webserver_bytes(self, session_id: int) -> dict:
+        """Calculate webserver bytes sent/received from Record model data."""
+        from benchmark.metrics import calculate_webserver_bytes_from_records
+        return calculate_webserver_bytes_from_records(session_id)
 
     async def execute(self) -> AggregateMetrics:
         """
@@ -729,6 +741,11 @@ class AIAgentOrchestrator:
         # Run the simulator (it just observes steps, no actions to send)
         participant_metrics = await simulator.run()
 
+        # Calculate webserver bytes from Records BEFORE cleanup
+        webserver_bytes_by_step = {}
+        if hasattr(self, 'test_session') and self.test_session:
+            webserver_bytes_by_step = await self._calculate_webserver_bytes(self.test_session.id)
+
         # Aggregate metrics (single participant, but represents all AI agents)
         metrics = aggregate_metrics(
             [participant_metrics],
@@ -738,6 +755,7 @@ class AIAgentOrchestrator:
             num_agents=self.config.num_agents,  # This is an AI agent benchmark
             network_latency_ms=0.0,  # No simulated latency for AI agents
             image_size="64x64",  # Default for AI agent benchmarks
+            webserver_bytes_by_step=webserver_bytes_by_step,
         )
 
         print(f"[{self.benchmark_id}] Benchmark complete")
@@ -789,6 +807,12 @@ class AIAgentOrchestrator:
                 pass
 
         print(f"[{self.benchmark_id}] Cleanup complete")
+
+    @sync_to_async
+    def _calculate_webserver_bytes(self, session_id: int) -> dict:
+        """Calculate webserver bytes sent/received from Record model data."""
+        from benchmark.metrics import calculate_webserver_bytes_from_records
+        return calculate_webserver_bytes_from_records(session_id)
 
     async def execute(self) -> AggregateMetrics:
         """Full benchmark lifecycle: setup -> run -> cleanup."""
