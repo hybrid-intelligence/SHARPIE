@@ -564,9 +564,8 @@ def save_results_csv(
     Each row = one timestep from one participant/agent.
     Contains only per-step raw timing data.
     
-    Columns: benchmark_id, participants, agents, seed, trial, latency_ms, image_size,
-             agent_id, timestep, action_sent_time, obs_received_time, rtt_ms,
-             action_taken, image_bytes, bytes_sent, bytes_received,
+    Columns: benchmark_id, participants, agents, seed, trial, participant_id, latency_ms, image_size,
+             timestep, action_sent_time, rtt_ms, action_taken, image_bytes, bytes_sent, bytes_received,
              webserver_sent_bytes, webserver_received_bytes
     
     Args:
@@ -592,12 +591,11 @@ def save_results_csv(
             'agents',
             'seed',
             'trial',
+            'participant_id',
             'latency_ms',
             'image_size',
-            'agent_id',
             'timestep',
             'action_sent_time',
-            'obs_received_time',
             'rtt_ms',
             'action_taken',
             'image_bytes',
@@ -608,7 +606,7 @@ def save_results_csv(
         ])
         
         for participant_data in metrics.participants:
-            participant_id = participant_data.get('participant_id', 'unknown')
+            pid = participant_data.get('participant_id', 'unknown')
             timing_samples = participant_data.get('timing_samples', [])
             
             for sample in timing_samples:
@@ -640,12 +638,11 @@ def save_results_csv(
                     metrics.num_agents,
                     '',  # seed - not available in single AggregateMetrics
                     '',  # trial - not available in single AggregateMetrics
+                    pid,
                     metrics.network_latency_ms,
                     metrics.image_size,
-                    participant_id,
                     step,
                     sample.get('action_sent_time', 0),
-                    sample.get('obs_received_time', 0),
                     round(sample.get('rtt_seconds', 0) * 1000, 3),
                     sample.get('action_taken', 0),
                     image_bytes,
@@ -691,12 +688,11 @@ def save_multi_trial_results_csv(
             'agents',
             'seed',
             'trial',
+            'participant_id',
             'latency_ms',
             'image_size',
-            'agent_id',
             'timestep',
             'action_sent_time',
-            'obs_received_time',
             'rtt_ms',
             'action_taken',
             'image_bytes',
@@ -710,7 +706,7 @@ def save_multi_trial_results_csv(
             metrics = trial.metrics
             
             for participant_data in metrics.participants:
-                participant_id = participant_data.get('participant_id', 'unknown')
+                pid = participant_data.get('participant_id', 'unknown')
                 timing_samples = participant_data.get('timing_samples', [])
                 
                 for sample in timing_samples:
@@ -742,12 +738,11 @@ def save_multi_trial_results_csv(
                         metrics.num_agents,
                         trial.seed_used,
                         trial.trial_number,
+                        pid,
                         metrics.network_latency_ms,
                         metrics.image_size,
-                        participant_id,
                         step,
                         sample.get('action_sent_time', 0),
-                        sample.get('obs_received_time', 0),
                         round(sample.get('rtt_seconds', 0) * 1000, 3),
                         sample.get('action_taken', 0),
                         image_bytes,
@@ -758,6 +753,103 @@ def save_multi_trial_results_csv(
                     ])
     
     return filepath
+
+
+def save_suite_merged_csv(
+    suite_results: List[List['TrialResult']],
+    base_seed: int,
+    output_dir: str,
+    suite_name: str,
+) -> str:
+    """
+    Save all configurations from a suite into a single merged CSV file.
+    
+    Each row includes a config_name column to distinguish between different
+    configurations within the suite.
+    
+    Args:
+        suite_results: List of config results, each containing list of TrialResult
+        base_seed: Base random seed used for the benchmark
+        output_dir: Directory to save results
+        suite_name: Name of the suite (e.g., "scalability", "ai_agents")
+    
+    Returns:
+        str: Path to saved CSV file
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    
+    filename = f"{suite_name}_merged.csv"
+    filepath = os.path.join(output_dir, filename)
+    
+    with open(filepath, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow([
+            'config_name',
+            'benchmark_id',
+            'participants',
+            'agents',
+            'seed',
+            'trial',
+            'participant_id',
+            'latency_ms',
+            'image_size',
+            'timestep',
+            'action_sent_time',
+            'rtt_ms',
+            'action_taken',
+            'image_bytes',
+            'bytes_sent',
+            'bytes_received',
+            'webserver_sent_bytes',
+            'webserver_received_bytes',
+        ])
+        
+        for config_trials in suite_results:
+            if not config_trials:
+                continue
+            
+            for trial in config_trials:
+                metrics = trial.metrics
+                config_name = metrics.benchmark_id
+                
+                for participant_data in metrics.participants:
+                    pid = participant_data.get('participant_id', 'unknown')
+                    timing_samples = participant_data.get('timing_samples', [])
+                    
+                    for sample in timing_samples:
+                        step = sample.get('step', 0)
+                        
+                        bytes_sent = sample.get('bytes_sent', 0)
+                        bytes_received = sample.get('bytes_received', 0)
+                        image_bytes = sample.get('image_size', 0)
+                        
+                        runner_bytes = metrics.webserver_bytes_by_step.get(step, {})
+                        from_runner_bytes = runner_bytes.get('from_runner_bytes', 0)
+                        to_runner_bytes = runner_bytes.get('to_runner_bytes', 0)
+                        
+                        webserver_sent_bytes = to_runner_bytes + bytes_received
+                        webserver_received_bytes = from_runner_bytes + image_bytes + bytes_sent
+                        
+                        writer.writerow([
+                            config_name,
+                            metrics.benchmark_id,
+                            metrics.num_participants,
+                            metrics.num_agents,
+                            trial.seed_used,
+                            trial.trial_number,
+                            pid,
+                            metrics.network_latency_ms,
+                            metrics.image_size,
+                            step,
+                            sample.get('action_sent_time', 0),
+                            round(sample.get('rtt_seconds', 0) * 1000, 3),
+                            sample.get('action_taken', 0),
+                            image_bytes,
+                            bytes_sent,
+                            bytes_received,
+                            webserver_sent_bytes,
+                            webserver_received_bytes,
+                        ])
     
     return filepath
 

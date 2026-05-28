@@ -43,6 +43,7 @@ class BenchmarkConfig:
     trials: int = 1  # Number of trials to run
     seed: int = 42  # Base random seed for reproducibility
     save_raw_data: bool = False  # Whether to include timing_samples in saved output
+    format: str = "json"  # Output format: "json" or "csv"
 
 
 @dataclass
@@ -58,6 +59,7 @@ class ScalabilitySuite:
     trials: int = 1  # Number of trials to run
     seed: int = 42  # Base random seed for reproducibility
     save_raw_data: bool = False  # Whether to include timing_samples in saved output
+    format: str = "json"  # Output format: "json" or "csv"
 
     def get_config(self, num_participants: int) -> BenchmarkConfig:
         """Get a benchmark config for a specific participant count."""
@@ -72,6 +74,7 @@ class ScalabilitySuite:
             trials=self.trials,
             seed=self.seed,
             save_raw_data=self.save_raw_data,
+            format=self.format,
         )
 
 
@@ -88,6 +91,7 @@ class NetworkLatencySuite:
     trials: int = 1  # Number of trials to run
     seed: int = 42  # Base random seed for reproducibility
     save_raw_data: bool = False  # Whether to include timing_samples in saved output
+    format: str = "json"  # Output format: "json" or "csv"
 
     def get_config(self, latency_preset: str) -> BenchmarkConfig:
         """Get a benchmark config for a specific latency preset."""
@@ -103,6 +107,7 @@ class NetworkLatencySuite:
             trials=self.trials,
             seed=self.seed,
             save_raw_data=self.save_raw_data,
+            format=self.format,
         )
 
 
@@ -119,6 +124,7 @@ class ImageSizeSuite:
     trials: int = 1  # Number of trials to run
     seed: int = 42  # Base random seed for reproducibility
     save_raw_data: bool = False  # Whether to include timing_samples in saved output
+    format: str = "json"  # Output format: "json" or "csv"
 
     def get_config(self, image_size_preset: str) -> BenchmarkConfig:
         """Get a benchmark config for a specific image size preset."""
@@ -134,6 +140,7 @@ class ImageSizeSuite:
             trials=self.trials,
             seed=self.seed,
             save_raw_data=self.save_raw_data,
+            format=self.format,
         )
 
 
@@ -177,6 +184,7 @@ class AIAgentConfig:
     trials: int = 1  # Number of trials to run
     seed: int = 42  # Base random seed for reproducibility
     save_raw_data: bool = False  # Whether to include timing_samples in saved output
+    format: str = "json"  # Output format: "json" or "csv"
 
 
 @dataclass
@@ -191,6 +199,7 @@ class AIAgentScalabilitySuite:
     trials: int = 1  # Number of trials to run
     seed: int = 42  # Base random seed for reproducibility
     save_raw_data: bool = False  # Whether to include timing_samples in saved output
+    format: str = "json"  # Output format: "json" or "csv"
 
     def get_config(self, num_agents: int) -> AIAgentConfig:
         """Get a benchmark config for a specific agent count."""
@@ -204,6 +213,7 @@ class AIAgentScalabilitySuite:
             trials=self.trials,
             seed=self.seed,
             save_raw_data=self.save_raw_data,
+            format=self.format,
         )
 
 

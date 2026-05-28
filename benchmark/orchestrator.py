@@ -69,9 +69,9 @@ from .config import BenchmarkConfig, BENCHMARK_EXPERIMENT, AIAgentConfig, AI_AGE
 from .participant_simulator import ParticipantSimulator, ParticipantMetrics
 from .metrics import aggregate_metrics, save_results, AggregateMetrics
 
-# Absolute path to benchmark results directory
-_BENCHMARK_DIR = os.path.dirname(os.path.abspath(__file__))
-_RESULTS_DIR = os.path.join(_BENCHMARK_DIR, 'results')
+# Absolute path to project root (parent of benchmark directory)
+_BENCHMARK_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_RESULTS_DIR = os.path.join(_BENCHMARK_DIR, 'benchmark', 'results')
 
 
 @dataclass
@@ -378,12 +378,13 @@ class BenchmarkOrchestrator:
         print(f"[{self.benchmark_id}] Benchmark complete")
         print(metrics.summary())
 
-        # Save results to absolute path
-        output_dir = self.config.output_dir
-        if not os.path.isabs(output_dir):
-            output_dir = os.path.join(_BENCHMARK_DIR, output_dir)
-        output_path = save_results(metrics, output_dir)
-        print(f"[{self.benchmark_id}] Results saved to {output_path}")
+        # Save results to JSON (skip if CSV format was requested)
+        if self.config.format != "csv":
+            output_dir = self.config.output_dir
+            if not os.path.isabs(output_dir):
+                output_dir = os.path.join(_BENCHMARK_DIR, output_dir)
+            output_path = save_results(metrics, output_dir)
+            print(f"[{self.benchmark_id}] Results saved to {output_path}")
 
         return metrics
 
@@ -734,11 +735,11 @@ class AIAgentOrchestrator:
             action_interval=0.0,  # No action delay
             connection_timeout=self.config.runner_timeout,
             verbose=self.config.verbose,
-            send_actions=False,  # AI agents run policies, no participant input needed
+            send_actions=True,  # Collect timing data for CSV export
             seed=self.seed,
         )
 
-        # Run the simulator (it just observes steps, no actions to send)
+        # Run the simulator (it collects timing data for CSV export)
         participant_metrics = await simulator.run()
 
         # Calculate webserver bytes from Records BEFORE cleanup
@@ -761,11 +762,13 @@ class AIAgentOrchestrator:
         print(f"[{self.benchmark_id}] Benchmark complete")
         print(metrics.summary())
 
-        output_dir = self.config.output_dir
-        if not os.path.isabs(output_dir):
-            output_dir = os.path.join(_BENCHMARK_DIR, output_dir)
-        output_path = save_results(metrics, output_dir)
-        print(f"[{self.benchmark_id}] Results saved to {output_path}")
+        # Save results to JSON (skip if CSV format was requested)
+        if self.config.format != "csv":
+            output_dir = self.config.output_dir
+            if not os.path.isabs(output_dir):
+                output_dir = os.path.join(_BENCHMARK_DIR, output_dir)
+            output_path = save_results(metrics, output_dir)
+            print(f"[{self.benchmark_id}] Results saved to {output_path}")
 
         return metrics
 

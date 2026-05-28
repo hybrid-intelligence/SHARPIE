@@ -227,7 +227,7 @@ Prerequisites:
         run_ai_agent_scalability_suite, run_network_latency_suite, run_image_size_suite,
         TrialResult
     )
-    from benchmark.metrics import print_comparison_table, MultiTrialResults, save_results_csv, save_multi_trial_results_csv
+    from benchmark.metrics import print_comparison_table, MultiTrialResults, save_results_csv, save_multi_trial_results_csv, save_suite_merged_csv
     import json
 
     async def run():
@@ -241,6 +241,7 @@ Prerequisites:
                 trials=args.trials,
                 seed=args.seed,
                 save_raw_data=args.raw_data,
+                format=args.format,
             )
             results = await run_scalability_suite(suite)
 
@@ -259,6 +260,14 @@ Prerequisites:
                             f"scalability_{config_trials[0].metrics.num_participants}p",
                         )
                         print(f"CSV saved to {csv_path}")
+                # Save merged CSV for all configurations
+                merged_path = save_suite_merged_csv(
+                    results,
+                    suite.seed,
+                    output_dir,
+                    "scalability",
+                )
+                print(f"Merged CSV saved to {merged_path}")
             elif args.json:
                 # Serialize as list of config results, each containing trials
                 output = []
@@ -313,6 +322,7 @@ Prerequisites:
                 trials=args.trials,
                 seed=args.seed,
                 save_raw_data=args.raw_data,
+                format=args.format,
             )
             results = await run_ai_agent_scalability_suite(suite)
 
@@ -327,9 +337,17 @@ Prerequisites:
                             config_trials,
                             suite.seed,
                             output_dir,
-                            f"ai_agents_{config_trials[0].metrics.num_participants}a",
+                            f"ai_agents_{config_trials[0].metrics.num_agents}a",
                         )
                         print(f"CSV saved to {csv_path}")
+                # Save merged CSV for all configurations
+                merged_path = save_suite_merged_csv(
+                    results,
+                    suite.seed,
+                    output_dir,
+                    "ai_agents",
+                )
+                print(f"Merged CSV saved to {merged_path}")
             elif args.json:
                 output = []
                 for config_trials in results:
@@ -383,6 +401,7 @@ Prerequisites:
                 trials=args.trials,
                 seed=args.seed,
                 save_raw_data=args.raw_data,
+                format=args.format,
             )
             results = await run_network_latency_suite(suite)
 
@@ -400,6 +419,14 @@ Prerequisites:
                             f"network_latency_{config_name}",
                         )
                         print(f"CSV saved to {csv_path}")
+                # Save merged CSV for all configurations
+                merged_path = save_suite_merged_csv(
+                    results,
+                    suite.seed,
+                    output_dir,
+                    "network_latency",
+                )
+                print(f"Merged CSV saved to {merged_path}")
             elif args.json:
                 output = []
                 for config_trials in results:
@@ -452,6 +479,7 @@ Prerequisites:
                 trials=args.trials,
                 seed=args.seed,
                 save_raw_data=args.raw_data,
+                format=args.format,
             )
             results = await run_image_size_suite(suite)
 
@@ -469,6 +497,14 @@ Prerequisites:
                             f"image_size_{config_name}",
                         )
                         print(f"CSV saved to {csv_path}")
+                # Save merged CSV for all configurations
+                merged_path = save_suite_merged_csv(
+                    results,
+                    suite.seed,
+                    output_dir,
+                    "image_size",
+                )
+                print(f"Merged CSV saved to {merged_path}")
             elif args.json:
                 output = []
                 for config_trials in results:
@@ -531,6 +567,7 @@ Prerequisites:
                 trials=args.trials,
                 seed=args.seed,
                 save_raw_data=args.raw_data,
+                format=args.format,
             )
 
             trial_results = await run_benchmark(config)
