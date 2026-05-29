@@ -137,11 +137,21 @@ class AggregateMetrics:
     p99_rtt_ms: float
     std_rtt_ms: float
 
-    # Bandwidth
+    # Bandwidth - Per-participant measurements
     total_bytes_sent: int
     total_bytes_received: int
     upload_bandwidth_mbps: float
     download_bandwidth_mbps: float
+
+    # Bandwidth - Webserver-level totals
+    total_from_runner_bytes: int
+    total_to_runner_bytes: int
+    total_from_participants_bytes: int
+    total_to_participants_bytes: int
+    total_webserver_received: int  # from_runner + from_participants
+    total_webserver_sent: int       # to_runner + to_participants
+    webserver_download_bandwidth_mbps: float  # total_webserver_received / duration
+    webserver_upload_bandwidth_mbps: float     # total_webserver_sent / duration
 
     # Error rates
     error_rate: float
@@ -166,7 +176,7 @@ class AggregateMetrics:
     participants: List[dict] = field(default_factory=list)
     
     # Webserver bytes per timestep (from Record model - runner traffic)
-    # Dict mapping step_index to {from_runner_bytes, to_runner_bytes}
+    # Dict mapping step_index to {from_runner_bytes, to_runner_bytes, from_participants_bytes, to_participants_bytes}
     webserver_bytes_by_step: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
@@ -185,7 +195,18 @@ class AggregateMetrics:
             "=== Performance ===",
             f"FPS: avg={self.avg_fps:.2f}, min={self.min_fps:.2f}, max={self.max_fps:.2f}, median={self.median_fps:.2f}",
             f"RTT (ms): avg={self.avg_rtt_ms:.2f}, median={self.median_rtt_ms:.2f}, p95={self.p95_rtt_ms:.2f}, p99={self.p99_rtt_ms:.2f}",
-            f"Bandwidth: ↑{self.upload_bandwidth_mbps:.2f} MB/s upload, ↓{self.download_bandwidth_mbps:.2f} MB/s download",
+            "",
+            "=== Bandwidth (Per-Participant) ===",
+            f"Upload: {self.upload_bandwidth_mbps:.2f} MB/s",
+            f"Download: {self.download_bandwidth_mbps:.2f} MB/s",
+            "",
+            "=== Bandwidth (Webserver Total) ===",
+            f"From Runner: {self.total_from_runner_bytes:,} bytes",
+            f"To Runner: {self.total_to_runner_bytes:,} bytes",
+            f"From Participants: {self.total_from_participants_bytes:,} bytes",
+            f"To Participants: {self.total_to_participants_bytes:,} bytes",
+            f"Total Received: {self.total_webserver_received:,} bytes ({self.webserver_download_bandwidth_mbps:.2f} MB/s)",
+            f"Total Sent: {self.total_webserver_sent:,} bytes ({self.webserver_upload_bandwidth_mbps:.2f} MB/s)",
             "",
             "=== Timing ===",
             f"Avg wait time: {self.avg_wait_time_seconds:.3f}s (waiting for all participants)",
@@ -220,7 +241,7 @@ def aggregate_metrics(
         num_agents: Number of AI agents (0 for participant benchmarks)
         network_latency_ms: Simulated network latency in milliseconds
         image_size: Render size as string (e.g., "64x64", "512x512")
-        webserver_bytes_by_step: Dict mapping step_index to {from_runner_bytes, to_runner_bytes}
+        webserver_bytes_by_step: Dict mapping step_index to webserver bandwidth data
 
     Returns:
         AggregateMetrics: Combined statistics
@@ -257,6 +278,18 @@ def aggregate_metrics(
             avg_wait_time_seconds=0.0,
             max_wait_time_seconds=0.0,
             avg_gameplay_duration_seconds=0.0,
+            total_bytes_sent=0,
+            total_bytes_received=0,
+            upload_bandwidth_mbps=0.0,
+            download_bandwidth_mbps=0.0,
+            total_from_runner_bytes=0,
+            total_to_runner_bytes=0,
+            total_from_participants_bytes=0,
+            total_to_participants_bytes=0,
+            total_webserver_received=0,
+            total_webserver_sent=0,
+            webserver_download_bandwidth_mbps=0.0,
+            webserver_upload_bandwidth_mbps=0.0,
         )
 
     # Collect FPS values
@@ -283,7 +316,7 @@ def aggregate_metrics(
     max_wait_time = max(wait_times) if wait_times else 0.0
     avg_gameplay_duration = statistics.mean(gameplay_durations) if gameplay_durations else 0.0
 
-    # Calculate bandwidth
+    # Calculate participant-level bandwidth
     total_bytes_sent = sum(m.bytes_sent for m in participant_metrics)
     total_bytes_received = sum(m.bytes_received for m in participant_metrics)
     if avg_gameplay_duration > 0:
@@ -292,6 +325,28 @@ def aggregate_metrics(
     else:
         upload_bandwidth_mbps = 0.0
         download_bandwidth_mbps = 0.0
+
+    # Calculate webserver-level bandwidth from webserver_bytes_by_step
+    total_from_runner_bytes = 0
+    total_to_runner_bytes = 0
+    total_from_participants_bytes = 0
+    total_to_participants_bytes = 0
+    
+    for step_data in webserver_bytes_by_step.values():
+        total_from_runner_bytes += step_data.get('from_runner_bytes', 0)
+        total_to_runner_bytes += step_data.get('to_runner_bytes', 0)
+        total_from_participants_bytes += step_data.get('from_participants_bytes', 0)
+        total_to_participants_bytes += step_data.get('to_participants_bytes', 0)
+    
+    total_webserver_received = total_from_runner_bytes + total_from_participants_bytes
+    total_webserver_sent = total_to_runner_bytes + total_to_participants_bytes
+    
+    if avg_gameplay_duration > 0:
+        webserver_download_bandwidth_mbps = (total_webserver_received / avg_gameplay_duration) / (1024 * 1024)
+        webserver_upload_bandwidth_mbps = (total_webserver_sent / avg_gameplay_duration) / (1024 * 1024)
+    else:
+        webserver_download_bandwidth_mbps = 0.0
+        webserver_upload_bandwidth_mbps = 0.0
 
     # Error rate
     total_attempts = total_steps + total_errors
@@ -323,6 +378,14 @@ def aggregate_metrics(
         total_bytes_received=total_bytes_received,
         upload_bandwidth_mbps=round(upload_bandwidth_mbps, 3),
         download_bandwidth_mbps=round(download_bandwidth_mbps, 3),
+        total_from_runner_bytes=total_from_runner_bytes,
+        total_to_runner_bytes=total_to_runner_bytes,
+        total_from_participants_bytes=total_from_participants_bytes,
+        total_to_participants_bytes=total_to_participants_bytes,
+        total_webserver_received=total_webserver_received,
+        total_webserver_sent=total_webserver_sent,
+        webserver_download_bandwidth_mbps=round(webserver_download_bandwidth_mbps, 3),
+        webserver_upload_bandwidth_mbps=round(webserver_upload_bandwidth_mbps, 3),
         error_rate=error_rate,
         total_duration_seconds=round(total_duration, 3),
         avg_participant_duration_seconds=round(avg_duration, 3),
@@ -344,31 +407,79 @@ def _percentile(values: List[float], p: float) -> float:
     return sorted_values[idx]
 
 
-def calculate_webserver_bytes_from_records(session_id: int) -> dict:
+def aggregate_participant_bytes_by_step(
+    participant_metrics: List['ParticipantMetrics']
+) -> dict:
+    """
+    Aggregate bytes from all participants for each timestep.
+    
+    Args:
+        participant_metrics: List of per-participant metrics
+    
+    Returns:
+        Dict mapping step_index to {
+            'from_participants_bytes': int,  # sum of bytes_sent (actions to webserver)
+            'to_participants_bytes': int,    # sum of bytes_received (broadcasts from webserver)
+            'image_size': int,               # image size for this step
+        }
+    """
+    bytes_by_step = {}
+    
+    for m in participant_metrics:
+        for sample in m.samples:
+            step = sample.step
+            
+            if step not in bytes_by_step:
+                bytes_by_step[step] = {
+                    'from_participants_bytes': 0,
+                    'to_participants_bytes': 0,
+                    'image_size': 0,
+                }
+            
+            bytes_by_step[step]['from_participants_bytes'] += sample.bytes_sent
+            bytes_by_step[step]['to_participants_bytes'] += sample.bytes_received
+            bytes_by_step[step]['image_size'] = sample.image_size  # Same for all participants
+    
+    return bytes_by_step
+
+
+def calculate_webserver_bytes_from_records(
+    session_id: int,
+    image_sizes_by_step: dict = None
+) -> dict:
     """
     Calculate webserver bytes sent/received per timestep from Record model data.
     
     Webserver RECEIVES:
     - From Runner: {step, observations, actions, rewards, image, terminated, truncated}
-      -> State/action/reward stored in Record, image tracked separately
+      -> State/action/reward stored in Record, image added from image_sizes_by_step
     
     - From Participants: Individual action messages
-      -> Not stored in Record, tracked in timing_samples as bytes_sent
+      -> Tracked in timing_samples as bytes_sent, aggregated via image_sizes_by_step
     
     Webserver SENDS:
     - To Runner: Batched actions from all participants
-      -> Action field in Record contains all participants' actions
+      -> Action field in Record contains all participants' actions (good estimate)
     
     - To Participants: Forwarded broadcast {step, image, terminated, truncated}
-      -> Tracked in timing_samples as bytes_received (includes image)
+      -> Tracked in timing_samples as bytes_received, aggregated via image_sizes_by_step
     
     Args:
         session_id: Session ID to query Records from
+        image_sizes_by_step: Dict mapping step_index to image_size_bytes (from participant metrics)
     
     Returns:
-        Dict mapping step_index to {from_runner_bytes, to_runner_bytes}
+        Dict mapping step_index to {
+            'from_runner_bytes': int,
+            'to_runner_bytes': int,
+            'from_participants_bytes': int,
+            'to_participants_bytes': int,
+        }
     """
     from data.models import Session, Episode, Record
+    
+    if image_sizes_by_step is None:
+        image_sizes_by_step = {}
     
     bytes_by_step = {}
     
@@ -384,13 +495,17 @@ def calculate_webserver_bytes_from_records(session_id: int) -> dict:
                 
                 # Bytes from runner (webserver received)
                 # Record stores: observations in state, actions in action, rewards in reward
-                # The runner sends the full state; webserver receives it
+                # Image is NOT stored in Record, must be added from participant metrics
                 from_runner_data = {
                     'observations': record.state,
                     'actions': record.action,
                     'rewards': record.reward,
                 }
                 from_runner_bytes = len(json.dumps(from_runner_data, separators=(',', ':')).encode('utf-8'))
+                
+                # Add image size if available
+                image_size = image_sizes_by_step.get(step, {}).get('image_size', 0)
+                from_runner_bytes += image_size
                 
                 # Bytes to runner (webserver sent)
                 # Webserver forwards batched actions from all participants
@@ -400,9 +515,16 @@ def calculate_webserver_bytes_from_records(session_id: int) -> dict:
                 }
                 to_runner_bytes = len(json.dumps(to_runner_data, separators=(',', ':')).encode('utf-8'))
                 
+                # Get participant bytes from aggregated data
+                participant_data = image_sizes_by_step.get(step, {})
+                from_participants_bytes = participant_data.get('from_participants_bytes', 0)
+                to_participants_bytes = participant_data.get('to_participants_bytes', 0)
+                
                 bytes_by_step[step] = {
                     'from_runner_bytes': from_runner_bytes,
                     'to_runner_bytes': to_runner_bytes,
+                    'from_participants_bytes': from_participants_bytes,
+                    'to_participants_bytes': to_participants_bytes,
                 }
     except Exception as e:
         pass
@@ -562,11 +684,14 @@ def save_results_csv(
     Save per-timestep benchmark data to CSV.
     
     Each row = one timestep from one participant/agent.
-    Contains only per-step raw timing data.
+    Contains per-step raw timing and bandwidth data.
     
     Columns: benchmark_id, participants, agents, seed, trial, participant_id, latency_ms, image_size,
-             timestep, action_sent_time, rtt_ms, action_taken, image_bytes, bytes_sent, bytes_received,
-             webserver_sent_bytes, webserver_received_bytes
+             timestep, action_sent_time, rtt_ms, action_taken, image_bytes, 
+             participant_bytes_sent, participant_bytes_received,
+             webserver_from_runner_bytes, webserver_to_runner_bytes,
+             webserver_from_participants_bytes, webserver_to_participants_bytes,
+             webserver_total_received, webserver_total_sent
     
     Args:
         metrics: Aggregated metrics (must include timing samples from --raw-data)
@@ -599,10 +724,14 @@ def save_results_csv(
             'rtt_ms',
             'action_taken',
             'image_bytes',
-            'bytes_sent',
-            'bytes_received',
-            'webserver_sent_bytes',
-            'webserver_received_bytes',
+            'participant_bytes_sent',
+            'participant_bytes_received',
+            'webserver_from_runner_bytes',
+            'webserver_to_runner_bytes',
+            'webserver_from_participants_bytes',
+            'webserver_to_participants_bytes',
+            'webserver_total_received',
+            'webserver_total_sent',
         ])
         
         for participant_data in metrics.participants:
@@ -618,19 +747,15 @@ def save_results_csv(
                 image_bytes = sample.get('image_size', 0)
                 
                 # Get bytes from/to runner (Record data)
-                runner_bytes = metrics.webserver_bytes_by_step.get(step, {})
-                from_runner_bytes = runner_bytes.get('from_runner_bytes', 0)
-                to_runner_bytes = runner_bytes.get('to_runner_bytes', 0)
+                step_data = metrics.webserver_bytes_by_step.get(step, {})
+                from_runner_bytes = step_data.get('from_runner_bytes', 0)
+                to_runner_bytes = step_data.get('to_runner_bytes', 0)
+                from_participants_bytes = step_data.get('from_participants_bytes', 0)
+                to_participants_bytes = step_data.get('to_participants_bytes', 0)
                 
-                # Webserver sent = to_runner (batched actions) + to_participants (includes image)
-                # bytes_received from participant IS what webserver sent to participant
-                webserver_sent_bytes = to_runner_bytes + bytes_received
-                
-                # Webserver received = from_runner (observations + image) + from_participants (actions)
-                # bytes_sent from participant IS what webserver received from participant
-                # image is received from runner (included in bytes_received sent to participants)
-                # We need to add image size since it's not in Record's state/action/reward
-                webserver_received_bytes = from_runner_bytes + image_bytes + bytes_sent
+                # Calculate webserver totals for this step
+                webserver_total_received = from_runner_bytes + from_participants_bytes
+                webserver_total_sent = to_runner_bytes + to_participants_bytes
                 
                 writer.writerow([
                     metrics.benchmark_id,
@@ -648,8 +773,12 @@ def save_results_csv(
                     image_bytes,
                     bytes_sent,
                     bytes_received,
-                    webserver_sent_bytes,
-                    webserver_received_bytes,
+                    from_runner_bytes,
+                    to_runner_bytes,
+                    from_participants_bytes,
+                    to_participants_bytes,
+                    webserver_total_received,
+                    webserver_total_sent,
                 ])
     
     return filepath
@@ -696,10 +825,14 @@ def save_multi_trial_results_csv(
             'rtt_ms',
             'action_taken',
             'image_bytes',
-            'bytes_sent',
-            'bytes_received',
-            'webserver_sent_bytes',
-            'webserver_received_bytes',
+            'participant_bytes_sent',
+            'participant_bytes_received',
+            'webserver_from_runner_bytes',
+            'webserver_to_runner_bytes',
+            'webserver_from_participants_bytes',
+            'webserver_to_participants_bytes',
+            'webserver_total_received',
+            'webserver_total_sent',
         ])
         
         for trial in trial_results:
@@ -718,19 +851,15 @@ def save_multi_trial_results_csv(
                     image_bytes = sample.get('image_size', 0)
                     
                     # Get bytes from/to runner (Record data)
-                    runner_bytes = metrics.webserver_bytes_by_step.get(step, {})
-                    from_runner_bytes = runner_bytes.get('from_runner_bytes', 0)
-                    to_runner_bytes = runner_bytes.get('to_runner_bytes', 0)
+                    step_data = metrics.webserver_bytes_by_step.get(step, {})
+                    from_runner_bytes = step_data.get('from_runner_bytes', 0)
+                    to_runner_bytes = step_data.get('to_runner_bytes', 0)
+                    from_participants_bytes = step_data.get('from_participants_bytes', 0)
+                    to_participants_bytes = step_data.get('to_participants_bytes', 0)
                     
-                    # Webserver sent = to_runner (batched actions) + to_participants (includes image)
-                    # bytes_received from participant IS what webserver sent to participant
-                    webserver_sent_bytes = to_runner_bytes + bytes_received
-                    
-                    # Webserver received = from_runner (observations + image) + from_participants (actions)
-                    # bytes_sent from participant IS what webserver received from participant
-                    # image is received from runner (included in bytes_received sent to participants)
-                    # We need to add image size since it's not in Record's state/action/reward
-                    webserver_received_bytes = from_runner_bytes + image_bytes + bytes_sent
+                    # Calculate webserver totals for this step
+                    webserver_total_received = from_runner_bytes + from_participants_bytes
+                    webserver_total_sent = to_runner_bytes + to_participants_bytes
                     
                     writer.writerow([
                         metrics.benchmark_id,
@@ -748,8 +877,12 @@ def save_multi_trial_results_csv(
                         image_bytes,
                         bytes_sent,
                         bytes_received,
-                        webserver_sent_bytes,
-                        webserver_received_bytes,
+                        from_runner_bytes,
+                        to_runner_bytes,
+                        from_participants_bytes,
+                        to_participants_bytes,
+                        webserver_total_received,
+                        webserver_total_sent,
                     ])
     
     return filepath
@@ -798,10 +931,14 @@ def save_suite_merged_csv(
             'rtt_ms',
             'action_taken',
             'image_bytes',
-            'bytes_sent',
-            'bytes_received',
-            'webserver_sent_bytes',
-            'webserver_received_bytes',
+            'participant_bytes_sent',
+            'participant_bytes_received',
+            'webserver_from_runner_bytes',
+            'webserver_to_runner_bytes',
+            'webserver_from_participants_bytes',
+            'webserver_to_participants_bytes',
+            'webserver_total_received',
+            'webserver_total_sent',
         ])
         
         for config_trials in suite_results:
@@ -819,16 +956,21 @@ def save_suite_merged_csv(
                     for sample in timing_samples:
                         step = sample.get('step', 0)
                         
+                        # Get bytes from participant (timing_samples)
                         bytes_sent = sample.get('bytes_sent', 0)
                         bytes_received = sample.get('bytes_received', 0)
                         image_bytes = sample.get('image_size', 0)
                         
-                        runner_bytes = metrics.webserver_bytes_by_step.get(step, {})
-                        from_runner_bytes = runner_bytes.get('from_runner_bytes', 0)
-                        to_runner_bytes = runner_bytes.get('to_runner_bytes', 0)
+                        # Get bytes from/to runner (Record data)
+                        step_data = metrics.webserver_bytes_by_step.get(step, {})
+                        from_runner_bytes = step_data.get('from_runner_bytes', 0)
+                        to_runner_bytes = step_data.get('to_runner_bytes', 0)
+                        from_participants_bytes = step_data.get('from_participants_bytes', 0)
+                        to_participants_bytes = step_data.get('to_participants_bytes', 0)
                         
-                        webserver_sent_bytes = to_runner_bytes + bytes_received
-                        webserver_received_bytes = from_runner_bytes + image_bytes + bytes_sent
+                        # Calculate webserver totals for this step
+                        webserver_total_received = from_runner_bytes + from_participants_bytes
+                        webserver_total_sent = to_runner_bytes + to_participants_bytes
                         
                         writer.writerow([
                             config_name,
@@ -847,8 +989,12 @@ def save_suite_merged_csv(
                             image_bytes,
                             bytes_sent,
                             bytes_received,
-                            webserver_sent_bytes,
-                            webserver_received_bytes,
+                            from_runner_bytes,
+                            to_runner_bytes,
+                            from_participants_bytes,
+                            to_participants_bytes,
+                            webserver_total_received,
+                            webserver_total_sent,
                         ])
     
     return filepath
