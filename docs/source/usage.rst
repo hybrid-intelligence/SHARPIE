@@ -24,7 +24,14 @@ Install Redis server:
 .. code-block:: console
 
    # On Ubuntu
-   sudo apt-get install redis-server & redis-server
+   sudo apt-get install redis-server && sudo systemctl enable redis-server && redis-server
+
+Verify that redis has installed and runs correctly: 
+
+.. code-block:: console
+
+      redis-server --version # should output >8
+      redis-cli ping # should output "PONG"
 
 Navigate to the SHARPIE directory and install the required packages:
 
@@ -45,18 +52,8 @@ Create a database file (SQLite by default) and add an admin user:
    python manage.py makemigrations accounts experiment data runner
    python manage.py migrate
    python manage.py createsuperuser
+   cd ..
 
-Generating the data model diagram
------------------------------------
-
-To regenerate the data model documentation diagram after making changes to the Django models:
-
-.. code-block:: console
-
-   cd webserver
-   python manage.py graph_models accounts experiment data runner -o ../docs/source/_static/data_model.png
-
-This requires `django-extensions` and `pygraphviz` to be installed, which are included in the project's requirements.
 
 Run in development mode
 ----------------
@@ -68,14 +65,21 @@ Start the web server:
    cd webserver
    python manage.py runserver
 
-Go to the admin interface and add a new runner with the desired connection key (e.g., "secret"). In another terminal, start the runner:
+Go to the admin interface at ``localhost:8000/admin/`` and log in with your superuser name and password.
+
+Add a new runner ``Runner > Runnders > add`` and choose a connection key (e.g., "secret"). Select "SAVE".
+
+Open a new terminal in the SHARPIE root directory, and start the runner:
 
 .. code-block:: console
 
+   conda activate sharpie_env
    cd runner
    python manage.py runserver --connection-key=secret
 
-You can access the website at http://localhost:8000 and manage the authorized users from http://localhost:8000/admin with the username and password that you set at the end of the installation. For now there is no experiment available but you can find some examples ready to use in our `galery <https://github.com/hybrid-intelligence/SHARPIE_Gallery/>`_!
+The terminal running the webserver should now show log a websocket connection between the runner and the webserver.
+
+You can access the website at http://localhost:8000 and manage the authorized users from http://localhost:8000/admin with the username and password that you set at the end of the installation. For now there is no experiment available but you can find some examples ready to use in our `gallery <https://github.com/hybrid-intelligence/SHARPIE_Gallery/>`_!
 
 Run in production mode
 ------------------
@@ -112,3 +116,15 @@ If you already have a release of SHARPIE installed, you can upgrade it by downlo
    python manage.py migrate
 
 This will look at the migrations files under /accounts and /experiment, and apply any new migrations that are available to your database.
+
+Generating the data model diagram
+-----------------------------------
+
+To regenerate the data model documentation diagram after making changes to the Django models:
+
+.. code-block:: console
+
+   cd webserver
+   python manage.py graph_models accounts experiment data runner -o ../docs/source/_static/data_model.png
+
+This requires `django-extensions` and `pygraphviz` to be installed, which are included in the project's requirements.
