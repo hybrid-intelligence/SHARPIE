@@ -3,6 +3,7 @@ django
 channels[daphne]
 Twisted[tls,http2]
 channels_redis
+redis==7.4.0
 django-crispy-forms
 crispy-bootstrap4
 opencv-python-headless
@@ -11,3 +12,4 @@ pygraphviz
 pydot
 aiohttp
 django-environ
+pyyaml
