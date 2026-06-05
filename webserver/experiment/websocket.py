@@ -112,7 +112,7 @@ class RunConsumer(RunConsumerHelpers, AsyncWebsocketConsumer):
         message = json.loads(text_data)
         if message["type"] == 'broadcast':
             await self._handle_broadcast(message)
-        elif message.get("type") == 'private' and message.get("message") == 'action':
+        elif message.get("type") == 'private' and "action" in message:
             await self._handle_action(message)
         elif message.get("message") == 'settings':
             await self._handle_settings()

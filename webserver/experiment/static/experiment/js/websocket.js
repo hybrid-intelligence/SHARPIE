@@ -68,7 +68,7 @@ document.addEventListener('instruction-submit', function(e) {
 });
 
 function sendAction(action) {
-    websocket.send(JSON.stringify({type: 'broadcast', action: action}));
+    websocket.send(JSON.stringify({type: 'private', action: action}));
 }
 
 // When the server finishes a step and replies
