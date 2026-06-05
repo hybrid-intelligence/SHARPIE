@@ -195,7 +195,7 @@ def override_actions(agents_settings, participant_inputs, policy_actions):
         if agents_settings[agent_name].get('inputs_type') == 'actions':
             default_val = agents_settings[agent_name].get('keyboard_inputs', {}).get('default', 0)
             # Only override if the participant actually provided a non-default input
-            if agent_name in final_actions and p_input != default_val:
+            if agent_name in final_actions and p_input == default_val:
                 continue
             if isinstance(final_actions, dict):
                 final_actions[agent_name] = p_input
