@@ -1,5 +1,5 @@
 from django import forms
-from mysite.settings import REGISTRATION_KEY
+from server.settings import REGISTRATION_KEY
 from django.core.validators import RegexValidator
 
 # For example, look at https://docs.djangoproject.com/en/5.1/ref/forms/fields/

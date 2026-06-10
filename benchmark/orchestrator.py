@@ -43,14 +43,14 @@ for p in sys.path:
         _cleaned_path.append(p)
 sys.path[:] = _cleaned_path
 
-# Add webserver for Django (mysite.settings) and benchmark for imports
+# Add webserver for Django (server.settings) and benchmark for imports
 if _webserver_path not in sys.path:
     sys.path.insert(0, _webserver_path)
 if _benchmark_path not in sys.path:
     sys.path.insert(0, _benchmark_path)
 
 # Setup Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'server.settings')
 import django
 django.setup()
 

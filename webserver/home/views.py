@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from experiment.models import Experiment
 
-from mysite.settings import DEMO
+from server.settings import DEMO
 
 
 def index(request):
