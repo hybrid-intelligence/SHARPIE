@@ -47,14 +47,26 @@ We agree to restrict the following behaviors in our community. Instances, threat
 
 Tensions can occur between community members even when they are trying their best to collaborate. Not every conflict represents a code of conduct violation, and this Code of Conduct reinforces encouraged behaviors and norms that can help avoid conflicts and minimize harm.
 
-When an incident does occur, it is important to report it promptly. To report a possible violation, **[NOTE: describe your means of reporting here.]**
+When an incident does occur, it is important to report it promptly. We use GitHub's **Private Vulnerability Reporting** to enable reporting Code of Conduct violations in a private, and secure manner. You must have a GitHub account to use this method.
+
+To submit a private report:
+1. Navigate to the main page of this GitHub repository.
+2. Click on the **Security** tab located under the repository name.
+3. In the left sidebar, click on **Reporting**.
+4. Click the **Report a vulnerability** button.
+5. In your report, clearly state in the description that this is a **Code of Conduct Violation**, and provide details of the incident (including links or screenshots if applicable).
+
+### Conflict of Interest Bypass
+Because we are a very small academic team, private repository reports will automatically notify all core repository maintainers. 
+
+If your report involves a specific maintainer of this project and you do not want them to see it, **do not use the GitHub Security tab**. Instead, please reach out directly to an alternative team member or a neutral departmental ally via their institutional email:
+* **Alternative Contact A:** Firstname1 Lastname1 — [first name and last name without whitespace]at[google's mail service]
+* **Alternative Contact B:** Firstname1 Lastname2 - l.b.[lastname without withespace]@[uni].nl
 
 Community Moderators take reports of violations seriously and will make every effort to respond in a timely manner. They will investigate all reports of code of conduct violations, reviewing messages, logs, and recordings, or interviewing witnesses and other participants. Community Moderators will keep investigation and enforcement actions as transparent as possible while prioritizing safety and confidentiality. In order to honor these values, enforcement actions are carried out in private with the involved parties, but communicating to the whole community may be part of a mutually agreed upon resolution.
 
 
 ## Addressing and Repairing Harm
-
-**[NOTE: The remedies and repairs outlined below are suggestions based on best practices in code of conduct enforcement. If your community has its own established enforcement process, be sure to edit this section to describe your own policies.]**
 
 If an investigation by the Community Moderators finds that this Code of Conduct has been violated, the following enforcement ladder may be used to determine how best to repair harm, based on the incident's impact on the individuals involved and the community as a whole. Depending on the severity of a violation, lower rungs on the ladder may be skipped.
 
