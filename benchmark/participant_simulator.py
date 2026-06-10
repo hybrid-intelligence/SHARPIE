@@ -13,6 +13,8 @@ from typing import Optional
 import statistics
 import numpy as np
 
+BYTES_PER_MEBIBYTE = 1024 * 1024
+
 try:
     import aiohttp
 except ImportError:
@@ -139,17 +141,17 @@ class ParticipantMetrics:
 
     @property
     def upload_bandwidth_mbps(self) -> float:
-        """Upload bandwidth in MB/s during gameplay."""
+        """Upload bandwidth in MiB/s during gameplay."""
         if self.gameplay_duration <= 0:
             return 0.0
-        return (self.bytes_sent / self.gameplay_duration) / (1024 * 1024)
+        return (self.bytes_sent / self.gameplay_duration) / BYTES_PER_MEBIBYTE
 
     @property
     def download_bandwidth_mbps(self) -> float:
-        """Download bandwidth in MB/s during gameplay."""
+        """Download bandwidth in MiB/s during gameplay."""
         if self.gameplay_duration <= 0:
             return 0.0
-        return (self.bytes_received / self.gameplay_duration) / (1024 * 1024)
+        return (self.bytes_received / self.gameplay_duration) / BYTES_PER_MEBIBYTE
 
     def to_dict(self, include_timing_samples: bool = False) -> dict:
         """Convert metrics to dictionary for JSON serialization.

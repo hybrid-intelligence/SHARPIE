@@ -16,6 +16,8 @@ import numpy as np
 
 from .participant_simulator import ParticipantMetrics
 
+BYTES_PER_MEBIBYTE = 1024 * 1024
+
 
 @dataclass
 class TrialResult:
@@ -197,16 +199,16 @@ class AggregateMetrics:
             f"RTT (ms): avg={self.avg_rtt_ms:.2f}, median={self.median_rtt_ms:.2f}, p95={self.p95_rtt_ms:.2f}, p99={self.p99_rtt_ms:.2f}",
             "",
             "=== Bandwidth (Per-Participant) ===",
-            f"Upload: {self.upload_bandwidth_mbps:.2f} MB/s",
-            f"Download: {self.download_bandwidth_mbps:.2f} MB/s",
+            f"Upload: {self.upload_bandwidth_mbps:.2f} MiB/s",
+            f"Download: {self.download_bandwidth_mbps:.2f} MiB/s",
             "",
             "=== Bandwidth (Webserver Total) ===",
             f"From Runner: {self.total_from_runner_bytes:,} bytes",
             f"To Runner: {self.total_to_runner_bytes:,} bytes",
             f"From Participants: {self.total_from_participants_bytes:,} bytes",
             f"To Participants: {self.total_to_participants_bytes:,} bytes",
-            f"Total Received: {self.total_webserver_received:,} bytes ({self.webserver_download_bandwidth_mbps:.2f} MB/s)",
-            f"Total Sent: {self.total_webserver_sent:,} bytes ({self.webserver_upload_bandwidth_mbps:.2f} MB/s)",
+            f"Total Received: {self.total_webserver_received:,} bytes ({self.webserver_download_bandwidth_mbps:.2f} MiB/s)",
+            f"Total Sent: {self.total_webserver_sent:,} bytes ({self.webserver_upload_bandwidth_mbps:.2f} MiB/s)",
             "",
             "=== Timing ===",
             f"Avg wait time: {self.avg_wait_time_seconds:.3f}s (waiting for all participants)",
@@ -320,8 +322,8 @@ def aggregate_metrics(
     total_bytes_sent = sum(m.bytes_sent for m in participant_metrics)
     total_bytes_received = sum(m.bytes_received for m in participant_metrics)
     if avg_gameplay_duration > 0:
-        upload_bandwidth_mbps = (total_bytes_sent / avg_gameplay_duration) / (1024 * 1024)
-        download_bandwidth_mbps = (total_bytes_received / avg_gameplay_duration) / (1024 * 1024)
+        upload_bandwidth_mbps = (total_bytes_sent / avg_gameplay_duration) / BYTES_PER_MEBIBYTE
+        download_bandwidth_mbps = (total_bytes_received / avg_gameplay_duration) / BYTES_PER_MEBIBYTE
     else:
         upload_bandwidth_mbps = 0.0
         download_bandwidth_mbps = 0.0
@@ -342,8 +344,8 @@ def aggregate_metrics(
     total_webserver_sent = total_to_runner_bytes + total_to_participants_bytes
     
     if avg_gameplay_duration > 0:
-        webserver_download_bandwidth_mbps = (total_webserver_received / avg_gameplay_duration) / (1024 * 1024)
-        webserver_upload_bandwidth_mbps = (total_webserver_sent / avg_gameplay_duration) / (1024 * 1024)
+        webserver_download_bandwidth_mbps = (total_webserver_received / avg_gameplay_duration) / BYTES_PER_MEBIBYTE
+        webserver_upload_bandwidth_mbps = (total_webserver_sent / avg_gameplay_duration) / BYTES_PER_MEBIBYTE
     else:
         webserver_download_bandwidth_mbps = 0.0
         webserver_upload_bandwidth_mbps = 0.0
@@ -1015,8 +1017,8 @@ def print_comparison_table(results: List[AggregateMetrics]) -> str:
         "Avg FPS",
         "Median RTT (ms)",
         "P95 RTT (ms)",
-        "Upload (MB/s)",
-        "Download (MB/s)",
+        "Upload (MiB/s)",
+        "Download (MiB/s)",
         "Errors",
     ]
 
