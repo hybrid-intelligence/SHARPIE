@@ -311,6 +311,8 @@ Prerequisites:
                         summary = multi_trial.get_summary()
                         print(f"  Avg FPS: {summary.avg_fps.mean:.2f} ± {summary.avg_fps.stddev:.2f}")
                         print(f"  Median RTT: {summary.median_rtt_ms.mean:.2f} ± {summary.median_rtt_ms.stddev:.2f}ms")
+                        print(f"  Upload BW: {summary.upload_bandwidth_mbps.mean:.2f} ± {summary.upload_bandwidth_mbps.stddev:.2f} MiB/s")
+                        print(f"  Download BW: {summary.download_bandwidth_mbps.mean:.2f} ± {summary.download_bandwidth_mbps.stddev:.2f} MiB/s")
 
         elif args.suite == "ai-agents":
             suite = AIAgentScalabilitySuite(
@@ -389,6 +391,8 @@ Prerequisites:
                         summary = multi_trial.get_summary()
                         print(f"  Avg FPS: {summary.avg_fps.mean:.2f} ± {summary.avg_fps.stddev:.2f}")
                         print(f"  Median RTT: {summary.median_rtt_ms.mean:.2f} ± {summary.median_rtt_ms.stddev:.2f}ms")
+                        print(f"  Upload BW: {summary.upload_bandwidth_mbps.mean:.2f} ± {summary.upload_bandwidth_mbps.stddev:.2f} MiB/s")
+                        print(f"  Download BW: {summary.download_bandwidth_mbps.mean:.2f} ± {summary.download_bandwidth_mbps.stddev:.2f} MiB/s")
 
         elif args.suite == "network-latency":
             suite = NetworkLatencySuite(
@@ -467,6 +471,8 @@ Prerequisites:
                         print(f"\nConfig: {config_name} ({len(config_trials)} trials)")
                         print(f"  Avg FPS: {summary.avg_fps.mean:.2f} ± {summary.avg_fps.stddev:.2f}")
                         print(f"  Median RTT: {summary.median_rtt_ms.mean:.2f} ± {summary.median_rtt_ms.stddev:.2f}ms")
+                        print(f"  Upload BW: {summary.upload_bandwidth_mbps.mean:.2f} ± {summary.upload_bandwidth_mbps.stddev:.2f} MiB/s")
+                        print(f"  Download BW: {summary.download_bandwidth_mbps.mean:.2f} ± {summary.download_bandwidth_mbps.stddev:.2f} MiB/s")
 
         elif args.suite == "image-size":
             suite = ImageSizeSuite(
@@ -545,6 +551,8 @@ Prerequisites:
                         print(f"\nConfig: {config_name} ({len(config_trials)} trials)")
                         print(f"  Avg FPS: {summary.avg_fps.mean:.2f} ± {summary.avg_fps.stddev:.2f}")
                         print(f"  Median RTT: {summary.median_rtt_ms.mean:.2f} ± {summary.median_rtt_ms.stddev:.2f}ms")
+                        print(f"  Upload BW: {summary.upload_bandwidth_mbps.mean:.2f} ± {summary.upload_bandwidth_mbps.stddev:.2f} MiB/s")
+                        print(f"  Download BW: {summary.download_bandwidth_mbps.mean:.2f} ± {summary.download_bandwidth_mbps.stddev:.2f} MiB/s")
 
         else:
             # Single benchmark
@@ -621,7 +629,8 @@ Prerequisites:
                     print(f"\nPerformance:")
                     print(f"  Avg FPS: {summary.avg_fps.mean:.2f} ± {summary.avg_fps.stddev:.2f}")
                     print(f"  Median RTT: {summary.median_rtt_ms.mean:.2f} ± {summary.median_rtt_ms.stddev:.2f}ms")
-                    print(f"  Throughput: {summary.total_messages_per_second.mean:.2f} ± {summary.total_messages_per_second.stddev:.2f} msg/s")
+                    print(f"  Upload BW: {summary.upload_bandwidth_mbps.mean:.2f} ± {summary.upload_bandwidth_mbps.stddev:.2f} MiB/s")
+                    print(f"  Download BW: {summary.download_bandwidth_mbps.mean:.2f} ± {summary.download_bandwidth_mbps.stddev:.2f} MiB/s")
                     print(f"\nAcross {len(trial_results)} trials:")
                     for i, t in enumerate(trial_results):
                         print(f"  Trial {i} (seed={t.seed_used}): FPS={t.metrics.avg_fps:.2f}, RTT={t.metrics.median_rtt_ms:.2f}ms")
