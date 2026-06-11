@@ -2,28 +2,27 @@
 """
 Command-line interface for SHARPIE benchmarking tools.
 
-Run from the webserver directory:
-    cd webserver
-    python ../benchmark/cli.py --participants 10 --steps 100 --connection-key YOUR_KEY
+Run from the repository root:
+    sharpie-benchmark --participants 10 --steps 100 --connection-key YOUR_KEY
 
 Usage:
     # Single benchmark with participants
-    python ../benchmark/cli.py --participants 10 --steps 100 --connection-key YOUR_KEY
+    sharpie-benchmark --participants 10 --steps 100 --connection-key YOUR_KEY
 
     # Full participant scalability suite (1, 10, 50, 100, 250 participants)
-    python ../benchmark/cli.py --suite scalability --connection-key YOUR_KEY
+    sharpie-benchmark --suite scalability --connection-key YOUR_KEY
 
     # Full AI agent scalability suite (1, 10, 50, 100, 250 AI agents)
-    python ../benchmark/cli.py --suite ai-agents --connection-key YOUR_KEY
+    sharpie-benchmark --suite ai-agents --connection-key YOUR_KEY
 
     # Network latency suite (machine/lab/regional/global latency presets)
-    python ../benchmark/cli.py --suite network-latency --connection-key YOUR_KEY
+    sharpie-benchmark --suite network-latency --connection-key YOUR_KEY
 
     # Single benchmark with simulated network latency
-    python ../benchmark/cli.py -n 10 --latency global --connection-key YOUR_KEY
+    sharpie-benchmark -n 10 --latency global --connection-key YOUR_KEY
 
     # Custom options
-    python ../benchmark/cli.py -n 50 -s 200 --host localhost --port 8000 --connection-key YOUR_KEY -v
+    sharpie-benchmark -n 50 -s 200 --host localhost --port 8000 --connection-key YOUR_KEY -v
 """
 
 import argparse
@@ -45,14 +44,14 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python -m benchmark.cli -n 10 -s 100 -k KEY    Run 10 participants for 100 steps
-  python -m benchmark.cli --suite scalability -k KEY  Run participant scalability suite
-  python -m benchmark.cli --suite ai-agents -k KEY   Run AI agent scalability suite
-  python -m benchmark.cli --suite network-latency -k KEY  Run network latency suite
-  python -m benchmark.cli --suite image-size -k KEY   Run image size suite
-  python -m benchmark.cli -n 10 --latency global -k KEY   Run with 200ms simulated latency
-  python -m benchmark.cli -n 1 --image-size 512x512 -k KEY   Run with 512x512 render size
-  python -m benchmark.cli -n 50 -v -k KEY        Run with verbose output
+  sharpie-benchmark -n 10 -s 100 -k KEY    Run 10 participants for 100 steps
+  sharpie-benchmark --suite scalability -k KEY  Run participant scalability suite
+  sharpie-benchmark --suite ai-agents -k KEY   Run AI agent scalability suite
+  sharpie-benchmark --suite network-latency -k KEY  Run network latency suite
+  sharpie-benchmark --suite image-size -k KEY   Run image size suite
+  sharpie-benchmark -n 10 --latency global -k KEY   Run with 200ms simulated latency
+  sharpie-benchmark -n 1 --image-size 512x512 -k KEY   Run with 512x512 render size
+  sharpie-benchmark -n 50 -v -k KEY        Run with verbose output
 
 Latency presets:
   machine   - localhost (<0.1ms)
