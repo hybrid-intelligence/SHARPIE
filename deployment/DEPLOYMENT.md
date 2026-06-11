@@ -32,7 +32,7 @@ main push → Test Job (GitHub runner) → Deploy Job (Self-hosted runner) → H
 | `.github/workflows/deploy-production.yml` | GitHub Actions workflow definition |
 | `deployment/nginx.conf` | Nginx reverse proxy configuration |
 | `deployment/webserver_supervisor.conf` | Supervisor config for Django/Daphne |
-| `deployment/runner_supervisor.conf` | Supervisor config for the WebSocket runner |
+| `deployment/runner_supervisor.conf` | Supervisor config for the experiment runner |
 | `deployment/SERVER_SETUP.md` | One-time server setup instructions |
 
 ## Deployment Workflow

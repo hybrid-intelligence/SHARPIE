@@ -78,6 +78,19 @@ pip install -r requirements.txt
 exit
 ```
 
+## Step 3.5: Create Static Files Directory
+
+Django's `collectstatic` command requires a static files directory:
+
+```bash
+# Create static files directory
+sudo mkdir -p /var/www/static
+
+# Set ownership - deployment user needs write access
+sudo chown sharpie-deploy:www-data /var/www/static
+sudo chmod 775 /var/www/static
+```
+
 ## Step 4: Configure Supervisor Socket Permissions
 
 Add the deployment user to the supervisor group to allow running `supervisorctl` without sudo:
@@ -124,7 +137,7 @@ exit
 
 ## Step 5: Configure Supervisor for SHARPIE
 
-Copy and configure the supervisor configs:
+Copy the supervisor configs:
 
 ```bash
 # Copy configs to supervisor directory
@@ -132,29 +145,35 @@ sudo cp /var/www/sharpie/deployment/webserver_supervisor.conf /etc/supervisor/co
 sudo cp /var/www/sharpie/deployment/runner_supervisor.conf /etc/supervisor/conf.d/sharpie-runner.conf
 ```
 
-Edit the configs to use correct paths:
+### Edit the webserver config
+
+The webserver config uses standard paths and typically requires no changes:
 
 ```bash
-# Edit webserver config
 sudo nano /etc/supervisor/conf.d/sharpie-web.conf
 ```
 
-Replace placeholder paths:
-- Change `/my/app/path` to `/var/www/sharpie`
-- Change `/path/to/venv` to `/var/www/sharpie/venv`
-- Change `/your/log/` to `/var/www/sharpie/logs/`
+**If you customized paths**, update:
+- `directory` → your webserver directory (default: `/var/www/sharpie/webserver/`)
+- `environment PATH` → your venv (default: `/var/www/sharpie/venv/bin/`)
+- `stdout_logfile` → your log directory (default: `/var/www/sharpie/logs/asgi.log`)
+
+### Edit the runner config
+
+**Required:** You must set the connection key before the runner can start:
 
 ```bash
-# Edit runner config
 sudo nano /etc/supervisor/conf.d/sharpie-runner.conf
 ```
 
-Replace placeholder paths:
-- Change `/my/app/path` to `/var/www/sharpie`
-- Change `/path/to/venv` to `/var/www/sharpie/venv`
-- Change `/your/log/` to `/var/www/sharpie/logs/`
+Replace `YOUR_CONNECTION_KEY` with the key from Step 11.5 (create this after completing database setup).
 
-Create log directory and apply configuration:
+**If you customized paths**, update:
+- `directory` → your runner directory (default: `/var/www/sharpie/runner`)
+- `environment PATH` → your venv (default: `/var/www/sharpie/venv/bin/`)
+- `stdout_logfile` → your log directory (default: `/var/www/sharpie/logs/runner.log`)
+
+### Create required directories
 
 ```bash
 # Create log directory
@@ -293,7 +312,7 @@ REGISTRATION_KEY=your-registration-key
 DATABASE_URL=postgres://sharpie:your-secure-password@localhost/sharpie
 ```
 
-## Step 11: Verify Setup
+## Step 11: Verify Webserver Setup
 
 ```bash
 # Check supervisor status
@@ -301,7 +320,6 @@ sudo supervisorctl status
 
 # Should show:
 # sharpie-web:running
-# sharpie-runner:running
 
 # Check if application is responding
 curl http://localhost:8000
@@ -312,6 +330,53 @@ sudo systemctl status nginx
 # Check from browser
 # Visit: https://your-domain.com
 ```
+
+## Step 11.5: Create Runner Connection Key
+
+The runner process requires a connection key to authenticate with the webserver. Create a Runner in Django Admin:
+
+1. Create a superuser (if not already done):
+   ```bash
+   sudo su - sharpie-deploy
+   cd /var/www/sharpie
+   source venv/bin/activate
+   cd webserver
+   python manage.py createsuperuser
+   exit
+   ```
+
+2. Log in to Django Admin at `https://your-domain.com/admin/`
+
+3. Navigate to **Runners** and click **Add Runner**
+
+4. Generate a secure connection key:
+   ```bash
+   python -c "from secrets import token_urlsafe; print(token_urlsafe(35))"
+   ```
+
+5. Enter the connection key and save the Runner.
+
+6. Update the runner supervisor config with your connection key:
+   ```bash
+   sudo nano /etc/supervisor/conf.d/sharpie-runner.conf
+   ```
+   
+   Replace `YOUR_CONNECTION_KEY` with the key you created:
+   ```ini
+   command=python manage.py runserver --connection-key=YOUR_ACTUAL_KEY_HERE
+   ```
+
+7. Restart the runner:
+   ```bash
+   sudo supervisorctl restart sharpie-runner
+   ```
+
+8. Verify the runner is running:
+   ```bash
+   sudo supervisorctl status
+   # Should show:
+   # sharpie-runner:running
+   ```
 
 ## Troubleshooting
 
@@ -341,7 +406,7 @@ sudo supervisorctl tail -f sharpie-runner
 
 # Manually start programs
 sudo supervisorctl start sharpie-web
-sudo supervisorctl start sharpie-runner
+sudo supervisorctl restart sharpie-runner
 ```
 
 ### Nginx Issues
