@@ -184,15 +184,15 @@ Prerequisites:
     args = parser.parse_args()
 
     # Import after argument parsing to avoid slow startup
-    from benchmark.config import (
+    from sharpie.benchmark.config import (
         BenchmarkConfig, ScalabilitySuite, AIAgentConfig, AIAgentScalabilitySuite,
         NetworkLatencySuite, ImageSizeSuite, NETWORK_PRESETS, IMAGE_SIZE_PRESETS
     )
-    from benchmark.orchestrator import (
+    from sharpie.benchmark.orchestrator import (
         run_benchmark, run_scalability_suite, run_ai_agent_benchmark,
         run_ai_agent_scalability_suite, run_network_latency_suite, run_image_size_suite
     )
-    from benchmark.metrics import print_comparison_table
+    from sharpie.benchmark.metrics import print_comparison_table
 
     async def run():
         if args.suite == "scalability":
