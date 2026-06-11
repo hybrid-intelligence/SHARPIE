@@ -7,7 +7,7 @@ import sys
 def main():
     """Run administrative tasks."""
     # Note FdH: this breaks running manage.py from `sharpie/webserver` but enables running it as a pip installable package
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sharpie.webserver.mysite.settings')
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sharpie.webserver.server.settings')
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

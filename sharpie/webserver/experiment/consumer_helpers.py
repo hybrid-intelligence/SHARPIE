@@ -9,7 +9,7 @@ from django.db import transaction
 from django.db.models import F, Prefetch
 from django.db.models.functions import Now
 
-from data.models import Session
+from sharpie.webserver.data.models import Session
 
 
 class RunConsumerHelpers:

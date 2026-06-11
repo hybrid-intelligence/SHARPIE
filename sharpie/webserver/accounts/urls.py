@@ -1,5 +1,5 @@
 from django.urls import path
-from ....webserver.accounts import views
+from sharpie.webserver.accounts import views
 
 urlpatterns = [
     path("", views.login_, name="index"),

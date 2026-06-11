@@ -4,9 +4,9 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.db.models.functions import Now
 
-from accounts.models import Participant
-from runner.models import Runner
-from data.models import Session, Episode, Record
+from sharpie.webserver.accounts.models import Participant
+from sharpie.webserver.runner.models import Runner
+from sharpie.webserver.data.models import Session, Episode, Record
 from .consumer_helpers import RunConsumerHelpers, decode_data
 
 

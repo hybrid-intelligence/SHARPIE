@@ -2,7 +2,7 @@ from django.db.models.functions import Now
 from django.db import models
 from django.core.exceptions import ValidationError
 
-from accounts.models import Participant
+from sharpie.webserver.accounts.models import Participant
 
 import os
 
