@@ -12,14 +12,17 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import environ
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+CWD = Path.cwd() # current working directory
+
 # Initialize environment
 env = environ.Env()
-environ.Env.read_env(BASE_DIR / '.env')
-
+environ.Env.read_env(os.path.join(CWD, ".env"))
+print('Using settings from:', os.path.join(CWD, ".env"), ' if file exists')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -105,7 +108,7 @@ TEMPLATES = [
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 DATABASES = {
-    'default': env.db_url(default=f'sqlite:///{BASE_DIR / "db.sqlite3"}')
+    'default': env.db_url(default=f'sqlite:///{CWD / "db.sqlite3"}')
 }
 
 
