@@ -15,7 +15,6 @@ import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-print("BASE_DIR:", BASE_DIR)
 
 # Initialize environment
 env = environ.Env()
@@ -70,12 +69,12 @@ REGISTRATION_KEY = env('REGISTRATION_KEY', default='sharpie')
 
 INSTALLED_APPS = [
     'daphne',
-
-    'home',
-    'accounts',
-    'experiment',
-    'runner',
-    'data',
+    # Note FdH: the sharpie.webserver prefix breaks running manage.py from `sharpie/webserver` but enables running it as a pip installable package
+    'sharpie.webserver.home',
+    'sharpie.webserver.accounts',
+    'sharpie.webserver.experiment',
+    'sharpie.webserver.runner',
+    'sharpie.webserver.data',
 
     'crispy_forms',
     'crispy_bootstrap4',
@@ -103,12 +102,12 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'server.urls'
+ROOT_URLCONF = 'sharpie.webserver.server.urls'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['server/templates'],
+        'DIRS': [BASE_DIR / 'server/templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -123,7 +122,6 @@ TEMPLATES = [
 
 
 
-print(env.db_url(default=f'sqlite:///{BASE_DIR / "db.sqlite3"}'))
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 DATABASES = {
@@ -173,7 +171,7 @@ STATIC_ROOT = '/var/www/static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-ASGI_APPLICATION = "server.asgi.application"
+ASGI_APPLICATION = "sharpie.webserver.server.asgi.application"
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",

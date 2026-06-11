@@ -5,14 +5,14 @@ import os
 
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from accounts.decorators import consent_required
+from sharpie.webserver.accounts.decorators import consent_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import Http404, HttpResponse
-from experiment.forms import ConfigForm
-from experiment import models
+from sharpie.webserver.experiment.forms import ConfigForm
+from sharpie.webserver.experiment import models
 
-from accounts.models import Participant
-from data.models import Session
+from sharpie.webserver.accounts.models import Participant
+from sharpie.webserver.data.models import Session
 
 from django.conf import settings
 

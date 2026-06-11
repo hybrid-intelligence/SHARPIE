@@ -1,7 +1,7 @@
 from django.shortcuts import render
-from experiment.models import Experiment
+from sharpie.webserver.experiment.models import Experiment
 
-from server.settings import DEMO
+from sharpie.webserver.server.settings import DEMO
 
 
 def index(request):

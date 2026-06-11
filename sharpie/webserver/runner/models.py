@@ -2,7 +2,7 @@ from django.db.models.functions import Now
 from django.db import models
 from django.core.exceptions import ValidationError
 
-from data.models import Session
+from sharpie.webserver.data.models import Session
 
 
 

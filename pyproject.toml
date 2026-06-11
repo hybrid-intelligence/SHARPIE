@@ -53,6 +53,11 @@ docs = [
     "myst-parser>=2.0",
 ]
 
+[project.scripts]
+sharpie-benchmark = "sharpie.benchmark.cli:main"
+sharpie-web = "sharpie.webserver.manage:main"
+sharpie-runner = "sharpie.runner.manage:main"
+
 [project.urls]
 Homepage = "https://github.com/hybrid-intelligence/SHARPIE"
 Documentation = "https://sharpie.readthedocs.io"
@@ -61,16 +66,6 @@ Issues = "https://github.com/hybrid-intelligence/SHARPIE/issues"
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
-
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["sharpie*",]
-
-[project.scripts]
-sharpie-benchmark = "sharpie.benchmark.cli:main"
-sharpie-web = "sharpie.webserver.manage:main"
-sharpie-runner = "sharpie.runner.manage:main"
-
 
 # Setuptools configuration
 [tool.setuptools]
