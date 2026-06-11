@@ -1,0 +1,48 @@
+{
+  "benchmark_id": "benchmark_1p_b37c151c",
+  "timestamp": "2026-06-11T12:33:28.013495",
+  "num_participants": 1,
+  "target_steps": 100,
+  "total_steps_completed": 0,
+  "total_errors": 1,
+  "avg_fps": 0.0,
+  "min_fps": 0.0,
+  "max_fps": 0.0,
+  "median_fps": 0.0,
+  "std_fps": 0,
+  "avg_rtt_ms": 0,
+  "median_rtt_ms": 0,
+  "min_rtt_ms": 0,
+  "max_rtt_ms": 0,
+  "p95_rtt_ms": 0,
+  "p99_rtt_ms": 0,
+  "std_rtt_ms": 0,
+  "total_messages_per_second": 0.0,
+  "error_rate": 1.0,
+  "total_duration_seconds": 0.004,
+  "avg_participant_duration_seconds": 0.004,
+  "avg_wait_time_seconds": 0.0,
+  "max_wait_time_seconds": 0.0,
+  "avg_gameplay_duration_seconds": 0.004,
+  "participants": [
+    {
+      "participant_id": "64",
+      "steps_completed": 0,
+      "total_duration_seconds": 0.004,
+      "wait_time_seconds": 0.0,
+      "gameplay_duration_seconds": 0.004,
+      "fps": 0.0,
+      "rtt": {
+        "avg_ms": 0.0,
+        "median_ms": 0.0,
+        "min_ms": 0.0,
+        "max_ms": 0.0,
+        "p95_ms": 0.0,
+        "p99_ms": 0.0
+      },
+      "errors": 1,
+      "error_rate": 1.0,
+      "connected": false
+    }
+  ]
+}

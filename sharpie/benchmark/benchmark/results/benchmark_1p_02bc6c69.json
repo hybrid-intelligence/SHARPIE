@@ -1,0 +1,48 @@
+{
+  "benchmark_id": "benchmark_1p_02bc6c69",
+  "timestamp": "2026-06-11T12:49:15.958064",
+  "num_participants": 1,
+  "target_steps": 100,
+  "total_steps_completed": 101,
+  "total_errors": 0,
+  "avg_fps": 30.41442070656132,
+  "min_fps": 30.41442070656132,
+  "max_fps": 30.41442070656132,
+  "median_fps": 30.41442070656132,
+  "std_fps": 0,
+  "avg_rtt_ms": 22.17010736465454,
+  "median_rtt_ms": 22.011995315551758,
+  "min_rtt_ms": 5.340099334716797,
+  "max_rtt_ms": 46.794891357421875,
+  "p95_rtt_ms": 24.956941604614258,
+  "p99_rtt_ms": 46.794891357421875,
+  "std_rtt_ms": 3.879009534829846,
+  "total_messages_per_second": 53.226358779267606,
+  "error_rate": 0.0,
+  "total_duration_seconds": 3.795,
+  "avg_participant_duration_seconds": 3.795,
+  "avg_wait_time_seconds": 0.474,
+  "max_wait_time_seconds": 0.474,
+  "avg_gameplay_duration_seconds": 3.321,
+  "participants": [
+    {
+      "participant_id": "1",
+      "steps_completed": 101,
+      "total_duration_seconds": 3.795,
+      "wait_time_seconds": 0.474,
+      "gameplay_duration_seconds": 3.321,
+      "fps": 30.414,
+      "rtt": {
+        "avg_ms": 22.17,
+        "median_ms": 22.01,
+        "min_ms": 5.34,
+        "max_ms": 46.79,
+        "p95_ms": 24.96,
+        "p99_ms": 46.79
+      },
+      "errors": 0,
+      "error_rate": 0.0,
+      "connected": true
+    }
+  ]
+}

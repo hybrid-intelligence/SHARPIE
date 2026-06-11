@@ -28,6 +28,8 @@ import sys
 import uuid
 from typing import List, Tuple, Optional
 
+FILE_PATH = os.path.abspath(__file__)
+
 # Path setup to avoid conflicts between:
 # - top-level 'runner' directory and 'webserver/runner' Django app
 # Must be done before Django setup
@@ -50,20 +52,22 @@ if _benchmark_path not in sys.path:
     sys.path.insert(0, _benchmark_path)
 
 # Setup Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'server.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sharpie.webserver.server.settings')
 import django
 django.setup()
 
+from django.contrib.sessions.backends.db import SessionStore
 from django.contrib.auth.models import User
 from django.test import Client
 from asgiref.sync import sync_to_async
 
-from accounts.models import Participant, Consent
-from experiment.models import Experiment, Environment, Agent, Policy
-from data.models import Session
-from runner.models import Runner
+from sharpie.webserver.accounts.models import Participant, Consent
+from sharpie.webserver.experiment.models import Experiment, Environment, Agent, Policy
+from sharpie.webserver.data.models import Session
+from sharpie.webserver.runner.models import Runner
+from sharpie.webserver.data.models import Episode, Record
 
-from .config import BenchmarkConfig, BENCHMARK_EXPERIMENT, AIAgentConfig, AI_AGENT_EXPERIMENT, NetworkLatencySuite, ImageSizeSuite
+from .config import FILE_PATH, BenchmarkConfig, BENCHMARK_EXPERIMENT, AIAgentConfig, AI_AGENT_EXPERIMENT, NetworkLatencySuite, ImageSizeSuite
 from .participant_simulator import ParticipantSimulator, ParticipantMetrics
 from .metrics import aggregate_metrics, save_results, AggregateMetrics
 
@@ -168,7 +172,7 @@ class BenchmarkOrchestrator:
             name="NoOp Benchmark Environment",
             defaults={
                 "description": "Minimal environment for measuring infrastructure overhead",
-                "filepaths": {"environment": "noop_environment.py"},
+                "filepaths": {"environment": os.path.join(FILE_PATH, "noop_environment.py")},
                 "metadata": {
                     "max_steps": self.config.num_steps,
                     "render_size": list(self.config.image_size),
@@ -280,8 +284,6 @@ class BenchmarkOrchestrator:
         Returns:
             List of (participant_id, session_cookie, role) tuples
         """
-        from django.contrib.sessions.backends.db import SessionStore
-
         cookies = []
 
         for i, (user, participant) in enumerate(zip(self.test_users, self.test_participants)):
@@ -366,10 +368,8 @@ class BenchmarkOrchestrator:
             return
 
         print(f"[{self.benchmark_id}] Cleaning up...")
-
         # Delete test session and related data (need to handle FK constraints)
         if hasattr(self, 'test_session') and self.test_session:
-            from data.models import Episode, Record
             try:
                 # Delete records first (they reference episodes)
                 episodes = Episode.objects.filter(session=self.test_session)
@@ -525,7 +525,7 @@ class AIAgentOrchestrator:
             name="NoOp Benchmark Environment",
             defaults={
                 "description": "Minimal environment for measuring infrastructure overhead",
-                "filepaths": {"environment": "noop_environment.py"},
+                "filepaths": {"environment": os.path.join(FILE_PATH, 'noop_environment.py')},
                 "metadata": {"max_steps": self.config.num_steps},
             }
         )
@@ -716,7 +716,6 @@ class AIAgentOrchestrator:
         print(f"[{self.benchmark_id}] Cleaning up...")
 
         if hasattr(self, 'test_session') and self.test_session:
-            from data.models import Episode, Record
             try:
                 episodes = Episode.objects.filter(session=self.test_session)
                 Record.objects.filter(episode__in=episodes).delete()
