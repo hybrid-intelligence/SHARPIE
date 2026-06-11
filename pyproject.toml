@@ -5,6 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "SHARPIE"
 version = "1.0.0"
+
 authors = [
     {name="Libio Gonçalves Braz",  email="l.b.goncalvesbraz@uu.nl"},
     {name="Floris den Hengst", email="f.den.hengst@vu.nl"},
@@ -96,3 +97,4 @@ select = ["E", "F", "I", "N", "W"]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "sharpie.webserver.server.settings"
+

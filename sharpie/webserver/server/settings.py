@@ -16,6 +16,7 @@ import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+print("BASE_DIR:", BASE_DIR)
 
 CWD = Path.cwd() # current working directory
 
@@ -105,10 +106,18 @@ TEMPLATES = [
 
 
 
+<<<<<<<< HEAD:sharpie/webserver/server/settings.py
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 DATABASES = {
     'default': env.db_url(default=f'sqlite:///{CWD / "db.sqlite3"}')
+========
+print(env.db_url(default=f'sqlite:///{BASE_DIR / "db.sqlite3"}'))
+# Database
+# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
+DATABASES = {
+    'default': env.db_url(default=f'sqlite:///{BASE_DIR / "db.sqlite3"}')
+>>>>>>>> 11099e6f8dd432b6419ee26732fcf86f2d00c8ca:sharpie/webserver/mysite/settings.py
 }
 
 

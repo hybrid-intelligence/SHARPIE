@@ -1,6 +1,7 @@
 from django.urls import path
 from sharpie.webserver.accounts import views
 
+
 urlpatterns = [
     path("", views.login_, name="index"),
     path("login/", views.login_, name="login"),
