@@ -1,0 +1,4 @@
+recursive-include webserver/templates *
+recursive-include webserver/static *
+recursive-include runner/templates *
+include requirements.txt
