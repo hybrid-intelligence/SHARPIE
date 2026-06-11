@@ -47,6 +47,7 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.0",
 ]
+# should be the same as docs/requirements.txt
 docs = [
     "sphinx>=7.0",
     "sphinx-rtd-theme>=2.0",
