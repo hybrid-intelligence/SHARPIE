@@ -332,12 +332,7 @@ def start_experiment(hostname, port, connection_key, link, room):
         logging.warning(f"Connection to {link} refused")
 
 
-
-
-
-
-
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="Run experiment runner.")
     parser.add_argument("--hostname", type=str, default="localhost", help="Hostname of the server")
     parser.add_argument("--port", type=int, default=8000, help="Port of the server")
@@ -378,3 +373,6 @@ if __name__ == "__main__":
             time.sleep(sleeptime)
             sleeptime = min(60.0, sleeptime * 2)
             continue
+
+if __name__ == "__main__":
+    main()

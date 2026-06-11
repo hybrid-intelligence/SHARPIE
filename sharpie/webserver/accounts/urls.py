@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from ....webserver.accounts import views
 
 urlpatterns = [
     path("", views.login_, name="index"),

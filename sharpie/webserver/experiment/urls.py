@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from ....webserver.experiment import views
 
 # These are the default URLs available:
 # - 2 URLs redirected to 1 view for the configuration
