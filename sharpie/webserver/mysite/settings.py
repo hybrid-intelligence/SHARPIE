@@ -15,6 +15,7 @@ import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+print("BASE_DIR:", BASE_DIR)
 
 # Initialize environment
 env = environ.Env()
@@ -101,11 +102,12 @@ TEMPLATES = [
 ]
 
 
+
+print(env.db_url(default=f'sqlite:///{BASE_DIR / "db.sqlite3"}'))
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
 DATABASES = {
-    'default': env.db_url(default=f'sqlite://{BASE_DIR / "db.sqlite3"}')
+    'default': env.db_url(default=f'sqlite:///{BASE_DIR / "db.sqlite3"}')
 }
 
 

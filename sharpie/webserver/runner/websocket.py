@@ -7,7 +7,7 @@ from django.utils import timezone
 from channels.generic.websocket import WebsocketConsumer
 
 from .models import Runner
-from data.models import Session
+from sharpie.webserver.data.models import Session
 
 
 
