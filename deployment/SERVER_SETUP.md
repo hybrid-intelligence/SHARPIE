@@ -308,6 +308,7 @@ SECRET_KEY=
 # IMPORTANT: Generate a secure secret key before running the application
 # Generate one with: python -c "from secrets import token_urlsafe; print(token_urlsafe(50))"
 ALLOWED_HOSTS=your-domain.com,www.your-domain.com
+CSRF_TRUSTED_ORIGINS=https://your-domain.com,https://www.your-domain.com
 REGISTRATION_KEY=your-registration-key
 DATABASE_URL=postgres://sharpie:your-secure-password@localhost/sharpie
 ```
