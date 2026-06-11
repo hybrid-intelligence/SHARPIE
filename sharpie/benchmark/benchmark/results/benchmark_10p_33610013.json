@@ -1,0 +1,219 @@
+{
+  "benchmark_id": "benchmark_10p_33610013",
+  "timestamp": "2026-06-11T12:35:20.961206",
+  "num_participants": 10,
+  "target_steps": 100,
+  "total_steps_completed": 0,
+  "total_errors": 10,
+  "avg_fps": 0.0,
+  "min_fps": 0.0,
+  "max_fps": 0.0,
+  "median_fps": 0.0,
+  "std_fps": 0.0,
+  "avg_rtt_ms": 0,
+  "median_rtt_ms": 0,
+  "min_rtt_ms": 0,
+  "max_rtt_ms": 0,
+  "p95_rtt_ms": 0,
+  "p99_rtt_ms": 0,
+  "std_rtt_ms": 0,
+  "total_messages_per_second": 0.0,
+  "error_rate": 1.0,
+  "total_duration_seconds": 0.004,
+  "avg_participant_duration_seconds": 0.004,
+  "avg_wait_time_seconds": 0.0,
+  "max_wait_time_seconds": 0.0,
+  "avg_gameplay_duration_seconds": 0.004,
+  "participants": [
+    {
+      "participant_id": "86",
+      "steps_completed": 0,
+      "total_duration_seconds": 0.004,
+      "wait_time_seconds": 0.0,
+      "gameplay_duration_seconds": 0.004,
+      "fps": 0.0,
+      "rtt": {
+        "avg_ms": 0.0,
+        "median_ms": 0.0,
+        "min_ms": 0.0,
+        "max_ms": 0.0,
+        "p95_ms": 0.0,
+        "p99_ms": 0.0
+      },
+      "errors": 1,
+      "error_rate": 1.0,
+      "connected": false
+    },
+    {
+      "participant_id": "87",
+      "steps_completed": 0,
+      "total_duration_seconds": 0.004,
+      "wait_time_seconds": 0.0,
+      "gameplay_duration_seconds": 0.004,
+      "fps": 0.0,
+      "rtt": {
+        "avg_ms": 0.0,
+        "median_ms": 0.0,
+        "min_ms": 0.0,
+        "max_ms": 0.0,
+        "p95_ms": 0.0,
+        "p99_ms": 0.0
+      },
+      "errors": 1,
+      "error_rate": 1.0,
+      "connected": false
+    },
+    {
+      "participant_id": "88",
+      "steps_completed": 0,
+      "total_duration_seconds": 0.004,
+      "wait_time_seconds": 0.0,
+      "gameplay_duration_seconds": 0.004,
+      "fps": 0.0,
+      "rtt": {
+        "avg_ms": 0.0,
+        "median_ms": 0.0,
+        "min_ms": 0.0,
+        "max_ms": 0.0,
+        "p95_ms": 0.0,
+        "p99_ms": 0.0
+      },
+      "errors": 1,
+      "error_rate": 1.0,
+      "connected": false
+    },
+    {
+      "participant_id": "89",
+      "steps_completed": 0,
+      "total_duration_seconds": 0.004,
+      "wait_time_seconds": 0.0,
+      "gameplay_duration_seconds": 0.004,
+      "fps": 0.0,
+      "rtt": {
+        "avg_ms": 0.0,
+        "median_ms": 0.0,
+        "min_ms": 0.0,
+        "max_ms": 0.0,
+        "p95_ms": 0.0,
+        "p99_ms": 0.0
+      },
+      "errors": 1,
+      "error_rate": 1.0,
+      "connected": false
+    },
+    {
+      "participant_id": "90",
+      "steps_completed": 0,
+      "total_duration_seconds": 0.004,
+      "wait_time_seconds": 0.0,
+      "gameplay_duration_seconds": 0.004,
+      "fps": 0.0,
+      "rtt": {
+        "avg_ms": 0.0,
+        "median_ms": 0.0,
+        "min_ms": 0.0,
+        "max_ms": 0.0,
+        "p95_ms": 0.0,
+        "p99_ms": 0.0
+      },
+      "errors": 1,
+      "error_rate": 1.0,
+      "connected": false
+    },
+    {
+      "participant_id": "91",
+      "steps_completed": 0,
+      "total_duration_seconds": 0.004,
+      "wait_time_seconds": 0.0,
+      "gameplay_duration_seconds": 0.004,
+      "fps": 0.0,
+      "rtt": {
+        "avg_ms": 0.0,
+        "median_ms": 0.0,
+        "min_ms": 0.0,
+        "max_ms": 0.0,
+        "p95_ms": 0.0,
+        "p99_ms": 0.0
+      },
+      "errors": 1,
+      "error_rate": 1.0,
+      "connected": false
+    },
+    {
+      "participant_id": "92",
+      "steps_completed": 0,
+      "total_duration_seconds": 0.004,
+      "wait_time_seconds": 0.0,
+      "gameplay_duration_seconds": 0.004,
+      "fps": 0.0,
+      "rtt": {
+        "avg_ms": 0.0,
+        "median_ms": 0.0,
+        "min_ms": 0.0,
+        "max_ms": 0.0,
+        "p95_ms": 0.0,
+        "p99_ms": 0.0
+      },
+      "errors": 1,
+      "error_rate": 1.0,
+      "connected": false
+    },
+    {
+      "participant_id": "93",
+      "steps_completed": 0,
+      "total_duration_seconds": 0.004,
+      "wait_time_seconds": 0.0,
+      "gameplay_duration_seconds": 0.004,
+      "fps": 0.0,
+      "rtt": {
+        "avg_ms": 0.0,
+        "median_ms": 0.0,
+        "min_ms": 0.0,
+        "max_ms": 0.0,
+        "p95_ms": 0.0,
+        "p99_ms": 0.0
+      },
+      "errors": 1,
+      "error_rate": 1.0,
+      "connected": false
+    },
+    {
+      "participant_id": "94",
+      "steps_completed": 0,
+      "total_duration_seconds": 0.004,
+      "wait_time_seconds": 0.0,
+      "gameplay_duration_seconds": 0.004,
+      "fps": 0.0,
+      "rtt": {
+        "avg_ms": 0.0,
+        "median_ms": 0.0,
+        "min_ms": 0.0,
+        "max_ms": 0.0,
+        "p95_ms": 0.0,
+        "p99_ms": 0.0
+      },
+      "errors": 1,
+      "error_rate": 1.0,
+      "connected": false
+    },
+    {
+      "participant_id": "95",
+      "steps_completed": 0,
+      "total_duration_seconds": 0.004,
+      "wait_time_seconds": 0.0,
+      "gameplay_duration_seconds": 0.004,
+      "fps": 0.0,
+      "rtt": {
+        "avg_ms": 0.0,
+        "median_ms": 0.0,
+        "min_ms": 0.0,
+        "max_ms": 0.0,
+        "p95_ms": 0.0,
+        "p99_ms": 0.0
+      },
+      "errors": 1,
+      "error_rate": 1.0,
+      "connected": false
+    }
+  ]
+}

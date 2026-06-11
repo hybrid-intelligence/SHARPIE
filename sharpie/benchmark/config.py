@@ -4,6 +4,10 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 import os
 
+from pathlib import Path
+
+FILE_PATH = Path(__file__).resolve().parent
+
 
 # Network latency presets (in seconds)
 NETWORK_PRESETS = {
@@ -115,14 +119,13 @@ class ImageSizeSuite:
             verbose=self.verbose,
         )
 
-
 # Benchmark experiment configuration
 BENCHMARK_EXPERIMENT = {
     "name": "Scalability Benchmark",
     "link": "benchmark-scalability",
     "short_description": "Infrastructure overhead benchmark",
     "long_description": "Measures SHARPIE's capacity for hosting large-scale crowdsourced studies.",
-    "environment_file": "noop_environment.py",
+    "environment_file": os.path.join(FILE_PATH, "noop_environment.py"),
     "target_fps": 30.0,
     "wait_for_inputs": False,  # Wait for participant actions
     "number_of_episodes": 1,
@@ -134,7 +137,7 @@ AI_AGENT_EXPERIMENT = {
     "link": "benchmark-ai-agents",
     "short_description": "AI agent overhead benchmark",
     "long_description": "Measures SHARPIE's capacity for running many AI agents with policies.",
-    "environment_file": "noop_environment.py",
+    "environment_file": os.path.join(FILE_PATH, "noop_environment.py"),
     "target_fps": 30.0,
     "wait_for_inputs": False,
     "number_of_episodes": 1,

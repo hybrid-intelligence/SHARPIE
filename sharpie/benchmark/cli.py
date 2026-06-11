@@ -31,15 +31,6 @@ import asyncio
 import sys
 import os
 
-# Verify we're in the webserver directory
-_cwd = os.path.basename(os.getcwd())
-if _cwd != 'webserver':
-    print("ERROR: Benchmark must be run from the 'webserver' directory.")
-    print(f"Current directory: {os.getcwd()}")
-    print("\nRun:")
-    print("  cd webserver")
-    print("  python ../benchmark/cli.py --help")
-    sys.exit(1)
 
 # Add project root to sys.path for benchmark module imports
 # (we're in webserver, so parent is project root)
