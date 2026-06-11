@@ -46,6 +46,8 @@ dev = [
     "black>=23.0",
     "ruff>=0.1.0",
     "mypy>=1.0",
+    "build==1.5.0",
+    "pygraphviz~=1.14.0",
 ]
 # should be the same as docs/requirements.txt
 docs = [
@@ -70,7 +72,7 @@ dependencies = {file = ["requirements.txt"]}
 
 # Setuptools configuration
 [tool.setuptools]
-packages = ["sharpie"]
+packages = { find = { include = ["sharpie*"] } }
 zip-safe = false
 
 [tool.setuptools.package-data]
