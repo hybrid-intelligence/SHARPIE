@@ -181,6 +181,102 @@ sudo systemctl status redis-server
 redis-cli ping
 ```
 
+## Use-Case Installation
+
+SHARPIE automatically installs demo use-cases from the [SHARPIE_Gallery](https://github.com/hybrid-intelligence/SHARPIE_Gallery) repository during deployment. Use-cases are experiment configurations (environments, policies, agents) that users can run immediately.
+
+### How It Works
+
+1. **Deployment workflow** runs `scripts/install_use_cases.sh`
+2. **Script clones** the SHARPIE_Gallery repository
+3. **For each use-case** listed in `deployment/use_cases.txt`:
+   - Copies files to `runner/<use_case>/` directory
+   - Installs Python dependencies
+   - Creates database entries (Environment, Policy, Agent, Experiment)
+4. **Cleanup** removes temporary files
+
+### Configuration
+
+Edit `deployment/use_cases.txt` to customize which use-cases are installed:
+
+```
+# Lightweight demo use-cases (Python >= 3.13 compatible):
+amaze
+frozen
+mountain
+spread
+tag
+
+# Resource-intensive use-cases (disabled for demo server):
+# mario (requires gym-super-mario-bros)
+# overcooked (requires Python 3.10.x)
+```
+
+### Available Use-Cases
+
+Run `python install.py --list` in the SHARPIE_Gallery repository to see all available use-cases.
+
+**Lightweight (recommended for demo servers):**
+- **amaze** - Maze navigation with TAMER (minimal dependencies)
+- **frozen** - Frozen lake with TAMER (minimal dependencies)
+- **mountain** - Mountain car human-only (minimal dependencies)
+- **spread** - Multi-agent coordination (minimal dependencies)
+- **tag** - Multi-agent pursuit (minimal dependencies)
+
+**Medium weight (optional):**
+- **mario** - Super Mario Bros behavior cloning (requires gym-super-mario-bros)
+
+**Heavy weight (avoid on demo servers):**
+- **overcooked** - Collaborative cooking (requires Python 3.10.x specifically)
+- **saycan** - Language-conditioned manipulation (requires Python 3.10.x, JAX, TensorFlow)
+- **smacv2** - StarCraft II challenge (requires Python 3.10.x, heavy dependencies)
+
+### Manual Installation
+
+To manually install use-cases outside of deployment:
+
+```bash
+# Clone Gallery
+git clone https://github.com/hybrid-intelligence/SHARPIE_Gallery.git /tmp/SHARPIE_Gallery
+
+# Install specific use-case
+cd /tmp/SHARPIE_Gallery
+python install.py <use_case> --sharpie-dir /var/www/sharpie
+
+# Or run the deployment script
+cd /var/www/sharpie
+source venv/bin/activate
+bash scripts/install_use_cases.sh
+```
+
+### Troubleshooting
+
+**Use-case installation fails:**
+- Check logs: `tail -f /var/www/sharpie/logs/use_cases_install.log`
+- Verify Python version compatibility (use-case requires Python >= 3.13)
+- Check if dependencies are installed: `pip list`
+- Verify database migrations: `cd webserver && python manage.py showmigrations`
+
+**Use-case not appearing in admin:**
+- Verify installation succeeded in logs
+- Check database: `cd webserver && python manage.py dbshell`
+  ```sql
+  SELECT * FROM experiment_experiment;
+  ```
+- Verify files exist: `ls -la /var/www/sharpie/runner/<use_case>/`
+
+**Experiments won't start:**
+- Check runner logs: `sudo supervisorctl tail -f sharpie-runner`
+- Verify runner is connected: Check Django logs for WebSocket connection
+- Ensure use-case files are in runner directory
+
+**Reinstall all use-cases:**
+```bash
+cd /var/www/sharpie
+source venv/bin/activate
+bash scripts/install_use_cases.sh
+```
+
 ## Monitoring
 
 Consider setting up:

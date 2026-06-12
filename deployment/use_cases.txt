@@ -1,0 +1,16 @@
+# Use-cases to install in production (demo server)
+# One use-case per line, lines starting with # are comments
+# Use 'python install.py --list' in SHARPIE_Gallery to see all available use-cases
+
+# Lightweight demo use-cases (Python >= 3.13 compatible):
+amaze
+frozen
+mountain
+spread
+tag
+
+# Resource-intensive use-cases (disabled for demo server):
+# mario (requires gym-super-mario-bros)
+# overcooked (requires Python 3.10.x)
+# saycan (requires Python 3.10.x)
+# smacv2 (requires Python 3.10.x)
