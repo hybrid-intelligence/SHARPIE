@@ -15,7 +15,7 @@ jobs:
           python-version: '3.13'
 
       - name: Install graphviz
-        run: sudo apt-get install -y graphviz
+        run: sudo apt-get install -y graphviz graphviz-dev
 
       - name: Install dependencies
         run: |
