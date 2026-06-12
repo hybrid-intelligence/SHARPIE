@@ -53,11 +53,13 @@ for use_case in $USE_CASES; do
     fi
     
     # Install dependencies and update database
+    set +e  # Temporarily disable exit on error
     OUTPUT=$(python "$TEMP_DIR/install.py" "$use_case" \
          --sharpie-dir "$SHARPIE_DIR" \
          --webserver-dir "$WEBSERVER_DIR" \
          --quiet 2>&1)
     EXIT_CODE=$?
+    set -e  # Re-enable exit on error
     echo "$OUTPUT" | tee -a "$LOG_FILE"
     
     if [ $EXIT_CODE -eq 0 ]; then
