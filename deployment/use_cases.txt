@@ -8,9 +8,9 @@ frozen
 mountain
 spread
 tag
+mario
 
 # Resource-intensive use-cases (disabled for demo server):
-# mario (requires gym-super-mario-bros)
 # overcooked (requires Python 3.10.x)
 # saycan (requires Python 3.10.x)
 # smacv2 (requires Python 3.10.x)
