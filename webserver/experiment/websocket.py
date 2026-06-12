@@ -247,9 +247,11 @@ class RunConsumer(RunConsumerHelpers, AsyncWebsocketConsumer):
                 # Session may have been deleted
                 return
 
-        # If this is a participant (not a runner) and the session is completed or aborted,
-        # we need to update their session to reflect they're no longer in that session
+        # If this is a participant (not a runner), handle disconnection
         if not self.runner and hasattr(self, 'session'):
+            # Decrement connected participants count if session hasn't started
+            await database_sync_to_async(self._do_decrement)()
+            
             # Refresh the session from the database to get the latest status
             try:
                 await database_sync_to_async(self.session.refresh_from_db)()
