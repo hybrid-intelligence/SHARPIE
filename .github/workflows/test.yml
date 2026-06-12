@@ -24,5 +24,6 @@ jobs:
 
       - name: Run tests
         run: |
-          python webserver/manage.py test accounts
-          python webserver/manage.py test experiment
+          cd webserver
+          python manage.py test accounts
+          python manage.py test experiment
