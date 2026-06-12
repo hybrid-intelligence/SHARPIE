@@ -3,7 +3,7 @@
 # Use 'python install.py --list' in SHARPIE_Gallery to see all available use-cases
 
 # Lightweight demo use-cases (Python >= 3.13 compatible):
-amaze
+# amaze (disabled - requires numpy<2.0.0, incompatible with Python 3.12+)
 frozen
 mountain
 spread
