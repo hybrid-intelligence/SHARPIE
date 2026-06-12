@@ -90,7 +90,7 @@ If a deployment causes issues:
    cd webserver
    python manage.py migrate
    python manage.py collectstatic --noinput
-   supervisorctl restart sharpie-web
+   supervisorctl restart sharpie-web:*
    supervisorctl restart sharpie-runner
    ```
 
@@ -139,7 +139,7 @@ Installed automatically from `requirements.txt` during deployment.
 
 **Services don't restart**
 - Verify supervisor is running: `sudo systemctl status supervisor`
-- Check supervisor logs: `sudo supervisorctl tail sharpie-web`
+   - Check supervisor logs: `sudo supervisorctl tail sharpie-web:*`
 - Verify user is in the supervisor group
 
 **Database migrations fail**
@@ -159,7 +159,7 @@ Installed automatically from `requirements.txt` during deployment.
 supervisorctl status
 
 # View service logs
-supervisorctl tail -f sharpie-web
+ supervisorctl tail -f sharpie-web:*
 supervisorctl tail -f sharpie-runner
 
 # Restart specific service

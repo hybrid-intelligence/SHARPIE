@@ -23,4 +23,4 @@ jobs:
           cd webserver
           python manage.py migrate
           python manage.py collectstatic --noinput
-          supervisorctl restart sharpie-web sharpie-runner
+          supervisorctl restart sharpie-web:* sharpie-runner
