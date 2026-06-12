@@ -53,10 +53,14 @@ for use_case in $USE_CASES; do
     fi
     
     # Install dependencies and update database
-    if python "$TEMP_DIR/install.py" "$use_case" \
+    OUTPUT=$(python "$TEMP_DIR/install.py" "$use_case" \
          --sharpie-dir "$SHARPIE_DIR" \
          --webserver-dir "$WEBSERVER_DIR" \
-         --quiet 2>&1 | tee -a "$LOG_FILE"; then
+         --quiet 2>&1)
+    EXIT_CODE=$?
+    echo "$OUTPUT" | tee -a "$LOG_FILE"
+    
+    if [ $EXIT_CODE -eq 0 ]; then
         log "✓ Successfully installed: $use_case"
     else
         log "✗ Failed to install: $use_case"
