@@ -5,7 +5,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.utils import timezone
 
-from mysite.settings import REGISTRATION_KEY, DEMO
+from server.settings import REGISTRATION_KEY, DEMO
 from .forms import LoginForm, RegisterForm, ConsentForm, ProfileInfoForm, ProfilePasswordForm
 from .models import Consent, Participant
 

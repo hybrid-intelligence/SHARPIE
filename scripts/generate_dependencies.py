@@ -26,8 +26,11 @@ def main():
     packages.extend(get_packages_from_requirements(root / 'requirements.txt'))
     packages.extend(get_packages_from_requirements(root / 'docs' / 'requirements.txt'))
     
+    import sys
+    pip_licenses = Path(sys.executable).parent / 'pip-licenses'
+    
     result = subprocess.run(
-        ['pip-licenses', '--from=mixed', '--format=markdown', 
+        [str(pip_licenses), '--from=mixed', '--format=markdown', 
          '-p'] + packages + ['--output-file=DEPENDENCIES_PIP.md'],
         capture_output=True,
         text=True,
