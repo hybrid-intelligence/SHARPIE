@@ -23,4 +23,12 @@ jobs:
           cd webserver
           python manage.py migrate
           python manage.py collectstatic --noinput
-          supervisorctl restart sharpie-web:* sharpie-runner
+          
+      - name: Install use-cases from Gallery
+        run: |
+          cd /var/www/sharpie
+          source venv/bin/activate
+          bash scripts/install_use_cases.sh
+          
+      - name: Restart services
+        run: supervisorctl restart sharpie-web:* sharpie-runner

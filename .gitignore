@@ -181,3 +181,6 @@ cython_debug/
 db.sqlite3
 
 __init__.py
+# Use-case installation logs
+logs/*.log
+!logs/.gitkeep
