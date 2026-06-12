@@ -29,9 +29,20 @@ class RunConsumerHelpers:
 
             # Refresh to get the actual value
             session.refresh_from_db()
-            participants_count = session.participants.count()
+            
+            # Get expected number of participants from experiment's agent configuration
+            expected_count = session.experiment.agents.filter(participant=True).count()
 
-            return session.connected_participants == participants_count
+            return session.connected_participants == expected_count
+
+    def _do_decrement(self):
+        """Atomically decrement participant count (only if session not yet running)."""
+        with transaction.atomic():
+            session = Session.objects.select_for_update().get(pk=self.session.pk)
+            # Only decrement if session hasn't started yet
+            if session.status in ['not_ready', 'ready'] and session.connected_participants > 0:
+                session.connected_participants = F('connected_participants') - 1
+                session.save(update_fields=['connected_participants'])
 
     def _fetch_episode_info(self):
         """Fetch episode completion info from database."""
