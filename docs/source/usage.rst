@@ -100,8 +100,26 @@ You can find an example configuration file in `deployment/nginx.conf`. This conf
    sudo systemctl reload nginx
 
 For the runner:
-We recommend using `supervisor <http://supervisord.org/>`_ to manage the runner process. You can find an example configuration file in `deployment/runner_supervisor.conf`. You can modify the paths mentioned in the file to match your configuration and copy it to `/etc/supervisor/conf.d/`. Then, run::
+We recommend using `supervisor <http://supervisord.org/>`_ to manage the runner process. You can find an example configuration file in `deployment/runner_supervisor.conf`.
 
+**Important:** The runner requires a connection key to authenticate with the webserver. First, create a Runner in Django Admin:
+
+1. Go to http://localhost:8000/admin
+2. Navigate to **Runners** and click **Add Runner**
+3. Generate a secure key: ``python -c "from secrets import token_urlsafe; print(token_urlsafe(35))"``
+4. Enter the connection key and save
+
+Then, update the supervisor config with your connection key by replacing ``YOUR_CONNECTION_KEY`` in the ``command`` line:
+
+.. code-block:: console
+
+   command=python manage.py runserver --connection-key=YOUR_ACTUAL_KEY_HERE
+
+Copy the config to supervisor and enable it:
+
+.. code-block:: console
+
+   sudo cp deployment/runner_supervisor.conf /etc/supervisor/conf.d/sharpie-runner.conf
    sudo supervisorctl reread
    sudo supervisorctl update
 

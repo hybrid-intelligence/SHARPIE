@@ -38,6 +38,26 @@ WS_SETTING = 'wss' if HTTPS else 'ws'
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
 
+# CSRF settings - critical for production behind reverse proxy
+CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[])
+
+# Security settings for HTTPS
+if PROD and HTTPS:
+    # Tell Django it's behind a proxy with SSL termination
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    
+    # Enforce HTTPS
+    SECURE_SSL_REDIRECT = True
+    
+    # Cookie security
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    
+    # HSTS settings (optional but recommended)
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
 # Registering key
 # Set to True to enable all user registration
 # Set to False to disable new user registration

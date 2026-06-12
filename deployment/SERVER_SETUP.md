@@ -7,7 +7,6 @@ This guide covers the one-time setup required on your production server before t
 - Ubuntu/Debian-based server (adjust commands for other distributions)
 - Root or sudo access
 - Domain name pointing to your server (for SSL)
-- GitHub Secrets already configured (see [GITHUB_SECRETS.md](GITHUB_SECRETS.md))
 
 ## Step 1: Create Deployment User
 
@@ -24,36 +23,7 @@ sudo usermod -a -G www-data sharpie-deploy
 sudo passwd sharpie-deploy
 ```
 
-## Step 2: Generate SSH Key for GitHub Actions
-
-On your **local machine** (not the server):
-
-```bash
-# Generate dedicated SSH key for deployment
-ssh-keygen -t rsa -b 4096 -f sharpie_deploy_key -C "github-actions-deploy"
-
-# This creates two files:
-# - sharpie_deploy_key (private key) -> Add to GitHub Secrets
-# - sharpie_deploy_key.pub (public key) -> Add to server
-```
-
-Add the public key to the server:
-
-```bash
-# Option 1: Using ssh-copy-id (from your local machine)
-ssh-copy-id -i sharpie_deploy_key.pub sharpie-deploy@your-server
-
-# Option 2: Manually (if ssh-copy-id not available)
-cat sharpie_deploy_key.pub | ssh sharpie-deploy@your-server 'mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && chmod 700 ~/.ssh'
-```
-
-Keep the private key for later (GitHub Secrets setup):
-```bash
-# Display private key (copy entire output including BEGIN/END lines)
-cat sharpie_deploy_key
-```
-
-## Step 3: Install System Dependencies
+## Step 2: Install System Dependencies
 
 On the server:
 
@@ -80,7 +50,7 @@ sudo systemctl enable nginx
 sudo systemctl start nginx
 ```
 
-## Step 4: Set Up Application Directory
+## Step 3: Set Up Application Directory
 
 ```bash
 # Create directory structure
@@ -108,7 +78,20 @@ pip install -r requirements.txt
 exit
 ```
 
-## Step 5: Configure Supervisor Socket Permissions
+## Step 3.5: Create Static Files Directory
+
+Django's `collectstatic` command requires a static files directory:
+
+```bash
+# Create static files directory
+sudo mkdir -p /var/www/static
+
+# Set ownership - deployment user needs write access
+sudo chown sharpie-deploy:www-data /var/www/static
+sudo chmod 775 /var/www/static
+```
+
+## Step 4: Configure Supervisor Socket Permissions
 
 Add the deployment user to the supervisor group to allow running `supervisorctl` without sudo:
 
@@ -152,9 +135,9 @@ supervisorctl status
 exit
 ```
 
-## Step 6: Configure Supervisor for SHARPIE
+## Step 5: Configure Supervisor for SHARPIE
 
-Copy and configure the supervisor configs:
+Copy the supervisor configs:
 
 ```bash
 # Copy configs to supervisor directory
@@ -162,19 +145,35 @@ sudo cp /var/www/sharpie/deployment/webserver_supervisor.conf /etc/supervisor/co
 sudo cp /var/www/sharpie/deployment/runner_supervisor.conf /etc/supervisor/conf.d/sharpie-runner.conf
 ```
 
-Edit the configs to use correct paths:
+### Edit the webserver config
+
+The webserver config uses standard paths and typically requires no changes:
 
 ```bash
-# Edit webserver config
 sudo nano /etc/supervisor/conf.d/sharpie-web.conf
 ```
 
-Replace placeholder paths:
-- Change `/my/app/path` to `/var/www/sharpie`
-- Change `/path/to/venv` to `/var/www/sharpie/venv`
-- Change `/your/log/` to `/var/www/sharpie/logs/`
+**If you customized paths**, update:
+- `directory` → your webserver directory (default: `/var/www/sharpie/webserver/`)
+- `environment PATH` → your venv (default: `/var/www/sharpie/venv/bin/`)
+- `stdout_logfile` → your log directory (default: `/var/www/sharpie/logs/asgi.log`)
 
-Create log directory and apply configuration:
+### Edit the runner config
+
+**Required:** You must set the connection key before the runner can start:
+
+```bash
+sudo nano /etc/supervisor/conf.d/sharpie-runner.conf
+```
+
+Replace `YOUR_CONNECTION_KEY` with the key from Step 11.5 (create this after completing database setup).
+
+**If you customized paths**, update:
+- `directory` → your runner directory (default: `/var/www/sharpie/runner`)
+- `environment PATH` → your venv (default: `/var/www/sharpie/venv/bin/`)
+- `stdout_logfile` → your log directory (default: `/var/www/sharpie/logs/runner.log`)
+
+### Create required directories
 
 ```bash
 # Create log directory
@@ -191,7 +190,7 @@ sudo supervisorctl reread
 sudo supervisorctl update
 ```
 
-## Step 7: Configure Nginx
+## Step 6: Configure Nginx
 
 ```bash
 # Copy nginx configuration
@@ -221,7 +220,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-## Step 8: Set Up SSL Certificates (Let's Encrypt)
+## Step 7: Set Up SSL Certificates (Let's Encrypt)
 
 ```bash
 # Install Certbot
@@ -237,7 +236,7 @@ sudo certbot --nginx -d your-domain.com
 sudo certbot renew --dry-run
 ```
 
-## Step 9: Configure Database
+## Step 8: Configure Database
 
 For production, use PostgreSQL instead of SQLite:
 
@@ -267,7 +266,7 @@ source venv/bin/activate
 pip install psycopg2-binary
 ```
 
-## Step 10: Initial Database Setup
+## Step 9: Initial Database Setup
 
 ```bash
 sudo su - sharpie-deploy
@@ -287,7 +286,7 @@ python manage.py createsuperuser
 exit
 ```
 
-## Step 11: Configure Environment Variables
+## Step 10: Configure Environment Variables
 
 Create environment file for Django settings:
 
@@ -309,11 +308,12 @@ SECRET_KEY=
 # IMPORTANT: Generate a secure secret key before running the application
 # Generate one with: python -c "from secrets import token_urlsafe; print(token_urlsafe(50))"
 ALLOWED_HOSTS=your-domain.com,www.your-domain.com
+CSRF_TRUSTED_ORIGINS=https://your-domain.com,https://www.your-domain.com
 REGISTRATION_KEY=your-registration-key
 DATABASE_URL=postgres://sharpie:your-secure-password@localhost/sharpie
 ```
 
-## Step 12: Verify Setup
+## Step 11: Verify Webserver Setup
 
 ```bash
 # Check supervisor status
@@ -321,7 +321,6 @@ sudo supervisorctl status
 
 # Should show:
 # sharpie-web:running
-# sharpie-runner:running
 
 # Check if application is responding
 curl http://localhost:8000
@@ -332,6 +331,53 @@ sudo systemctl status nginx
 # Check from browser
 # Visit: https://your-domain.com
 ```
+
+## Step 11.5: Create Runner Connection Key
+
+The runner process requires a connection key to authenticate with the webserver. Create a Runner in Django Admin:
+
+1. Create a superuser (if not already done):
+   ```bash
+   sudo su - sharpie-deploy
+   cd /var/www/sharpie
+   source venv/bin/activate
+   cd webserver
+   python manage.py createsuperuser
+   exit
+   ```
+
+2. Log in to Django Admin at `https://your-domain.com/admin/`
+
+3. Navigate to **Runners** and click **Add Runner**
+
+4. Generate a secure connection key:
+   ```bash
+   python -c "from secrets import token_urlsafe; print(token_urlsafe(35))"
+   ```
+
+5. Enter the connection key and save the Runner.
+
+6. Update the runner supervisor config with your connection key:
+   ```bash
+   sudo nano /etc/supervisor/conf.d/sharpie-runner.conf
+   ```
+   
+   Replace `YOUR_CONNECTION_KEY` with the key you created:
+   ```ini
+   command=python manage.py runserver --connection-key=YOUR_ACTUAL_KEY_HERE
+   ```
+
+7. Restart the runner:
+   ```bash
+   sudo supervisorctl restart sharpie-runner
+   ```
+
+8. Verify the runner is running:
+   ```bash
+   sudo supervisorctl status
+   # Should show:
+   # sharpie-runner:running
+   ```
 
 ## Troubleshooting
 
@@ -361,7 +407,7 @@ sudo supervisorctl tail -f sharpie-runner
 
 # Manually start programs
 sudo supervisorctl start sharpie-web
-sudo supervisorctl start sharpie-runner
+sudo supervisorctl restart sharpie-runner
 ```
 
 ### Nginx Issues
@@ -391,10 +437,100 @@ redis-cli ping
 sudo journalctl -u redis-server
 ```
 
+## Step 12: Install Self-Hosted GitHub Actions Runner
+
+For production environments behind firewalls or accessible through jumpserver/bastion hosts, a self-hosted runner allows direct deployment without SSH tunneling.
+
+### Why Self-Hosted?
+
+- Works regardless of network topology (behind firewall, jumpserver access, etc.)
+- No need to expose SSH to the internet
+- No need to manage SSH keys for deployment
+- Faster deployments (local execution)
+
+### Installing the Runner
+
+1. Go to your GitHub repository
+2. Navigate to **Settings** → **Actions** → **Runners**
+3. Click **New self-hosted runner**
+4. Choose **Linux** as the OS
+5. Run the provided commands on your production server:
+
+```bash
+# Switch to deployment user
+sudo su - sharpie-deploy
+
+# Create a directory for the runner
+mkdir -p ~/actions-runner && cd ~/actions-runner
+
+# Download the runner package (use the URL from GitHub UI)
+curl -o actions-runner-linux-x64-<version>.tar.gz <download-url-from-github>
+
+# Extract the package
+tar xzf ./actions-runner-linux-x64-<version>.tar.gz
+
+# Configure the runner (use the token from GitHub UI)
+./config.sh --url https://github.com/<your-org>/<your-repo> --token <token-from-github>
+```
+
+6. When prompted:
+   - **Runner group**: Press Enter for default
+   - **Runner name**: `sharpie-production` (or your preferred name)
+   - **Runner labels**: Press Enter to accept `self-hosted` (this must match the workflow)
+   - **Work folder**: Press Enter for default `_work`
+
+7. Exit from sharpie-deploy user:
+```bash
+exit
+```
+
+8. Install as a systemd service (run as root/sudo):
+```bash
+cd /home/sharpie-deploy/actions-runner
+sudo ./svc.sh install sharpie-deploy
+sudo ./svc.sh start
+```
+
+### Verifying the Runner
+
+1. Go to GitHub repository → **Settings** → **Actions** → **Runners**
+2. You should see your runner with a green "Online" status
+3. Test by triggering the workflow manually:
+   - Go to **Actions** tab
+   - Select **Deploy to Production** workflow
+   - Click **Run workflow**
+
+### Runner Security
+
+- The runner has access to the production server
+- Using a dedicated user (sharpie-deploy) limits the scope
+- Never run the runner as root
+- The runner only has access to repositories you explicitly grant
+- Consider using runner groups for additional isolation
+
+### Runner Maintenance
+
+- The runner will auto-update for minor versions
+- For major updates, repeat the installation process
+- To check runner status:
+  ```bash
+  sudo ./svc.sh status
+  ```
+- To view runner logs:
+  ```bash
+  journalctl -u actions.runner.SHARPIE.sharpie-production -f
+  ```
+- To stop/update/restart the runner:
+  ```bash
+  sudo ./svc.sh stop
+  sudo ./svc.sh start
+  sudo ./svc.sh restart
+  ```
+
 ## Next Steps
 
 After server setup is complete:
-1. Configure GitHub Secrets (see [GITHUB_SECRETS.md](GITHUB_SECRETS.md))
+1. Install and verify the self-hosted runner (Step 12)
 2. Push to `main` branch to trigger first deployment
 3. Monitor the deployment in GitHub Actions:
    - Go to your repository on GitHub
@@ -402,5 +538,4 @@ After server setup is complete:
    - Click on the running workflow to view logs in real-time
 4. Verify the application is working correctly:
    - Visit `https://your-domain.com` in a browser
-   - Check the health endpoint: `curl https://your-domain.com/health`
    - Check service status on server: `supervisorctl status`

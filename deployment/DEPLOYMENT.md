@@ -8,20 +8,20 @@ This document describes the CI/CD pipeline for automated deployment to productio
 
 SHARPIE uses GitHub Actions for continuous integration and deployment. When code is pushed to the `main` branch, the pipeline automatically:
 
-1. Runs tests
-2. Deploys to the production server via SSH
+1. Runs tests (on GitHub-hosted runner)
+2. Deploys to the production server via self-hosted runner
 3. Verifies the deployment with a health check
 
 ## Architecture
 
 ```
-main push → Run Tests → SSH Deploy → Health Check
+main push → Test Job (GitHub runner) → Deploy Job (Self-hosted runner) → Health Check
 ```
 
 ### Components
 
 - **GitHub Actions**: Orchestrates the CI/CD pipeline
-- **SSH Deployment**: Uses `appleboy/ssh-action` for remote deployment
+- **Self-Hosted Runner**: Runs on the production server for direct deployment
 - **Supervisor**: Manages Django/Daphne and runner processes on the server
 - **Nginx**: Reverse proxy for the webserver
 
@@ -32,9 +32,8 @@ main push → Run Tests → SSH Deploy → Health Check
 | `.github/workflows/deploy-production.yml` | GitHub Actions workflow definition |
 | `deployment/nginx.conf` | Nginx reverse proxy configuration |
 | `deployment/webserver_supervisor.conf` | Supervisor config for Django/Daphne |
-| `deployment/runner_supervisor.conf` | Supervisor config for the WebSocket runner |
+| `deployment/runner_supervisor.conf` | Supervisor config for the experiment runner |
 | `deployment/SERVER_SETUP.md` | One-time server setup instructions |
-| `deployment/GITHUB_SECRETS.md` | GitHub Secrets configuration guide |
 
 ## Deployment Workflow
 
@@ -52,17 +51,13 @@ The deployment workflow triggers on:
    - Install dependencies from `requirements.txt`
    - Run Django tests (`accounts`, `experiment`)
 
-2. **Deploy Job** (runs after tests pass)
-   - SSH to production server
+2. **Deploy Job** (runs on self-hosted runner on production server)
+   - Checkout code from main branch
    - Pull latest code from `main` branch
    - Update Python dependencies
    - Run database migrations
    - Collect static files
    - Restart services via supervisorctl
-
-3. **Health Check**
-   - Wait 10 seconds for services to start
-   - Verify the application is responding
 
 ## Rollback Procedure
 
@@ -108,10 +103,10 @@ If a deployment causes issues:
 
 ## Security Considerations
 
-- SSH deployment uses a dedicated key, not personal credentials
-- GitHub Secrets store sensitive values, not in repository code
+- Self-hosted runner runs as a dedicated user with limited permissions
 - Deployment user has limited permissions on the server
 - Supervisor access is granted via group membership, not sudo
+- The runner only has access to repositories you explicitly grant
 
 ## Requirements
 
@@ -138,23 +133,24 @@ Installed automatically from `requirements.txt` during deployment.
 ### Common Issues
 
 **Deployment fails: "Permission denied"**
-- Verify the SSH key is correctly added to GitHub Secrets
-- Check the deployment user's authorized_keys on the server
+- Check the deployment user has access to `/var/www/sharpie`
+- Verify user is in the correct groups (`www-data`, `supervisor`)
+- Check file permissions: `ls -la /var/www/sharpie`
 
 **Services don't restart**
 - Verify supervisor is running: `sudo systemctl status supervisor`
 - Check supervisor logs: `sudo supervisorctl tail sharpie-web`
 - Verify user is in the supervisor group
 
-**Health check fails**
-- Check if services are running: `supervisorctl status`
-- Review application logs in `/var/www/sharpie/logs/`
-- Verify nginx configuration: `sudo nginx -t`
-
 **Database migrations fail**
 - Check database connection settings
 - Verify database user permissions
 - Review migration conflicts: `python manage.py showmigrations`
+
+**Runner fails to start**
+- Check runner status: `sudo ./svc.sh status` (in actions-runner directory)
+- Review runner logs: `journalctl -u actions.runner.SHARPIE.sharpie-production -f`
+- Verify runner is registered in GitHub Settings → Actions → Runners
 
 ### Useful Commands
 
@@ -196,6 +192,5 @@ Consider setting up:
 ## Further Reading
 
 - [SERVER_SETUP.md](SERVER_SETUP.md) - One-time server configuration
-- [GITHUB_SECRETS.md](GITHUB_SECRETS.md) - GitHub Secrets setup
 - [Django Deployment Checklist](https://docs.djangoproject.com/en/stable/howto/deployment/checklist/)
 - [Channels Deployment Guide](https://channels.readthedocs.io/en/stable/deploying.html)
