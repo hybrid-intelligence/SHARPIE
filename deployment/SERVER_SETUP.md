@@ -320,7 +320,7 @@ DATABASE_URL=postgres://sharpie:your-secure-password@localhost/sharpie
 sudo supervisorctl status
 
 # Should show:
-# sharpie-web:running
+ # sharpie-web0:running
 
 # Check if application is responding
 curl http://localhost:8000
@@ -402,11 +402,11 @@ sudo chown root:supervisor /var/run/supervisor.sock
 sudo tail -f /var/log/supervisor/supervisord.log
 
 # Check program logs
-sudo supervisorctl tail -f sharpie-web
+ sudo supervisorctl tail -f sharpie-web:*
 sudo supervisorctl tail -f sharpie-runner
 
 # Manually start programs
-sudo supervisorctl start sharpie-web
+ sudo supervisorctl start sharpie-web:*
 sudo supervisorctl restart sharpie-runner
 ```
 
