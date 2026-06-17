@@ -54,7 +54,7 @@ The deployment workflow triggers on:
 2. **Deploy Job** (runs on self-hosted runner on production server)
    - Checkout code from main branch
    - Pull latest code from `main` branch
-   - Update Python dependencies
+   - Install as editable pip package (`pip install -e .`)
    - Run database migrations
    - Collect static files
    - Restart services via supervisorctl
@@ -86,10 +86,10 @@ If a deployment causes issues:
 5. Re-run deployment steps manually:
    ```bash
    source venv/bin/activate
-   pip install -r requirements.txt
+   pip install -e .
    cd webserver
-   python manage.py migrate
-   python manage.py collectstatic --noinput
+   sharpie-web migrate
+   sharpie-web collectstatic --noinput
    supervisorctl restart sharpie-web:*
    supervisorctl restart sharpie-runner
    ```
@@ -120,7 +120,7 @@ These must be installed on the server:
 
 ### Python Dependencies
 
-Installed automatically from `requirements.txt` during deployment.
+Installed automatically from `requirements.txt` during `pip install -e .`.
 
 ### External Services
 
@@ -145,7 +145,7 @@ Installed automatically from `requirements.txt` during deployment.
 **Database migrations fail**
 - Check database connection settings
 - Verify database user permissions
-- Review migration conflicts: `python manage.py showmigrations`
+- Review migration conflicts: `cd webserver && sharpie-web showmigrations`
 
 **Runner fails to start**
 - Check runner status: `sudo ./svc.sh status` (in actions-runner directory)
@@ -255,11 +255,11 @@ bash scripts/install_use_cases.sh
 - Check logs: `tail -f /var/www/sharpie/logs/use_cases_install.log`
 - Verify Python version compatibility (use-case requires Python >= 3.13)
 - Check if dependencies are installed: `pip list`
-- Verify database migrations: `cd webserver && python manage.py showmigrations`
+- Verify database migrations: `cd webserver && sharpie-web showmigrations`
 
 **Use-case not appearing in admin:**
 - Verify installation succeeded in logs
-- Check database: `cd webserver && python manage.py dbshell`
+- Check database: `cd webserver && sharpie-web dbshell`
   ```sql
   SELECT * FROM experiment_experiment;
   ```

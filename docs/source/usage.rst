@@ -48,10 +48,10 @@ Create a database file (SQLite by default) and add an admin user:
 
 .. code-block:: console
 
+   cd webserver
    sharpie-web makemigrations accounts experiment data runner
    sharpie-web migrate
    sharpie-web createsuperuser
-   cd ..
 
 
 Run in development mode
@@ -61,6 +61,7 @@ Start the web server:
 
 .. code-block:: console
 
+   cd webserver
    sharpie-web runserver
 
 Go to the admin interface at ``localhost:8000/admin/`` and log in with your superuser name and password.
@@ -110,7 +111,7 @@ Then, update the supervisor config with your connection key by replacing ``YOUR_
 
 .. code-block:: console
 
-   command=python manage.py runserver --connection-key=YOUR_ACTUAL_KEY_HERE
+   command=sharpie-runner runserver --connection-key=YOUR_ACTUAL_KEY_HERE
 
 Copy the config to supervisor and enable it:
 
@@ -139,6 +140,7 @@ To regenerate the data model documentation diagram after making changes to the D
 
 .. code-block:: console
 
-   sharpie-web graph_models accounts experiment data runner -o docs/source/_static/data_model.png
+   cd webserver
+   sharpie-web graph_models accounts experiment data runner -o ../docs/source/_static/data_model.png
 
 This requires `django-extensions` and `pygraphviz` to be installed, which are included in the project's requirements.
