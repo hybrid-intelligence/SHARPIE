@@ -16,14 +16,12 @@ import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-print("BASE_DIR:", BASE_DIR)
 
 CWD = Path.cwd() # current working directory
 
 # Initialize environment
 env = environ.Env()
 environ.Env.read_env(os.path.join(CWD, ".env"))
-print('Using settings from:', os.path.join(CWD, ".env"), ' if file exists')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
