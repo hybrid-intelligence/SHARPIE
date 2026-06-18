@@ -48,13 +48,16 @@ for use_case in $USE_CASES; do
     if [ -d "$TEMP_DIR/$use_case" ]; then
         log "  Copying files to runner directory..."
         mkdir -p "$RUNNER_DIR/$use_case"
+        # Clean __pycache__ from Gallery repo to avoid permission errors on cleanup
+        find "$TEMP_DIR/$use_case" -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
         cp -r "$TEMP_DIR/$use_case"/* "$RUNNER_DIR/$use_case/"
         log "  ✓ Files copied to: $RUNNER_DIR/$use_case"
     fi
     
     # Install dependencies and update database
+    # Must cd into WEBSERVER_DIR so Django finds .env and db.sqlite3 via CWD
     set +e  # Temporarily disable exit on error
-    OUTPUT=$(python "$TEMP_DIR/install.py" "$use_case" \
+    OUTPUT=$(cd "$WEBSERVER_DIR" && python "$TEMP_DIR/install.py" "$use_case" \
          --sharpie-dir "$SHARPIE_DIR" \
          --webserver-dir "$WEBSERVER_DIR" \
          --quiet 2>&1)

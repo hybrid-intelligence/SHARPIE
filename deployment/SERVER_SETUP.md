@@ -289,7 +289,7 @@ exit
 
 ## Step 10: Configure Environment Variables
 
-Create environment file for Django settings:
+Create environment file for Django settings. **The `.env` file and `db.sqlite3` (if using SQLite) must reside in the webserver directory** because Django resolves their paths relative to the current working directory (CWD). Daphne's CWD is set via the `directory=` directive in the supervisor config, and any script that uses Django (e.g., `sharpie-web migrate`, `install.py`) must also `cd` into this directory first.
 
 ```bash
 # On the server as sharpie-deploy
