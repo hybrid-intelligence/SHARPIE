@@ -72,7 +72,7 @@ python3 -m venv venv
 source venv/bin/activate
 
 # Install Python dependencies
-pip install -r requirements.txt
+pip install -e .
 
 # Exit from sharpie-deploy user
 exit
@@ -169,7 +169,7 @@ sudo nano /etc/supervisor/conf.d/sharpie-runner.conf
 Replace `YOUR_CONNECTION_KEY` with the key from Step 11.5 (create this after completing database setup).
 
 **If you customized paths**, update:
-- `directory` → your runner directory (default: `/var/www/sharpie/runner`)
+- `directory` → your runner directory (default: `/var/www/sharpie/runner/`)
 - `environment PATH` → your venv (default: `/var/www/sharpie/venv/bin/`)
 - `stdout_logfile` → your log directory (default: `/var/www/sharpie/logs/runner.log`)
 
@@ -257,7 +257,7 @@ GRANT ALL PRIVILEGES ON DATABASE sharpie TO sharpie;
 \q
 ```
 
-Add `psycopg2-binary` to your requirements if using PostgreSQL:
+Add `psycopg2-binary` to your requirements if using PostgreSQL. It will be installed automatically with `pip install -e .` if listed in `requirements.txt`. Alternatively, install it directly:
 
 ```bash
 sudo su - sharpie-deploy
@@ -272,16 +272,17 @@ pip install psycopg2-binary
 sudo su - sharpie-deploy
 cd /var/www/sharpie
 source venv/bin/activate
+pip install -e .
 cd webserver
 
 # Run migrations
-python manage.py migrate
+sharpie-web migrate
 
 # Collect static files
-python manage.py collectstatic
+sharpie-web collectstatic
 
 # Create superuser (optional)
-python manage.py createsuperuser
+sharpie-web createsuperuser
 
 exit
 ```
@@ -337,14 +338,14 @@ sudo systemctl status nginx
 The runner process requires a connection key to authenticate with the webserver. Create a Runner in Django Admin:
 
 1. Create a superuser (if not already done):
-   ```bash
-   sudo su - sharpie-deploy
-   cd /var/www/sharpie
-   source venv/bin/activate
-   cd webserver
-   python manage.py createsuperuser
-   exit
-   ```
+    ```bash
+    sudo su - sharpie-deploy
+    cd /var/www/sharpie
+    source venv/bin/activate
+    cd webserver
+    sharpie-web createsuperuser
+    exit
+    ```
 
 2. Log in to Django Admin at `https://your-domain.com/admin/`
 
@@ -363,9 +364,9 @@ The runner process requires a connection key to authenticate with the webserver.
    ```
    
    Replace `YOUR_CONNECTION_KEY` with the key you created:
-   ```ini
-   command=python manage.py runserver --connection-key=YOUR_ACTUAL_KEY_HERE
-   ```
+    ```ini
+    command=sharpie-runner runserver --connection-key=YOUR_ACTUAL_KEY_HERE
+    ```
 
 7. Restart the runner:
    ```bash
