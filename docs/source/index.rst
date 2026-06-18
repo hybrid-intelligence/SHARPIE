@@ -23,6 +23,7 @@ Contents
    usage
    api
    data_model
+   contributing
    dependencies
    faq
    glossary

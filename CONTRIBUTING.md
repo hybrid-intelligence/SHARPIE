@@ -47,7 +47,7 @@ We also welcome documentation updates.
 
 ## 5. Community & Communication
 - **Discussions**: Use the GitHub Discussions tab for high-level architectural ideas.
-- **Chat**: We have no dedicated chat yet, but are planning to set one op.
+- **Chat**: We have no dedicated chat yet, but are planning to set one up.
 
 ---
 
