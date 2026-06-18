@@ -33,26 +33,25 @@ Verify that redis has installed and runs correctly:
       redis-server --version # should output >8
       redis-cli ping # should output "PONG"
 
-Navigate to the SHARPIE directory and install the required packages:
+Navigate to the SHARPIE directory and install as editable pip package:
 
 .. code-block:: console
 
    cd SHARPIE
-   pip install -r requirements.txt   # This includes django-extensions and pygraphviz
+   pip install -e .  # This includes django-extensions and pygraphviz
 
    # If pygraphviz fails to install, install system dependencies first:
    sudo apt-get install graphviz libgraphviz-dev
-   pip install -r requirements.txt
+   pip install -e .
 
 Create a database file (SQLite by default) and add an admin user:
 
 .. code-block:: console
 
    cd webserver
-   python manage.py makemigrations accounts experiment data runner
-   python manage.py migrate
-   python manage.py createsuperuser
-   cd ..
+   sharpie-web makemigrations accounts experiment data runner
+   sharpie-web migrate
+   sharpie-web createsuperuser
 
 
 Run in development mode
@@ -63,7 +62,7 @@ Start the web server:
 .. code-block:: console
 
    cd webserver
-   python manage.py runserver
+   sharpie-web runserver
 
 Go to the admin interface at ``localhost:8000/admin/`` and log in with your superuser name and password.
 
@@ -74,8 +73,7 @@ Open a new terminal in the SHARPIE root directory, and start the runner:
 .. code-block:: console
 
    conda activate sharpie_env
-   cd runner
-   python manage.py runserver --connection-key=secret
+   sharpie-runner runserver --connection-key=secret
 
 The terminal running the webserver should now show log a websocket connection between the runner and the webserver.
 
@@ -113,7 +111,7 @@ Then, update the supervisor config with your connection key by replacing ``YOUR_
 
 .. code-block:: console
 
-   command=python manage.py runserver --connection-key=YOUR_ACTUAL_KEY_HERE
+   command=sharpie-runner runserver --connection-key=YOUR_ACTUAL_KEY_HERE
 
 Copy the config to supervisor and enable it:
 
@@ -130,8 +128,8 @@ If you already have a release of SHARPIE installed, you can upgrade it by downlo
 .. code-block:: console
 
    cd webserver
-   python manage.py makemigrations accounts experiment data runner
-   python manage.py migrate
+   sharpie-web makemigrations accounts experiment data runner
+   sharpie-web migrate
 
 This will look at the migrations files under /accounts and /experiment, and apply any new migrations that are available to your database.
 
@@ -143,6 +141,6 @@ To regenerate the data model documentation diagram after making changes to the D
 .. code-block:: console
 
    cd webserver
-   python manage.py graph_models accounts experiment data runner -o ../docs/source/_static/data_model.png
+   sharpie-web graph_models accounts experiment data runner -o ../docs/source/_static/data_model.png
 
 This requires `django-extensions` and `pygraphviz` to be installed, which are included in the project's requirements.

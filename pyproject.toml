@@ -1,8 +1,98 @@
 [build-system]
-requires = ["flit_core >=3.2,<4"]
-build-backend = "flit_core.buildapi"
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "SHARPIE"
-authors = [{name = "Hybrid Intelligence", email = ""}]
-dynamic = ["version", "description"]
+version = "1.0.0"
+authors = [
+    {name="Libio Gonçalves Braz",  email="l.b.goncalvesbraz@uu.nl"},
+    {name="Floris den Hengst", email="f.den.hengst@vu.nl"},
+    {name="Kevin Godin-Dubois" , email="k.j.m.godin-dubois@vu.nl"},
+    {name="Yeqian Li", email="y43.li@student.vu.nl"},
+    {name="Hüseyin Aydın", email="huseyin@ceng.metu.edu.tr"},
+    ]
+maintainers = [
+    {name="Libio Gonçalves Braz",  email="l.b.goncalvesbraz@uu.nl"},
+    {name="Floris den Hengst", email="f.den.hengst@vu.nl"},
+    {name="Kevin Godin-Dubois" , email="k.j.m.godin-dubois@vu.nl"},
+    ]
+description = "A modular framework for Reinforcement Learning and Human-AI interaction experiments."
+readme = "README.md"
+license = {text = "Apache-2.0"}
+requires-python = ">=3.11"
+keywords = [
+    "reinforcement-learning",
+    "human-ai-interaction",
+    "hybrid-intelligence",
+    "experiment-platform",
+    "django"
+]
+classifiers = [
+    "Framework :: Django",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dynamic = ["dependencies"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pytest-django>=4.5",
+    "black>=23.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0",
+    "build==1.5.0",
+    "pygraphviz~=1.14.0",
+]
+# should be the same as docs/requirements.txt
+docs = [
+    "sphinx>=7.0",
+    "sphinx-rtd-theme>=2.0",
+    "myst-parser>=3.0",
+]
+
+[project.scripts]
+sharpie-benchmark = "sharpie.benchmark.cli:main"
+sharpie-web = "sharpie.webserver.manage:main"
+sharpie-runner = "sharpie.runner.manage:main"
+
+[project.urls]
+Homepage = "https://github.com/hybrid-intelligence/SHARPIE"
+Documentation = "https://sharpie.readthedocs.io"
+Repository = "https://github.com/hybrid-intelligence/SHARPIE"
+Issues = "https://github.com/hybrid-intelligence/SHARPIE/issues"
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+# Setuptools configuration
+[tool.setuptools]
+packages = { find = { include = ["sharpie*"] } }
+zip-safe = false
+
+[tool.setuptools.package-data]
+sharpie = [
+    "**/*.html",
+    "**/*.js",
+    "**/*.css",
+    "**/*.png",
+    "**/*.jpg",
+    "**/*.svg",
+    "**/migrations/*.py",
+]
+
+# Tool configurations
+[tool.black]
+line-length = 100
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I", "N", "W"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "sharpie.webserver.server.settings"
