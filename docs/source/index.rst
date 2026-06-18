@@ -20,8 +20,9 @@ Contents
 .. toctree::
 
    overview
-   data_model
    usage
+   api
+   data_model
    dependencies
    faq
    glossary
