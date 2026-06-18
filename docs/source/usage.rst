@@ -164,14 +164,15 @@ Now add your random agent:
    
    policy = Policy()
 
-Now browse to [localhost:8000/admin](http://localhost:8000/admin) and create the following entries:
+Now browse to http://localhost:8000/admin and create the following entries:
 
 Experiment > Environments > Add Environment > Name: "MountainCar", paste the following list of environment files:
+Get `/full/path/to` by running `pwd` in the terminal
 
 .. code-block:: json
    
    {
-      "enviroment": "/full/path/to/environment.py", # get /full/path/to by running `pwd` in the terminal
+      "enviroment": "/full/path/to/environment.py",
    }
 
 Experiment > Policies > Add Policy > Name: "Random Policy", paste the following in list of policy files:
@@ -179,7 +180,7 @@ Experiment > Policies > Add Policy > Name: "Random Policy", paste the following 
 .. code-block:: json
 
    {
-      "policy": "/full/path/to/policy.py", # get /full/path/to by running `pwd` in the terminal
+      "policy": "/full/path/to/policy.py",
    }
 
 Experiment > Agents > Add Agent > Role: "random_agent", Name: "Random Agent" Policy: "Random Policy", "Can the participant act?": yes.
@@ -197,8 +198,9 @@ If you have already started your runner, stop it and install gymnasium[classic_c
    pip install "gymnasium[classic_control]"
    sharpie-runner runserver --connection-key my_secret
 
-Now browse to [localhost:8000](http://localhost:8000) and click on your experiment and start it.
- You should see the MountainCar environment rendered and be able to control the car with the left, down, and right arrow keys!
+
+Now browse to http://localhost:8000 and click on your experiment and start it.
+You should see the MountainCar environment rendered and be able to control the car with the left, down, and right arrow keys!
 
 Run in production mode
 ------------------
