@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "SHARPIE"
-version = "1.0.0"
+version = "1.0.0-rc1"
 authors = [
     {name="Libio Gonçalves Braz",  email="l.b.goncalvesbraz@uu.nl"},
     {name="Floris den Hengst", email="f.den.hengst@vu.nl"},
@@ -48,6 +48,7 @@ dev = [
     "mypy>=1.0",
     "build==1.5.0",
     "pygraphviz~=1.14.0",
+    "twine>=6.2.0",
 ]
 
 docs = [
