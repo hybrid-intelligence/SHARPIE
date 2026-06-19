@@ -4,9 +4,8 @@ set -e  # Exit on error (but continue to next use-case if one fails)
 # Configuration
 SHARPIE_DIR="/var/www/sharpie"
 WEBSERVER_DIR="$SHARPIE_DIR/webserver"
-RUNNER_DIR="$SHARPIE_DIR/runner"
 GALLERY_REPO="https://github.com/hybrid-intelligence/SHARPIE_Gallery.git"
-TEMP_DIR="/tmp/SHARPIE_Gallery_$$"  # Unique temp directory
+GALLERY_DIR="$(dirname "$SHARPIE_DIR")/SHARPIE_Gallery"
 USE_CASES_FILE="$SHARPIE_DIR/deployment/use_cases.txt"
 LOG_FILE="$SHARPIE_DIR/logs/use_cases_install.log"
 
@@ -18,9 +17,14 @@ log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
 }
 
-# Clone SHARPIE_Gallery
-log "Cloning SHARPIE_Gallery..."
-git clone --depth 1 "$GALLERY_REPO" "$TEMP_DIR"
+# Clone or update SHARPIE_Gallery
+if [ -d "$GALLERY_DIR" ]; then
+    log "Updating existing SHARPIE_Gallery..."
+    git -C "$GALLERY_DIR" pull
+else
+    log "Cloning SHARPIE_Gallery..."
+    git clone --depth 1 "$GALLERY_REPO" "$GALLERY_DIR"
+fi
 
 # Read use-cases from config file
 USE_CASES=$(grep -v '^#' "$USE_CASES_FILE" | grep -v '^$' || true)
@@ -36,25 +40,16 @@ for use_case in $USE_CASES; do
     log "Installing use-case: $use_case"
     
     # Check if use-case directory exists in Gallery
-    if [ ! -d "$TEMP_DIR/$use_case" ]; then
+    if [ ! -d "$GALLERY_DIR/$use_case" ]; then
         log "✗ Use-case not found: $use_case"
         FAILED_USE_CASES="$FAILED_USE_CASES $use_case"
         continue
     fi
     
-    # Copy use-case files to runner directory
-    # Each use-case has environment.py, policy.py, etc. in its directory
-    # These need to be accessible from the runner
-    if [ -d "$TEMP_DIR/$use_case" ]; then
-        log "  Copying files to runner directory..."
-        mkdir -p "$RUNNER_DIR/$use_case"
-        cp -r "$TEMP_DIR/$use_case"/* "$RUNNER_DIR/$use_case/"
-        log "  ✓ Files copied to: $RUNNER_DIR/$use_case"
-    fi
-    
     # Install dependencies and update database
+    # Must cd into WEBSERVER_DIR so Django finds .env and db.sqlite3 via CWD
     set +e  # Temporarily disable exit on error
-    OUTPUT=$(python "$TEMP_DIR/install.py" "$use_case" \
+    OUTPUT=$(cd "$WEBSERVER_DIR" && python "$GALLERY_DIR/install.py" "$use_case" \
          --sharpie-dir "$SHARPIE_DIR" \
          --webserver-dir "$WEBSERVER_DIR" \
          --quiet 2>&1)
@@ -67,14 +62,8 @@ for use_case in $USE_CASES; do
     else
         log "✗ Failed to install: $use_case"
         FAILED_USE_CASES="$FAILED_USE_CASES $use_case"
-        # Clean up copied files if installation failed
-        rm -rf "$RUNNER_DIR/$use_case"
     fi
 done
-
-# Cleanup
-log "Cleaning up..."
-rm -rf "$TEMP_DIR"
 
 # Summary
 if [ -n "$FAILED_USE_CASES" ]; then
