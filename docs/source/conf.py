@@ -1,4 +1,6 @@
 # Configuration file for the Sphinx documentation builder.
+import os
+import sys
 
 # -- Project information
 
@@ -17,6 +19,9 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
+    'sphinx.ext.todo',
+    'sphinxcontrib_django',
+    'sphinx_copybutton',
     'myst_parser',
 ]
 
@@ -35,9 +40,24 @@ html_static_path = ['_static']
 html_logo = '../images/logo.png'
 html_favicon = '../images/logo.png'
 html_theme_options = {
-    'logo_only': False,
-    'display_version': True,
+    'body_max_width': 'none'
 }
+
+# -- Options for Autodoc generator
+
+autodoc_default_options = {
+    'members': True,
+    'member-order': 'bysource',
+    'undoc-members': True,
+}
+
+# -- Options for Todo list
+todo_include_todos = True
+
+# -- Options for Django autodoc generator
+sys.path.insert(0, os.path.abspath("../sharpie"))
+django_settings = "sharpie.webserver.server.settings"
+autodoc_use_legacy_class_based = True
 
 
 # -- Options for EPUB output

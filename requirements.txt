@@ -12,3 +12,4 @@ pydot~=4.0.0
 aiohttp~=3.14.0
 django-environ~=0.13.0
 pyyaml~=6.0.0
+markdown~=3.10.2

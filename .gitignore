@@ -74,6 +74,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+_autosummary/
 
 # PyBuilder
 .pybuilder/
@@ -184,3 +185,7 @@ db.sqlite3
 # Use-case installation logs
 logs/*.log
 !logs/.gitkeep
+
+
+# Pycharm
+.idea/
