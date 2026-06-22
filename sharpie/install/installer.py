@@ -6,13 +6,16 @@ from pathlib import Path
 
 import yaml
 
-from sharpie.scripts.install.validator import validate_single
+from sharpie.install.validator import validate_single
+from sharpie.install.utils import log
+
+_django_initialized = False
 
 
 def get_sharpie_dir_from_env() -> Path | None:
     try:
-        path = importlib.metadata.distribution('sharpie')._path.resolve()
-        return path
+        dist = importlib.metadata.distribution('sharpie')
+        return dist.locate_file('').resolve()
     except importlib.metadata.PackageNotFoundError:
         return None
 
@@ -36,14 +39,11 @@ def check_dependencies(config: dict, verbosity: int = 1):
         try:
             pkg_name = dep.split('[')[0].replace('-', '_')
             __import__(pkg_name)
-            log(f"  ✓ {dep} already installed", level=2, verbosity=verbosity)
+            log(f"  [OK] {dep} already installed", level=2, verbosity=verbosity)
         except ImportError:
             log(f"  Installing {dep}...", level=1, verbosity=verbosity)
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', dep])
 
-
-def validate_files(config: dict, use_case: str, gallery_dir: Path, verbosity: int = 1):
-    validate_single(use_case, gallery_dir)
 
 
 def relative_to_absolute_path(path: str, use_case_dir: Path) -> str:
@@ -54,17 +54,23 @@ def relative_to_absolute_path(path: str, use_case_dir: Path) -> str:
 
 def relative_to_absolute_paths(config: dict, use_case_dir: Path) -> dict:
     for object_key, object_value in config.items():
-        if 'filepaths' in object_value:
+        if isinstance(object_value, dict) and 'filepaths' in object_value:
             for key, value in object_value['filepaths'].items():
                 config[object_key]['filepaths'][key] = relative_to_absolute_path(value, use_case_dir)
     return config
 
 
 def setup_database(config: dict, webserver_dir: Path, verbosity: int = 1):
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sharpie.webserver.server.settings')
-    sys.path.insert(0, str(webserver_dir))
-    import django
-    django.setup()
+    global _django_initialized
+
+    if not _django_initialized:
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sharpie.webserver.server.settings')
+        webserver_dir_str = str(webserver_dir)
+        if webserver_dir_str not in sys.path:
+            sys.path.insert(0, webserver_dir_str)
+        import django
+        django.setup()
+        _django_initialized = True
 
     from sharpie.webserver.experiment.models import Environment, Experiment, Policy, Agent
 
@@ -149,7 +155,7 @@ def install_use_case(use_case: str, gallery_dir: Path, webserver_dir: Path, chec
     check_dependencies(config, verbosity)
 
     log("\nStep 2/4: Validating files...", level=1, verbosity=verbosity)
-    validate_files(config, use_case, gallery_dir, verbosity)
+    validate_single(use_case, gallery_dir, verbosity)
 
     if check_only:
         return
@@ -162,9 +168,4 @@ def install_use_case(use_case: str, gallery_dir: Path, webserver_dir: Path, chec
     log("\nStep 4/4: Setting up database...", level=1, verbosity=verbosity)
     setup_database(config, webserver_dir, verbosity)
 
-    log(f"\n✅ {use_case} installed successfully!", level=1, verbosity=verbosity)
-
-
-def log(msg: str, level: int = 1, verbosity: int = 1):
-    if verbosity >= level:
-        print(msg)
+    log(f"\n[OK] {use_case} installed successfully!", level=1, verbosity=verbosity)

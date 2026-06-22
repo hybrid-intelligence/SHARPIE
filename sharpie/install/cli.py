@@ -15,16 +15,10 @@ import argparse
 import sys
 from pathlib import Path
 
-from sharpie.scripts.install.installer import (
+from sharpie.install.installer import (
     get_sharpie_dir_from_env,
     install_use_case,
 )
-
-VERBOSITY_LEVELS = {
-    'quiet': 0,
-    'default': 1,
-    'verbose': 2,
-}
 
 
 def parse_args():
@@ -33,8 +27,8 @@ def parse_args():
     parser.add_argument('--all', action='store_true', help='Install all use cases')
     parser.add_argument('--list', action='store_true', help='List available use cases')
     parser.add_argument('--check', action='store_true', help='Validate without installing')
-    parser.add_argument('--gallery-dir', type=str, default=None,
-                        help='Path to SHARPIE_Gallery directory (default: ../SHARPIE_Gallery)')
+    parser.add_argument('--gallery-dir', type=str, default='../SHARPIE_Gallery',
+                        help='Path to SHARPIE_Gallery directory')
     parser.add_argument('--sharpie-dir', type=str, default=None,
                         help='Path to SHARPIE directory (default: auto-detect)')
     parser.add_argument('--webserver-dir', type=str, default=None,
@@ -50,7 +44,7 @@ def get_paths(args):
     else:
         sharpie_dir = get_sharpie_dir_from_env()
         if sharpie_dir is None:
-            sharpie_dir = Path(__file__).parent.parent.parent.parent
+            sharpie_dir = Path(__file__).parent.parent.parent
 
     if args.webserver_dir:
         webserver_dir = Path(args.webserver_dir)
@@ -80,10 +74,6 @@ def main():
     args = parse_args()
     verbosity = get_verbosity(args)
 
-    if not args.gallery_dir:
-        print("Error: --gallery-dir is required. Specify the path to the SHARPIE_Gallery directory.", file=sys.stderr)
-        sys.exit(1)
-
     gallery_dir = Path(args.gallery_dir)
     if not gallery_dir.exists():
         print(f"Error: Gallery directory not found: {gallery_dir}", file=sys.stderr)
@@ -103,12 +93,12 @@ def main():
             try:
                 install_use_case(uc, gallery_dir, webserver_dir, check_only=args.check, verbosity=verbosity)
             except Exception as e:
-                print(f"❌ {uc} failed: {e}")
+                print(f"[FAIL] {uc} failed: {e}")
                 failed.append(uc)
                 continue
 
         if failed:
-            print(f"\n❌ {len(failed)} use case(s) failed")
+            print(f"\n[FAIL] {len(failed)} use case(s) failed")
             sys.exit(1)
     elif args.use_case:
         install_use_case(args.use_case, gallery_dir, webserver_dir, check_only=args.check, verbosity=verbosity)
