@@ -27,7 +27,7 @@ Python (PIP) Dependencies
 -------------------------
 
 .. include:: ../../DEPENDENCIES_PIP.md
-   :parser: myst_parser
+   :parser: myst_parser.parsers.docutils_
 
 System Dependencies
 -------------------

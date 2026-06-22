@@ -8,20 +8,20 @@ This document describes the CI/CD pipeline for automated deployment to productio
 
 SHARPIE uses GitHub Actions for continuous integration and deployment. When code is pushed to the `main` branch, the pipeline automatically:
 
-1. Runs tests
-2. Deploys to the production server via SSH
+1. Runs tests (on GitHub-hosted runner)
+2. Deploys to the production server via self-hosted runner
 3. Verifies the deployment with a health check
 
 ## Architecture
 
 ```
-main push → Run Tests → SSH Deploy → Health Check
+main push → Test Job (GitHub runner) → Deploy Job (Self-hosted runner) → Health Check
 ```
 
 ### Components
 
 - **GitHub Actions**: Orchestrates the CI/CD pipeline
-- **SSH Deployment**: Uses `appleboy/ssh-action` for remote deployment
+- **Self-Hosted Runner**: Runs on the production server for direct deployment
 - **Supervisor**: Manages Django/Daphne and runner processes on the server
 - **Nginx**: Reverse proxy for the webserver
 
@@ -32,9 +32,8 @@ main push → Run Tests → SSH Deploy → Health Check
 | `.github/workflows/deploy-production.yml` | GitHub Actions workflow definition |
 | `deployment/nginx.conf` | Nginx reverse proxy configuration |
 | `deployment/webserver_supervisor.conf` | Supervisor config for Django/Daphne |
-| `deployment/runner_supervisor.conf` | Supervisor config for the WebSocket runner |
+| `deployment/runner_supervisor.conf` | Supervisor config for the experiment runner |
 | `deployment/SERVER_SETUP.md` | One-time server setup instructions |
-| `deployment/GITHUB_SECRETS.md` | GitHub Secrets configuration guide |
 
 ## Deployment Workflow
 
@@ -52,17 +51,13 @@ The deployment workflow triggers on:
    - Install dependencies from `requirements.txt`
    - Run Django tests (`accounts`, `experiment`)
 
-2. **Deploy Job** (runs after tests pass)
-   - SSH to production server
+2. **Deploy Job** (runs on self-hosted runner on production server)
+   - Checkout code from main branch
    - Pull latest code from `main` branch
-   - Update Python dependencies
+   - Install as editable pip package (`pip install -e .`)
    - Run database migrations
    - Collect static files
    - Restart services via supervisorctl
-
-3. **Health Check**
-   - Wait 10 seconds for services to start
-   - Verify the application is responding
 
 ## Rollback Procedure
 
@@ -91,11 +86,11 @@ If a deployment causes issues:
 5. Re-run deployment steps manually:
    ```bash
    source venv/bin/activate
-   pip install -r requirements.txt
+   pip install -e .
    cd webserver
-   python manage.py migrate
-   python manage.py collectstatic --noinput
-   supervisorctl restart sharpie-web
+   sharpie-web migrate
+   sharpie-web collectstatic --noinput
+   supervisorctl restart sharpie-web:*
    supervisorctl restart sharpie-runner
    ```
 
@@ -108,10 +103,10 @@ If a deployment causes issues:
 
 ## Security Considerations
 
-- SSH deployment uses a dedicated key, not personal credentials
-- GitHub Secrets store sensitive values, not in repository code
+- Self-hosted runner runs as a dedicated user with limited permissions
 - Deployment user has limited permissions on the server
 - Supervisor access is granted via group membership, not sudo
+- The runner only has access to repositories you explicitly grant
 
 ## Requirements
 
@@ -125,7 +120,7 @@ These must be installed on the server:
 
 ### Python Dependencies
 
-Installed automatically from `requirements.txt` during deployment.
+Installed automatically from `requirements.txt` during `pip install -e .`.
 
 ### External Services
 
@@ -138,23 +133,24 @@ Installed automatically from `requirements.txt` during deployment.
 ### Common Issues
 
 **Deployment fails: "Permission denied"**
-- Verify the SSH key is correctly added to GitHub Secrets
-- Check the deployment user's authorized_keys on the server
+- Check the deployment user has access to `/var/www/sharpie`
+- Verify user is in the correct groups (`www-data`, `supervisor`)
+- Check file permissions: `ls -la /var/www/sharpie`
 
 **Services don't restart**
 - Verify supervisor is running: `sudo systemctl status supervisor`
-- Check supervisor logs: `sudo supervisorctl tail sharpie-web`
+   - Check supervisor logs: `sudo supervisorctl tail sharpie-web:*`
 - Verify user is in the supervisor group
-
-**Health check fails**
-- Check if services are running: `supervisorctl status`
-- Review application logs in `/var/www/sharpie/logs/`
-- Verify nginx configuration: `sudo nginx -t`
 
 **Database migrations fail**
 - Check database connection settings
 - Verify database user permissions
-- Review migration conflicts: `python manage.py showmigrations`
+- Review migration conflicts: `cd webserver && sharpie-web showmigrations`
+
+**Runner fails to start**
+- Check runner status: `sudo ./svc.sh status` (in actions-runner directory)
+- Review runner logs: `journalctl -u actions.runner.SHARPIE.sharpie-production -f`
+- Verify runner is registered in GitHub Settings → Actions → Runners
 
 ### Useful Commands
 
@@ -163,7 +159,7 @@ Installed automatically from `requirements.txt` during deployment.
 supervisorctl status
 
 # View service logs
-supervisorctl tail -f sharpie-web
+ supervisorctl tail -f sharpie-web:*
 supervisorctl tail -f sharpie-runner
 
 # Restart specific service
@@ -185,6 +181,102 @@ sudo systemctl status redis-server
 redis-cli ping
 ```
 
+## Use-Case Installation
+
+SHARPIE automatically installs demo use-cases from the [SHARPIE_Gallery](https://github.com/hybrid-intelligence/SHARPIE_Gallery) repository during deployment. Use-cases are experiment configurations (environments, policies, agents) that users can run immediately.
+
+### How It Works
+
+1. **Deployment workflow** runs `scripts/install_use_cases.sh`
+2. **Script clones** the SHARPIE_Gallery repository
+3. **For each use-case** listed in `deployment/use_cases.txt`:
+   - Copies files to `runner/<use_case>/` directory
+   - Installs Python dependencies
+   - Creates database entries (Environment, Policy, Agent, Experiment)
+4. **Cleanup** removes temporary files
+
+### Configuration
+
+Edit `deployment/use_cases.txt` to customize which use-cases are installed:
+
+```
+# Lightweight demo use-cases (Python >= 3.13 compatible):
+amaze
+frozen
+mountain
+spread
+tag
+
+# Resource-intensive use-cases (disabled for demo server):
+# mario (requires gym-super-mario-bros)
+# overcooked (requires Python 3.10.x)
+```
+
+### Available Use-Cases
+
+Run `python install.py --list` in the SHARPIE_Gallery repository to see all available use-cases.
+
+**Lightweight (recommended for demo servers):**
+- **amaze** - Maze navigation with TAMER (minimal dependencies)
+- **frozen** - Frozen lake with TAMER (minimal dependencies)
+- **mountain** - Mountain car human-only (minimal dependencies)
+- **spread** - Multi-agent coordination (minimal dependencies)
+- **tag** - Multi-agent pursuit (minimal dependencies)
+
+**Medium weight (optional):**
+- **mario** - Super Mario Bros behavior cloning (requires gym-super-mario-bros)
+
+**Heavy weight (avoid on demo servers):**
+- **overcooked** - Collaborative cooking (requires Python 3.10.x specifically)
+- **saycan** - Language-conditioned manipulation (requires Python 3.10.x, JAX, TensorFlow)
+- **smacv2** - StarCraft II challenge (requires Python 3.10.x, heavy dependencies)
+
+### Manual Installation
+
+To manually install use-cases outside of deployment:
+
+```bash
+# Clone Gallery
+git clone https://github.com/hybrid-intelligence/SHARPIE_Gallery.git /tmp/SHARPIE_Gallery
+
+# Install specific use-case
+cd /tmp/SHARPIE_Gallery
+python install.py <use_case> --sharpie-dir /var/www/sharpie
+
+# Or run the deployment script
+cd /var/www/sharpie
+source venv/bin/activate
+bash scripts/install_use_cases.sh
+```
+
+### Troubleshooting
+
+**Use-case installation fails:**
+- Check logs: `tail -f /var/www/sharpie/logs/use_cases_install.log`
+- Verify Python version compatibility (use-case requires Python >= 3.13)
+- Check if dependencies are installed: `pip list`
+- Verify database migrations: `cd webserver && sharpie-web showmigrations`
+
+**Use-case not appearing in admin:**
+- Verify installation succeeded in logs
+- Check database: `cd webserver && sharpie-web dbshell`
+  ```sql
+  SELECT * FROM experiment_experiment;
+  ```
+- Verify files exist: `ls -la /var/www/sharpie/runner/<use_case>/`
+
+**Experiments won't start:**
+- Check runner logs: `sudo supervisorctl tail -f sharpie-runner`
+- Verify runner is connected: Check Django logs for WebSocket connection
+- Ensure use-case files are in runner directory
+
+**Reinstall all use-cases:**
+```bash
+cd /var/www/sharpie
+source venv/bin/activate
+bash scripts/install_use_cases.sh
+```
+
 ## Monitoring
 
 Consider setting up:
@@ -196,6 +288,5 @@ Consider setting up:
 ## Further Reading
 
 - [SERVER_SETUP.md](SERVER_SETUP.md) - One-time server configuration
-- [GITHUB_SECRETS.md](GITHUB_SECRETS.md) - GitHub Secrets setup
 - [Django Deployment Checklist](https://docs.djangoproject.com/en/stable/howto/deployment/checklist/)
 - [Channels Deployment Guide](https://channels.readthedocs.io/en/stable/deploying.html)
