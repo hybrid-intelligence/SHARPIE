@@ -43,7 +43,7 @@ We also welcome documentation updates.
 - We use Markdown for all documentation.
 
 ## 4. Your use case in the Gallery
-- To contribute your own experimental setup, consider contributing it to the [SHARPIE Gallery](https://github.com/hybrid-intelligence/SHARPIE_Gallery).
+- To contribute your own experimental setup, consider contributing it to the [SHARPIE Gallery](https://github.com/hybrid-intelligence/SHARPIE_Gallery). You can install gallery use cases using the built-in ``sharpie-install`` command (see the usage documentation for details).
 
 ## 5. Community & Communication
 - **Discussions**: Use the GitHub Discussions tab for high-level architectural ideas.
