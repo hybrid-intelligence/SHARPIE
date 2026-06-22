@@ -12,10 +12,11 @@ import numpy as np
 class NoOpEnvironment:
     """Minimal environment for benchmarking infrastructure overhead."""
 
-    def __init__(self, render_size=(64, 64, 3), max_steps=100):
+    def __init__(self, render_size=(64, 64, 3), max_steps=100, seed=None):
         self.render_size = render_size
         self.step_count = 0
         self.max_steps = max_steps
+        self.rng = np.random.default_rng(seed)
 
     def reset(self):
         self.step_count = 0
@@ -28,7 +29,7 @@ class NoOpEnvironment:
         return {}, 0, terminated, truncated, {"step": self.step_count}
 
     def render(self):
-        return np.random.randint(0, 255, self.render_size, dtype=np.uint8)
+        return self.rng.integers(0, 255, self.render_size, dtype=np.uint8)
 
 
 # SHARPIE expects an `environment` variable

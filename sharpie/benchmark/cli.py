@@ -21,6 +21,9 @@ Usage:
     # Single benchmark with simulated network latency
     sharpie-benchmark -n 10 --latency global --connection-key YOUR_KEY
 
+    # Export per-timestep data to CSV (requires --raw-data)
+    sharpie-benchmark -n 10 --raw-data --format csv --connection-key YOUR_KEY
+
     # Custom options
     sharpie-benchmark -n 50 -s 200 --host localhost --port 8000 --connection-key YOUR_KEY -v
 """
@@ -31,13 +34,6 @@ import sys
 import os
 
 
-# Add project root to sys.path for benchmark module imports
-# (we're in webserver, so parent is project root)
-_project_root = os.path.dirname(os.getcwd())
-if _project_root not in sys.path:
-    sys.path.insert(0, _project_root)
-
-
 def main():
     parser = argparse.ArgumentParser(
         description="SHARPIE Scalability Benchmarking Tools",
@@ -45,6 +41,7 @@ def main():
         epilog="""
 Examples:
   sharpie-benchmark -n 10 -s 100 -k KEY    Run 10 participants for 100 steps
+  sharpie-benchmark -n 10 -s 100 -t 5 -k KEY    Run 10 participants for 100 steps, 5 trials
   sharpie-benchmark --suite scalability -k KEY  Run participant scalability suite
   sharpie-benchmark --suite ai-agents -k KEY   Run AI agent scalability suite
   sharpie-benchmark --suite network-latency -k KEY  Run network latency suite
@@ -52,6 +49,8 @@ Examples:
   sharpie-benchmark -n 10 --latency global -k KEY   Run with 200ms simulated latency
   sharpie-benchmark -n 1 --image-size 512x512 -k KEY   Run with 512x512 render size
   sharpie-benchmark -n 50 -v -k KEY        Run with verbose output
+  sharpie-benchmark -n 10 -t 3 --seed 123 -k KEY   Run 3 trials with custom seed
+  sharpie-benchmark -n 10 --raw-data --format csv -k KEY   Export per-timestep data to CSV
 
 Latency presets:
   machine   - localhost (<0.1ms)
@@ -158,6 +157,18 @@ Prerequisites:
         default=30.0,
         help="Seconds to wait for runner to pick up session (default: 30.0)",
     )
+    parser.add_argument(
+        "-t", "--trials",
+        type=int,
+        default=3,
+        help="Number of trials to run per configuration (default: 3)",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+        help="Base random seed for reproducibility (default: 42)",
+    )
 
     # Output options
     parser.add_argument(
@@ -170,8 +181,24 @@ Prerequisites:
         action="store_true",
         help="Output results as JSON",
     )
+    parser.add_argument(
+        "--raw-data",
+        action="store_true",
+        default=False,
+        help="Save raw per-participant timing data to separate files (default: False)",
+    )
+    parser.add_argument(
+        "--format",
+        choices=["json", "csv"],
+        default="json",
+        help="Output format: json (default) or csv (per-timestep raw data, requires --raw-data)",
+    )
 
     args = parser.parse_args()
+    
+    # Validate CSV format requires raw-data
+    if args.format == "csv" and not args.raw_data:
+        parser.error("--format csv requires --raw-data to collect timing samples")
 
     # Import after argument parsing to avoid slow startup
     from sharpie.benchmark.config import (
@@ -180,9 +207,11 @@ Prerequisites:
     )
     from sharpie.benchmark.orchestrator import (
         run_benchmark, run_scalability_suite, run_ai_agent_benchmark,
-        run_ai_agent_scalability_suite, run_network_latency_suite, run_image_size_suite
+        run_ai_agent_scalability_suite, run_network_latency_suite, run_image_size_suite,
+        TrialResult
     )
-    from sharpie.benchmark.metrics import print_comparison_table
+    from sharpie.benchmark.metrics import print_comparison_table, MultiTrialResults, save_results_csv, save_multi_trial_results_csv, save_suite_merged_csv
+    import json
 
     async def run():
         if args.suite == "scalability":
@@ -192,17 +221,81 @@ Prerequisites:
                 port=args.port,
                 runner_connection_key=args.connection_key,
                 verbose=args.verbose,
+                trials=args.trials,
+                seed=args.seed,
+                save_raw_data=args.raw_data,
+                format=args.format,
             )
             results = await run_scalability_suite(suite)
 
-            if args.json:
-                import json
-                print(json.dumps([r.to_dict() for r in results], indent=2))
+            if args.format == "csv":
+                # Save all trials to CSV
+                for config_trials in results:
+                    if config_trials:
+                        config_name = config_trials[0].metrics.benchmark_id
+                        output_dir = args.output_dir
+                        if not os.path.isabs(output_dir):
+                            output_dir = os.path.join(os.path.dirname(os.getcwd()), output_dir)
+                        csv_path = save_multi_trial_results_csv(
+                            config_trials,
+                            suite.seed,
+                            output_dir,
+                            f"scalability_{config_trials[0].metrics.num_participants}p",
+                        )
+                        print(f"CSV saved to {csv_path}")
+                # Save merged CSV for all configurations
+                merged_path = save_suite_merged_csv(
+                    results,
+                    suite.seed,
+                    output_dir,
+                    "scalability",
+                )
+                print(f"Merged CSV saved to {merged_path}")
+            elif args.json:
+                # Serialize as list of config results, each containing trials
+                output = []
+                for config_trials in results:
+                    config_name = config_trials[0].metrics.benchmark_id if config_trials else "unknown"
+                    multi_trial = MultiTrialResults(
+                        config_name=config_name,
+                        total_trials=len(config_trials),
+                        base_seed=suite.seed,
+                        trials=config_trials,
+                    )
+                    output.append({
+                        "config_name": config_name,
+                        "trials": [
+                            {
+                                "trial_number": t.trial_number,
+                                "seed_used": t.seed_used,
+                                "metrics": t.metrics.to_dict(),
+                            }
+                            for t in config_trials
+                        ],
+                        "summary": multi_trial.get_summary().to_dict(),
+                    })
+                print(json.dumps(output, indent=2))
             else:
                 print("\n" + "=" * 60)
                 print("SCALABILITY BENCHMARK RESULTS")
                 print("=" * 60)
-                print(print_comparison_table(results))
+                # Print summary for each config
+                for config_trials in results:
+                    if config_trials:
+                        config_name = config_trials[0].metrics.benchmark_id
+                        num_participants = config_trials[0].metrics.num_participants
+                        print(f"\n{num_participants} participants ({len(config_trials)} trials):")
+                        multi_trial = MultiTrialResults(
+                            config_name=config_name,
+                            total_trials=len(config_trials),
+                            base_seed=suite.seed,
+                            trials=config_trials,
+                        )
+                        summary = multi_trial.get_summary()
+                        print(f"  Avg FPS: {summary.avg_fps.mean:.2f} ± {summary.avg_fps.stddev:.2f}")
+                        print(f"  Median RTT: {summary.median_rtt_ms.mean:.2f} ± {summary.median_rtt_ms.stddev:.2f}ms")
+                        print(f"  Upload BW: {summary.upload_bandwidth_mbps.mean:.2f} ± {summary.upload_bandwidth_mbps.stddev:.2f} MiB/s")
+                        print(f"  Download BW: {summary.download_bandwidth_mbps.mean:.2f} ± {summary.download_bandwidth_mbps.stddev:.2f} MiB/s")
 
         elif args.suite == "ai-agents":
             suite = AIAgentScalabilitySuite(
@@ -211,17 +304,78 @@ Prerequisites:
                 port=args.port,
                 runner_connection_key=args.connection_key,
                 verbose=args.verbose,
+                trials=args.trials,
+                seed=args.seed,
+                save_raw_data=args.raw_data,
+                format=args.format,
             )
             results = await run_ai_agent_scalability_suite(suite)
 
-            if args.json:
-                import json
-                print(json.dumps([r.to_dict() for r in results], indent=2))
+            if args.format == "csv":
+                for config_trials in results:
+                    if config_trials:
+                        config_name = config_trials[0].metrics.benchmark_id
+                        output_dir = args.output_dir
+                        if not os.path.isabs(output_dir):
+                            output_dir = os.path.join(os.path.dirname(os.getcwd()), output_dir)
+                        csv_path = save_multi_trial_results_csv(
+                            config_trials,
+                            suite.seed,
+                            output_dir,
+                            f"ai_agents_{config_trials[0].metrics.num_agents}a",
+                        )
+                        print(f"CSV saved to {csv_path}")
+                # Save merged CSV for all configurations
+                merged_path = save_suite_merged_csv(
+                    results,
+                    suite.seed,
+                    output_dir,
+                    "ai_agents",
+                )
+                print(f"Merged CSV saved to {merged_path}")
+            elif args.json:
+                output = []
+                for config_trials in results:
+                    config_name = config_trials[0].metrics.benchmark_id if config_trials else "unknown"
+                    multi_trial = MultiTrialResults(
+                        config_name=config_name,
+                        total_trials=len(config_trials),
+                        base_seed=suite.seed,
+                        trials=config_trials,
+                    )
+                    output.append({
+                        "config_name": config_name,
+                        "trials": [
+                            {
+                                "trial_number": t.trial_number,
+                                "seed_used": t.seed_used,
+                                "metrics": t.metrics.to_dict(),
+                            }
+                            for t in config_trials
+                        ],
+                        "summary": multi_trial.get_summary().to_dict(),
+                    })
+                print(json.dumps(output, indent=2))
             else:
                 print("\n" + "=" * 60)
                 print("AI AGENT SCALABILITY BENCHMARK RESULTS")
                 print("=" * 60)
-                print(print_comparison_table(results))
+                for config_trials in results:
+                    if config_trials:
+                        config_name = config_trials[0].metrics.benchmark_id
+                        num_agents = config_trials[0].metrics.num_participants
+                        print(f"\n{num_agents} AI agents ({len(config_trials)} trials):")
+                        multi_trial = MultiTrialResults(
+                            config_name=config_name,
+                            total_trials=len(config_trials),
+                            base_seed=suite.seed,
+                            trials=config_trials,
+                        )
+                        summary = multi_trial.get_summary()
+                        print(f"  Avg FPS: {summary.avg_fps.mean:.2f} ± {summary.avg_fps.stddev:.2f}")
+                        print(f"  Median RTT: {summary.median_rtt_ms.mean:.2f} ± {summary.median_rtt_ms.stddev:.2f}ms")
+                        print(f"  Upload BW: {summary.upload_bandwidth_mbps.mean:.2f} ± {summary.upload_bandwidth_mbps.stddev:.2f} MiB/s")
+                        print(f"  Download BW: {summary.download_bandwidth_mbps.mean:.2f} ± {summary.download_bandwidth_mbps.stddev:.2f} MiB/s")
 
         elif args.suite == "network-latency":
             suite = NetworkLatencySuite(
@@ -231,17 +385,77 @@ Prerequisites:
                 port=args.port,
                 runner_connection_key=args.connection_key,
                 verbose=args.verbose,
+                trials=args.trials,
+                seed=args.seed,
+                save_raw_data=args.raw_data,
+                format=args.format,
             )
             results = await run_network_latency_suite(suite)
 
-            if args.json:
-                import json
-                print(json.dumps([r.to_dict() for r in results], indent=2))
+            if args.format == "csv":
+                for config_trials in results:
+                    if config_trials:
+                        config_name = config_trials[0].metrics.benchmark_id
+                        output_dir = args.output_dir
+                        if not os.path.isabs(output_dir):
+                            output_dir = os.path.join(os.path.dirname(os.getcwd()), output_dir)
+                        csv_path = save_multi_trial_results_csv(
+                            config_trials,
+                            suite.seed,
+                            output_dir,
+                            f"network_latency_{config_name}",
+                        )
+                        print(f"CSV saved to {csv_path}")
+                # Save merged CSV for all configurations
+                merged_path = save_suite_merged_csv(
+                    results,
+                    suite.seed,
+                    output_dir,
+                    "network_latency",
+                )
+                print(f"Merged CSV saved to {merged_path}")
+            elif args.json:
+                output = []
+                for config_trials in results:
+                    config_name = config_trials[0].metrics.benchmark_id if config_trials else "unknown"
+                    multi_trial = MultiTrialResults(
+                        config_name=config_name,
+                        total_trials=len(config_trials),
+                        base_seed=suite.seed,
+                        trials=config_trials,
+                    )
+                    output.append({
+                        "config_name": config_name,
+                        "trials": [
+                            {
+                                "trial_number": t.trial_number,
+                                "seed_used": t.seed_used,
+                                "metrics": t.metrics.to_dict(),
+                            }
+                            for t in config_trials
+                        ],
+                        "summary": multi_trial.get_summary().to_dict(),
+                    })
+                print(json.dumps(output, indent=2))
             else:
                 print("\n" + "=" * 60)
                 print("NETWORK LATENCY BENCHMARK RESULTS")
                 print("=" * 60)
-                print(print_comparison_table(results))
+                for config_trials in results:
+                    if config_trials:
+                        config_name = config_trials[0].metrics.benchmark_id
+                        multi_trial = MultiTrialResults(
+                            config_name=config_name,
+                            total_trials=len(config_trials),
+                            base_seed=suite.seed,
+                            trials=config_trials,
+                        )
+                        summary = multi_trial.get_summary()
+                        print(f"\nConfig: {config_name} ({len(config_trials)} trials)")
+                        print(f"  Avg FPS: {summary.avg_fps.mean:.2f} ± {summary.avg_fps.stddev:.2f}")
+                        print(f"  Median RTT: {summary.median_rtt_ms.mean:.2f} ± {summary.median_rtt_ms.stddev:.2f}ms")
+                        print(f"  Upload BW: {summary.upload_bandwidth_mbps.mean:.2f} ± {summary.upload_bandwidth_mbps.stddev:.2f} MiB/s")
+                        print(f"  Download BW: {summary.download_bandwidth_mbps.mean:.2f} ± {summary.download_bandwidth_mbps.stddev:.2f} MiB/s")
 
         elif args.suite == "image-size":
             suite = ImageSizeSuite(
@@ -251,17 +465,77 @@ Prerequisites:
                 port=args.port,
                 runner_connection_key=args.connection_key,
                 verbose=args.verbose,
+                trials=args.trials,
+                seed=args.seed,
+                save_raw_data=args.raw_data,
+                format=args.format,
             )
             results = await run_image_size_suite(suite)
 
-            if args.json:
-                import json
-                print(json.dumps([r.to_dict() for r in results], indent=2))
+            if args.format == "csv":
+                for config_trials in results:
+                    if config_trials:
+                        config_name = config_trials[0].metrics.benchmark_id
+                        output_dir = args.output_dir
+                        if not os.path.isabs(output_dir):
+                            output_dir = os.path.join(os.path.dirname(os.getcwd()), output_dir)
+                        csv_path = save_multi_trial_results_csv(
+                            config_trials,
+                            suite.seed,
+                            output_dir,
+                            f"image_size_{config_name}",
+                        )
+                        print(f"CSV saved to {csv_path}")
+                # Save merged CSV for all configurations
+                merged_path = save_suite_merged_csv(
+                    results,
+                    suite.seed,
+                    output_dir,
+                    "image_size",
+                )
+                print(f"Merged CSV saved to {merged_path}")
+            elif args.json:
+                output = []
+                for config_trials in results:
+                    config_name = config_trials[0].metrics.benchmark_id if config_trials else "unknown"
+                    multi_trial = MultiTrialResults(
+                        config_name=config_name,
+                        total_trials=len(config_trials),
+                        base_seed=suite.seed,
+                        trials=config_trials,
+                    )
+                    output.append({
+                        "config_name": config_name,
+                        "trials": [
+                            {
+                                "trial_number": t.trial_number,
+                                "seed_used": t.seed_used,
+                                "metrics": t.metrics.to_dict(),
+                            }
+                            for t in config_trials
+                        ],
+                        "summary": multi_trial.get_summary().to_dict(),
+                    })
+                print(json.dumps(output, indent=2))
             else:
                 print("\n" + "=" * 60)
                 print("IMAGE SIZE BENCHMARK RESULTS")
                 print("=" * 60)
-                print(print_comparison_table(results))
+                for config_trials in results:
+                    if config_trials:
+                        config_name = config_trials[0].metrics.benchmark_id
+                        multi_trial = MultiTrialResults(
+                            config_name=config_name,
+                            total_trials=len(config_trials),
+                            base_seed=suite.seed,
+                            trials=config_trials,
+                        )
+                        summary = multi_trial.get_summary()
+                        print(f"\nConfig: {config_name} ({len(config_trials)} trials)")
+                        print(f"  Avg FPS: {summary.avg_fps.mean:.2f} ± {summary.avg_fps.stddev:.2f}")
+                        print(f"  Median RTT: {summary.median_rtt_ms.mean:.2f} ± {summary.median_rtt_ms.stddev:.2f}ms")
+                        print(f"  Upload BW: {summary.upload_bandwidth_mbps.mean:.2f} ± {summary.upload_bandwidth_mbps.stddev:.2f} MiB/s")
+                        print(f"  Download BW: {summary.download_bandwidth_mbps.mean:.2f} ± {summary.download_bandwidth_mbps.stddev:.2f} MiB/s")
 
         else:
             # Single benchmark
@@ -281,15 +555,68 @@ Prerequisites:
                 output_dir=args.output_dir,
                 cleanup=not args.no_cleanup,
                 runner_timeout=args.runner_timeout,
+                trials=args.trials,
+                seed=args.seed,
+                save_raw_data=args.raw_data,
+                format=args.format,
             )
 
-            metrics = await run_benchmark(config)
+            trial_results = await run_benchmark(config)
 
-            if args.json:
-                import json
-                print(json.dumps(metrics.to_dict(), indent=2))
+            if args.format == "csv":
+                output_dir = args.output_dir
+                if not os.path.isabs(output_dir):
+                    output_dir = os.path.join(os.path.dirname(os.getcwd()), output_dir)
+                csv_path = save_multi_trial_results_csv(
+                    trial_results,
+                    config.seed,
+                    output_dir,
+                    trial_results[0].metrics.benchmark_id if trial_results else "benchmark",
+                )
+                print(f"CSV saved to {csv_path}")
+            elif args.json:
+                # Output all trials
+                output = {
+                    "config": {
+                        "benchmark_id": trial_results[0].metrics.benchmark_id if trial_results else "unknown",
+                        "total_trials": len(trial_results),
+                        "base_seed": config.seed,
+                    },
+                    "trials": [
+                        {
+                            "trial_number": t.trial_number,
+                            "seed_used": t.seed_used,
+                            "metrics": t.metrics.to_dict(),
+                        }
+                        for t in trial_results
+                    ],
+                }
+                print(json.dumps(output, indent=2))
             else:
-                print("\n" + metrics.summary())
+                # Print summary for single benchmark
+                if len(trial_results) == 1:
+                    # Single trial, use existing format
+                    print("\n" + trial_results[0].metrics.summary())
+                else:
+                    # Multiple trials, print summary statistics
+                    print("\n" + "=" * 60)
+                    print(f"BENCHMARK RESULTS ({len(trial_results)} trials)")
+                    print("=" * 60)
+                    multi_trial = MultiTrialResults(
+                        config_name=trial_results[0].metrics.benchmark_id,
+                        total_trials=len(trial_results),
+                        base_seed=config.seed,
+                        trials=trial_results,
+                    )
+                    summary = multi_trial.get_summary()
+                    print(f"\nPerformance:")
+                    print(f"  Avg FPS: {summary.avg_fps.mean:.2f} ± {summary.avg_fps.stddev:.2f}")
+                    print(f"  Median RTT: {summary.median_rtt_ms.mean:.2f} ± {summary.median_rtt_ms.stddev:.2f}ms")
+                    print(f"  Upload BW: {summary.upload_bandwidth_mbps.mean:.2f} ± {summary.upload_bandwidth_mbps.stddev:.2f} MiB/s")
+                    print(f"  Download BW: {summary.download_bandwidth_mbps.mean:.2f} ± {summary.download_bandwidth_mbps.stddev:.2f} MiB/s")
+                    print(f"\nAcross {len(trial_results)} trials:")
+                    for i, t in enumerate(trial_results):
+                        print(f"  Trial {i} (seed={t.seed_used}): FPS={t.metrics.avg_fps:.2f}, RTT={t.metrics.median_rtt_ms:.2f}ms")
 
     try:
         asyncio.run(run())

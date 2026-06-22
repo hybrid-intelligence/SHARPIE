@@ -27,6 +27,8 @@ import shutil
 import sys
 import uuid
 from typing import List, Tuple, Optional
+from dataclasses import dataclass
+import numpy as np
 
 FILE_PATH = os.path.abspath(__file__)
 
@@ -69,11 +71,19 @@ from sharpie.webserver.data.models import Episode, Record
 
 from .config import FILE_PATH, BenchmarkConfig, BENCHMARK_EXPERIMENT, AIAgentConfig, AI_AGENT_EXPERIMENT, NetworkLatencySuite, ImageSizeSuite
 from .participant_simulator import ParticipantSimulator, ParticipantMetrics
-from .metrics import aggregate_metrics, save_results, AggregateMetrics
+from .metrics import aggregate_metrics, save_results, AggregateMetrics, aggregate_participant_bytes_by_step
 
 # Absolute path to benchmark results directory
 _BENCHMARK_DIR = os.path.dirname(os.path.abspath(__file__))
 _RESULTS_DIR = os.path.join(_BENCHMARK_DIR, 'results')
+
+
+@dataclass
+class TrialResult:
+    """Container for a single trial result."""
+    trial_number: int
+    metrics: 'AggregateMetrics'
+    seed_used: int
 
 
 class BenchmarkOrchestrator:
@@ -81,8 +91,10 @@ class BenchmarkOrchestrator:
     Orchestrates benchmark setup, execution, and cleanup.
     """
 
-    def __init__(self, config: BenchmarkConfig):
+    def __init__(self, config: BenchmarkConfig, seed: int = 42):
         self.config = config
+        self.seed = seed
+        self.rng = np.random.default_rng(seed)
         self.test_users: List[User] = []
         self.test_participants: List[Participant] = []
         self.test_session: Optional[Session] = None
@@ -181,6 +193,7 @@ class BenchmarkOrchestrator:
         )
         # Update metadata if environment already exists
         if not created:
+            env.filepaths = {"environment": os.path.join(FILE_PATH, "noop_environment.py")}
             env.metadata = {
                 "max_steps": self.config.num_steps,
                 "render_size": list(self.config.image_size),
@@ -323,7 +336,9 @@ class BenchmarkOrchestrator:
 
         # Create participant simulators
         simulators = []
-        for participant_id, session_cookie, role in cookies:
+        for i, (participant_id, session_cookie, role) in enumerate(cookies):
+            # Generate unique seed for each participant from orchestrator RNG
+            participant_seed = int(self.rng.integers(0, 2**31))
             simulator = ParticipantSimulator(
                 participant_id=participant_id,
                 session_cookie=session_cookie,
@@ -334,6 +349,7 @@ class BenchmarkOrchestrator:
                 connection_timeout=self.config.runner_timeout,
                 verbose=self.config.verbose,
                 network_latency=self.config.network_latency,
+                seed=participant_seed,
             )
             simulators.append(simulator)
 
@@ -341,22 +357,46 @@ class BenchmarkOrchestrator:
         tasks = [sim.run() for sim in simulators]
         participant_metrics: List[ParticipantMetrics] = await asyncio.gather(*tasks)
 
+        # Aggregate participant bytes by step (for webserver bandwidth calculation)
+        image_sizes_by_step = aggregate_participant_bytes_by_step(participant_metrics)
+
+        # Wait for runner to persist records before querying
+        await self._wait_for_runner_persistence()
+        
+        # Calculate webserver bytes from Records BEFORE cleanup
+        webserver_bytes_by_step = {}
+        if hasattr(self, 'test_session') and self.test_session:
+            webserver_bytes_by_step = await self._calculate_webserver_bytes(
+                self.test_session.id,
+                image_sizes_by_step
+            )
+
+        # Format image size as string
+        h, w, _ = self.config.image_size
+        image_size_str = f"{h}x{w}"
+
         # Aggregate metrics
         metrics = aggregate_metrics(
             participant_metrics,
             benchmark_id=self.benchmark_id,
             target_steps=self.config.num_steps,
+            include_timing_samples=self.config.save_raw_data,
+            num_agents=0,  # This is a participant benchmark
+            network_latency_ms=self.config.network_latency * 1000,  # Convert to ms
+            image_size=image_size_str,
+            webserver_bytes_by_step=webserver_bytes_by_step,
         )
 
         print(f"[{self.benchmark_id}] Benchmark complete")
         print(metrics.summary())
 
-        # Save results to absolute path
-        output_dir = self.config.output_dir
-        if not os.path.isabs(output_dir):
-            output_dir = os.path.join(_BENCHMARK_DIR, output_dir)
-        output_path = save_results(metrics, output_dir)
-        print(f"[{self.benchmark_id}] Results saved to {output_path}")
+        # Save results to JSON (skip if CSV format was requested)
+        if self.config.format != "csv":
+            output_dir = self.config.output_dir
+            if not os.path.isabs(output_dir):
+                output_dir = os.path.join(_BENCHMARK_DIR, output_dir)
+            output_path = save_results(metrics, output_dir)
+            print(f"[{self.benchmark_id}] Results saved to {output_path}")
 
         return metrics
 
@@ -404,6 +444,56 @@ class BenchmarkOrchestrator:
 
         print(f"[{self.benchmark_id}] Cleanup complete")
 
+    async def _wait_for_runner_persistence(self):
+        """Wait for runner to disconnect and persist records to database.
+        
+        The runner buffers records in memory and only persists them on disconnect.
+        We need to wait for this to complete before querying the database.
+        Polls the database until all expected records appear or timeout.
+        """
+        import asyncio
+
+        timeout = 10.0  # Maximum wait time in seconds
+        poll_interval = 0.05  # Poll every 50ms
+        elapsed = 0.0
+
+        if not hasattr(self, 'test_session') or not self.test_session:
+            return
+
+        print(f"[{self.benchmark_id}] Waiting for runner to persist records...")
+
+        while elapsed < timeout:
+            # Check if all expected records exist
+            record_count = await self._get_record_count()
+
+            if record_count >= self.config.num_steps:
+                print(f"[{self.benchmark_id}] Records persisted ({record_count} records found)")
+                return
+
+            await asyncio.sleep(poll_interval)
+            elapsed += poll_interval
+
+        # Timeout occurred
+        print(f"[{self.benchmark_id}] Warning: Timeout waiting for runner (found {record_count}/{self.config.num_steps} records)")
+    
+    @sync_to_async
+    def _get_record_count(self):
+        """Get count of records for test session."""
+        if not hasattr(self, 'test_session') or not self.test_session:
+            return 0
+
+        try:
+            episodes = Episode.objects.filter(session=self.test_session)
+            return Record.objects.filter(episode__in=episodes).count()
+        except Exception:
+            return 0
+
+    @sync_to_async
+    def _calculate_webserver_bytes(self, session_id: int, image_sizes_by_step: dict = None) -> dict:
+        """Calculate webserver bytes sent/received from Record model data."""
+        from sharpie.benchmark.metrics import calculate_webserver_bytes_from_records
+        return calculate_webserver_bytes_from_records(session_id, image_sizes_by_step)
+
     async def execute(self) -> AggregateMetrics:
         """
         Full benchmark lifecycle: setup -> run -> cleanup.
@@ -419,21 +509,40 @@ class BenchmarkOrchestrator:
             await self.cleanup()
 
 
-async def run_benchmark(config: BenchmarkConfig) -> AggregateMetrics:
+async def run_benchmark(config: BenchmarkConfig) -> List[TrialResult]:
     """
-    Run a single benchmark with the given configuration.
+    Run benchmark multiple times with controlled seeds.
 
     Args:
         config: Benchmark configuration
 
     Returns:
-        AggregateMetrics: Combined metrics from all participants
+        List[TrialResult]: Results for each trial
     """
-    orchestrator = BenchmarkOrchestrator(config)
-    return await orchestrator.execute()
+    results = []
+    
+    for trial in range(config.trials):
+        # Generate trial-specific seed by offsetting base seed
+        trial_seed = config.seed + trial
+        
+        # Print trial progress for multi-trial runs
+        if config.trials > 1:
+            print(f"\n[Trial {trial + 1}/{config.trials}] Running benchmark (seed={trial_seed})...")
+        
+        # Create orchestrator with trial-specific seed
+        orchestrator = BenchmarkOrchestrator(config, seed=trial_seed)
+        
+        metrics = await orchestrator.execute()
+        results.append(TrialResult(
+            trial_number=trial,
+            metrics=metrics,
+            seed_used=trial_seed
+        ))
+    
+    return results
 
 
-async def run_scalability_suite(suite_config) -> List[AggregateMetrics]:
+async def run_scalability_suite(suite_config) -> List[List[TrialResult]]:
     """
     Run the full scalability suite.
 
@@ -441,14 +550,16 @@ async def run_scalability_suite(suite_config) -> List[AggregateMetrics]:
         suite_config: ScalabilitySuite configuration
 
     Returns:
-        List[AggregateMetrics]: Results for each participant count
+        List[List[TrialResult]]: Results for each participant count (each with multiple trials)
     """
     results = []
+    total_configs = len(suite_config.participant_counts)
 
-    for num_participants in suite_config.participant_counts:
+    for idx, num_participants in enumerate(suite_config.participant_counts, 1):
+        print(f"\n[Configuration {idx}/{total_configs}] Running benchmark with {num_participants} participants...")
         config = suite_config.get_config(num_participants)
-        metrics = await run_benchmark(config)
-        results.append(metrics)
+        trial_results = await run_benchmark(config)
+        results.append(trial_results)
 
     return results
 
@@ -462,8 +573,10 @@ class AIAgentOrchestrator:
     the session start.
     """
 
-    def __init__(self, config: AIAgentConfig):
+    def __init__(self, config: AIAgentConfig, seed: int = 42):
         self.config = config
+        self.seed = seed
+        self.rng = np.random.default_rng(seed)
         self.test_user: Optional[User] = None
         self.test_participant: Optional[Participant] = None
         self.test_session: Optional[Session] = None
@@ -530,6 +643,7 @@ class AIAgentOrchestrator:
             }
         )
         if not created:
+            env.filepaths = {"environment": os.path.join(FILE_PATH, 'noop_environment.py')}
             env.metadata = {"max_steps": self.config.num_steps}
             env.save()
         self.environment = env
@@ -553,10 +667,14 @@ class AIAgentOrchestrator:
             name="Random Benchmark Policy",
             defaults={
                 "description": "Random policy for AI agent benchmarking",
-                "filepaths": {"policy": "random_policy.py"},
+                "filepaths": {"policy": os.path.join(FILE_PATH, "random_policy.py")},
                 "checkpoint_interval": 0,
             }
         )
+        # Ensure existing policy row has the absolute path
+        if not created:
+            policy.filepaths = {"policy": os.path.join(FILE_PATH, "random_policy.py")}
+            policy.save()
         self.policy = policy
 
     @sync_to_async
@@ -682,27 +800,49 @@ class AIAgentOrchestrator:
             action_interval=0.0,  # No action delay
             connection_timeout=self.config.runner_timeout,
             verbose=self.config.verbose,
-            send_actions=False,  # AI agents run policies, no participant input needed
+            send_actions=True,  # Collect timing data for CSV export
+            seed=self.seed,
         )
 
-        # Run the simulator (it just observes steps, no actions to send)
+        # Run the simulator (it collects timing data for CSV export)
         participant_metrics = await simulator.run()
+
+        # Aggregate participant bytes by step (for webserver bandwidth calculation)
+        image_sizes_by_step = aggregate_participant_bytes_by_step([participant_metrics])
+
+        # Wait for runner to persist records before querying
+        await self._wait_for_runner_persistence()
+        
+        # Calculate webserver bytes from Records BEFORE cleanup
+        webserver_bytes_by_step = {}
+        if hasattr(self, 'test_session') and self.test_session:
+            webserver_bytes_by_step = await self._calculate_webserver_bytes(
+                self.test_session.id,
+                image_sizes_by_step
+            )
 
         # Aggregate metrics (single participant, but represents all AI agents)
         metrics = aggregate_metrics(
             [participant_metrics],
             benchmark_id=self.benchmark_id,
             target_steps=self.config.num_steps,
+            include_timing_samples=self.config.save_raw_data,
+            num_agents=self.config.num_agents,  # This is an AI agent benchmark
+            network_latency_ms=0.0,  # No simulated latency for AI agents
+            image_size="64x64",  # Default for AI agent benchmarks
+            webserver_bytes_by_step=webserver_bytes_by_step,
         )
 
         print(f"[{self.benchmark_id}] Benchmark complete")
         print(metrics.summary())
 
-        output_dir = self.config.output_dir
-        if not os.path.isabs(output_dir):
-            output_dir = os.path.join(_BENCHMARK_DIR, output_dir)
-        output_path = save_results(metrics, output_dir)
-        print(f"[{self.benchmark_id}] Results saved to {output_path}")
+        # Save results to JSON (skip if CSV format was requested)
+        if self.config.format != "csv":
+            output_dir = self.config.output_dir
+            if not os.path.isabs(output_dir):
+                output_dir = os.path.join(_BENCHMARK_DIR, output_dir)
+            output_path = save_results(metrics, output_dir)
+            print(f"[{self.benchmark_id}] Results saved to {output_path}")
 
         return metrics
 
@@ -744,6 +884,57 @@ class AIAgentOrchestrator:
 
         print(f"[{self.benchmark_id}] Cleanup complete")
 
+    async def _wait_for_runner_persistence(self):
+        """Wait for runner to disconnect and persist records to database.
+        
+        The runner buffers records in memory and only persists them on disconnect.
+        We need to wait for this to complete before querying the database.
+        Polls the database until all expected records appear or timeout.
+        """
+        import asyncio
+
+        timeout = 10.0  # Maximum wait time in seconds
+        poll_interval = 0.05  # Poll every 50ms
+        elapsed = 0.0
+
+        if not hasattr(self, 'test_session') or not self.test_session:
+            return
+
+        print(f"[{self.benchmark_id}] Waiting for runner to persist records...")
+
+        while elapsed < timeout:
+            # Check if all expected records exist
+            record_count = await self._get_record_count()
+
+            if record_count >= self.config.num_steps:
+                print(f"[{self.benchmark_id}] Records persisted ({record_count} records found)")
+                return
+
+            await asyncio.sleep(poll_interval)
+            elapsed += poll_interval
+
+        # Timeout occurred - get final count for message
+        record_count = await self._get_record_count()
+        print(f"[{self.benchmark_id}] Warning: Timeout waiting for runner (found {record_count}/{self.config.num_steps} records)")
+    
+    @sync_to_async
+    def _get_record_count(self):
+        """Get count of records for test session."""
+        if not hasattr(self, 'test_session') or not self.test_session:
+            return 0
+
+        try:
+            episodes = Episode.objects.filter(session=self.test_session)
+            return Record.objects.filter(episode__in=episodes).count()
+        except Exception:
+            return 0
+
+    @sync_to_async
+    def _calculate_webserver_bytes(self, session_id: int, image_sizes_by_step: dict = None) -> dict:
+        """Calculate webserver bytes sent/received from Record model data."""
+        from sharpie.benchmark.metrics import calculate_webserver_bytes_from_records
+        return calculate_webserver_bytes_from_records(session_id, image_sizes_by_step)
+
     async def execute(self) -> AggregateMetrics:
         """Full benchmark lifecycle: setup -> run -> cleanup."""
         try:
@@ -754,50 +945,70 @@ class AIAgentOrchestrator:
             await self.cleanup()
 
 
-async def run_ai_agent_benchmark(config: AIAgentConfig) -> AggregateMetrics:
-    """Run a single AI agent benchmark with the given configuration."""
-    orchestrator = AIAgentOrchestrator(config)
-    return await orchestrator.execute()
+async def run_ai_agent_benchmark(config: AIAgentConfig) -> List[TrialResult]:
+    """Run AI agent benchmark multiple times with controlled seeds."""
+    results = []
+    
+    for trial in range(config.trials):
+        trial_seed = config.seed + trial
+        
+        # Print trial progress for multi-trial runs
+        if config.trials > 1:
+            print(f"\n[Trial {trial + 1}/{config.trials}] Running AI agent benchmark (seed={trial_seed})...")
+        
+        orchestrator = AIAgentOrchestrator(config, seed=trial_seed)
+        metrics = await orchestrator.execute()
+        results.append(TrialResult(
+            trial_number=trial,
+            metrics=metrics,
+            seed_used=trial_seed
+        ))
+    
+    return results
 
 
-async def run_ai_agent_scalability_suite(suite_config) -> List[AggregateMetrics]:
+async def run_ai_agent_scalability_suite(suite_config) -> List[List[TrialResult]]:
     """Run the full AI agent scalability suite."""
     results = []
+    total_configs = len(suite_config.agent_counts)
 
-    for num_agents in suite_config.agent_counts:
+    for idx, num_agents in enumerate(suite_config.agent_counts, 1):
+        print(f"\n[Configuration {idx}/{total_configs}] Running benchmark with {num_agents} AI agents...")
         config = suite_config.get_config(num_agents)
-        metrics = await run_ai_agent_benchmark(config)
-        results.append(metrics)
+        trial_results = await run_ai_agent_benchmark(config)
+        results.append(trial_results)
 
     return results
 
 
-async def run_network_latency_suite(suite_config: NetworkLatencySuite) -> List[AggregateMetrics]:
+async def run_network_latency_suite(suite_config) -> List[List[TrialResult]]:
     """Run the network latency test suite."""
     from .config import NETWORK_PRESETS
     results = []
+    total_configs = len(suite_config.latency_presets)
 
-    for latency_preset in suite_config.latency_presets:
+    for idx, latency_preset in enumerate(suite_config.latency_presets, 1):
         config = suite_config.get_config(latency_preset)
         latency_ms = NETWORK_PRESETS.get(latency_preset, 0.0) * 1000
-        print(f"\nRunning benchmark with {latency_preset} latency ({latency_ms:.1f}ms)...")
-        metrics = await run_benchmark(config)
-        results.append(metrics)
+        print(f"\n[Configuration {idx}/{total_configs}] Running benchmark with {latency_preset} latency ({latency_ms:.1f}ms)...")
+        trial_results = await run_benchmark(config)
+        results.append(trial_results)
 
     return results
 
 
-async def run_image_size_suite(suite_config: ImageSizeSuite) -> List[AggregateMetrics]:
+async def run_image_size_suite(suite_config) -> List[List[TrialResult]]:
     """Run the image size test suite."""
     from .config import IMAGE_SIZE_PRESETS
     results = []
+    total_configs = len(suite_config.image_size_presets)
 
-    for image_size_preset in suite_config.image_size_presets:
+    for idx, image_size_preset in enumerate(suite_config.image_size_presets, 1):
         config = suite_config.get_config(image_size_preset)
         image_size = IMAGE_SIZE_PRESETS.get(image_size_preset, (64, 64, 3))
         h, w, _ = image_size
-        print(f"\nRunning benchmark with {image_size_preset} image size ({h}x{w})...")
-        metrics = await run_benchmark(config)
-        results.append(metrics)
+        print(f"\n[Configuration {idx}/{total_configs}] Running benchmark with {image_size_preset} image size ({h}x{w})...")
+        trial_results = await run_benchmark(config)
+        results.append(trial_results)
 
     return results

@@ -11,6 +11,9 @@ import time
 from dataclasses import dataclass, field
 from typing import Optional
 import statistics
+import numpy as np
+
+BYTES_PER_MEBIBYTE = 1024 * 1024
 
 try:
     import aiohttp
@@ -27,7 +30,10 @@ class TimingSample:
     step: int
     action_sent_time: float
     obs_received_time: float
+    action_taken: int = 0
     image_size: int = 0
+    bytes_sent: int = 0
+    bytes_received: int = 0
 
     @property
     def rtt(self) -> float:
@@ -47,6 +53,8 @@ class ParticipantMetrics:
     errors: list = field(default_factory=list)
     steps_completed: int = 0
     connected: bool = False
+    bytes_sent: int = 0  # Total bytes sent to server
+    bytes_received: int = 0  # Total bytes received from server
 
     @property
     def wait_time(self) -> float:
@@ -131,9 +139,27 @@ class ParticipantMetrics:
             return 0.0
         return len(self.errors) / total
 
-    def to_dict(self) -> dict:
-        """Convert metrics to dictionary for JSON serialization."""
-        return {
+    @property
+    def upload_bandwidth_mbps(self) -> float:
+        """Upload bandwidth in MiB/s during gameplay."""
+        if self.gameplay_duration <= 0:
+            return 0.0
+        return (self.bytes_sent / self.gameplay_duration) / BYTES_PER_MEBIBYTE
+
+    @property
+    def download_bandwidth_mbps(self) -> float:
+        """Download bandwidth in MiB/s during gameplay."""
+        if self.gameplay_duration <= 0:
+            return 0.0
+        return (self.bytes_received / self.gameplay_duration) / BYTES_PER_MEBIBYTE
+
+    def to_dict(self, include_timing_samples: bool = False) -> dict:
+        """Convert metrics to dictionary for JSON serialization.
+        
+        Args:
+            include_timing_samples: Whether to include raw timing samples (default: False)
+        """
+        result = {
             "participant_id": self.participant_id,
             "steps_completed": self.steps_completed,
             "total_duration_seconds": round(self.total_duration, 3),
@@ -148,10 +174,31 @@ class ParticipantMetrics:
                 "p95_ms": round(self.p95_rtt * 1000, 2),
                 "p99_ms": round(self.p99_rtt * 1000, 2),
             },
-            "errors": len(self.errors),
+            "errors": self.errors,
             "error_rate": round(self.error_rate, 4),
             "connected": self.connected,
+            "bytes_sent": self.bytes_sent,
+            "bytes_received": self.bytes_received,
+            "upload_bandwidth_mbps": round(self.upload_bandwidth_mbps, 3),
+            "download_bandwidth_mbps": round(self.download_bandwidth_mbps, 3),
         }
+        
+        if include_timing_samples:
+            result["timing_samples"] = [
+                {
+                    "step": s.step,
+                    "action_sent_time": s.action_sent_time,
+                    "obs_received_time": s.obs_received_time,
+                    "rtt_seconds": s.rtt,
+                    "action_taken": s.action_taken,
+                    "image_size": s.image_size,
+                    "bytes_sent": s.bytes_sent,
+                    "bytes_received": s.bytes_received,
+                }
+                for s in self.samples
+            ]
+        
+        return result
 
 
 class ParticipantSimulator:
@@ -174,6 +221,7 @@ class ParticipantSimulator:
         verbose: bool = False,
         send_actions: bool = True,
         network_latency: float = 0.0,
+        seed: Optional[int] = None,
     ):
         """
         Initialize participant simulator.
@@ -189,6 +237,7 @@ class ParticipantSimulator:
             verbose: Enable verbose logging
             send_actions: Whether to send actions (False for passive observers)
             network_latency: Simulated network latency in seconds (added to each message)
+            seed: Random seed for reproducible action sequences
         """
         self.participant_id = participant_id
         self.session_cookie = session_cookie
@@ -200,6 +249,8 @@ class ParticipantSimulator:
         self.verbose = verbose
         self.send_actions = send_actions
         self.network_latency = network_latency
+        self.seed = seed
+        self.rng = np.random.default_rng(seed)
 
         self.metrics = ParticipantMetrics(
             participant_id=participant_id,
@@ -250,6 +301,9 @@ class ParticipantSimulator:
 
                 async for msg in ws:
                     if msg.type == aiohttp.WSMsgType.TEXT:
+                        received_bytes = len(msg.data.encode('utf-8'))
+                        self.metrics.bytes_received += received_bytes
+                        
                         data = json.loads(msg.data)
 
                         # Simulate network latency (server → client)
@@ -265,10 +319,18 @@ class ParticipantSimulator:
 
                             # Record timing for pending action
                             if self._pending_action is not None:
+                                # Extract image size for bandwidth tracking
+                                image_base64 = data.get("image", "")
+                                image_size_bytes = len(image_base64) if image_base64 else 0
+                                
                                 sample = TimingSample(
                                     step=self._pending_action["step"],
                                     action_sent_time=self._pending_action["sent_time"],
                                     obs_received_time=time.time(),
+                                    action_taken=self._pending_action["action"],
+                                    image_size=image_size_bytes,
+                                    bytes_sent=self._pending_action.get("bytes_sent", 0),
+                                    bytes_received=received_bytes,
                                 )
                                 self.metrics.samples.append(sample)
                                 self._pending_action = None
@@ -311,22 +373,32 @@ class ParticipantSimulator:
                 self.log(f"Completed {step_count} steps")
 
     async def _send_action(self, ws, step: int):
-        """Send a hardcoded no-op action (action=0) to the server."""
+        """Send a random action (controlled by seed) to the server."""
         await asyncio.sleep(self.action_interval)
+
+        # Choose random action from valid action space
+        # Overcooked-style actions: 0=up, 1=down, 2=left, 3=right, 4=interact
+        action_space = [0, 1, 2, 3, 4]
+        random_action = int(self.rng.choice(action_space))
 
         # Participant sends action to be received by the runner
         # The RunConsumer forwards private messages to the runner
         action = {
             "type": "private",
             "message": "action",
-            "action": 0,  # Default "no-op" action
+            "action": random_action,
             "role": self.role,
         }
 
         self._pending_action = {
             "step": step,
             "sent_time": time.time(),
+            "action": random_action,
         }
 
-        await ws.send_json(action)
-        self.log(f"Sent action for step {step}")
+        message_json = json.dumps(action)
+        sent_bytes = len(message_json.encode('utf-8'))
+        self.metrics.bytes_sent += sent_bytes
+        self._pending_action["bytes_sent"] = sent_bytes
+        await ws.send_str(message_json)
+        self.log(f"Sent action {random_action} for step {step}")

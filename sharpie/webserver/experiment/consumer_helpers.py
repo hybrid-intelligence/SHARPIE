@@ -33,7 +33,7 @@ class RunConsumerHelpers:
             # Get expected number of participants from experiment's agent configuration
             expected_count = session.experiment.agents.filter(participant=True).count()
 
-            return session.connected_participants == expected_count
+            return session.connected_participants >= expected_count
 
     def _do_decrement(self):
         """Atomically decrement participant count (only if session not yet running)."""
