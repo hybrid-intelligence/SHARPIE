@@ -68,6 +68,9 @@ class Policy(models.Model):
             raise ValidationError({
                 'filepaths': f'Error parsing policy file {policy_file_path}: {str(e)}'
             })
+            
+    def __str__(self):
+        return self.name
 
 class Agent(models.Model):
     """
@@ -172,6 +175,7 @@ class Environment(models.Model):
             raise ValidationError({
                 'filepaths': f'Error parsing environment file {env_file_path}: {str(e)}'
             })
+
     def __str__(self):
         return self.name
 
