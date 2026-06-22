@@ -3,7 +3,7 @@
 # -- Project information
 
 project = 'SHARPIE'
-copyright = '2025, Hybrid Intelligence'
+copyright = '2025-2026, Hybrid Intelligence Center'
 author = 'SHARPIE Development Team'
 
 release = 'rc1'
