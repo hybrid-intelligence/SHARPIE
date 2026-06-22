@@ -193,6 +193,7 @@ class BenchmarkOrchestrator:
         )
         # Update metadata if environment already exists
         if not created:
+            env.filepaths = {"environment": os.path.join(FILE_PATH, "noop_environment.py")}
             env.metadata = {
                 "max_steps": self.config.num_steps,
                 "render_size": list(self.config.image_size),
@@ -451,39 +452,36 @@ class BenchmarkOrchestrator:
         Polls the database until all expected records appear or timeout.
         """
         import asyncio
-        from data.models import Episode, Record
-        
+
         timeout = 10.0  # Maximum wait time in seconds
         poll_interval = 0.05  # Poll every 50ms
         elapsed = 0.0
-        
+
         if not hasattr(self, 'test_session') or not self.test_session:
             return
-        
+
         print(f"[{self.benchmark_id}] Waiting for runner to persist records...")
-        
+
         while elapsed < timeout:
             # Check if all expected records exist
             record_count = await self._get_record_count()
-            
+
             if record_count >= self.config.num_steps:
                 print(f"[{self.benchmark_id}] Records persisted ({record_count} records found)")
                 return
-            
+
             await asyncio.sleep(poll_interval)
             elapsed += poll_interval
-        
+
         # Timeout occurred
         print(f"[{self.benchmark_id}] Warning: Timeout waiting for runner (found {record_count}/{self.config.num_steps} records)")
     
     @sync_to_async
     def _get_record_count(self):
         """Get count of records for test session."""
-        from data.models import Episode, Record
-        
         if not hasattr(self, 'test_session') or not self.test_session:
             return 0
-        
+
         try:
             episodes = Episode.objects.filter(session=self.test_session)
             return Record.objects.filter(episode__in=episodes).count()
@@ -645,6 +643,7 @@ class AIAgentOrchestrator:
             }
         )
         if not created:
+            env.filepaths = {"environment": os.path.join(FILE_PATH, 'noop_environment.py')}
             env.metadata = {"max_steps": self.config.num_steps}
             env.save()
         self.environment = env
@@ -668,10 +667,14 @@ class AIAgentOrchestrator:
             name="Random Benchmark Policy",
             defaults={
                 "description": "Random policy for AI agent benchmarking",
-                "filepaths": {"policy": "random_policy.py"},
+                "filepaths": {"policy": os.path.join(FILE_PATH, "random_policy.py")},
                 "checkpoint_interval": 0,
             }
         )
+        # Ensure existing policy row has the absolute path
+        if not created:
+            policy.filepaths = {"policy": os.path.join(FILE_PATH, "random_policy.py")}
+            policy.save()
         self.policy = policy
 
     @sync_to_async
@@ -889,28 +892,27 @@ class AIAgentOrchestrator:
         Polls the database until all expected records appear or timeout.
         """
         import asyncio
-        from data.models import Episode, Record
-        
+
         timeout = 10.0  # Maximum wait time in seconds
         poll_interval = 0.05  # Poll every 50ms
         elapsed = 0.0
-        
+
         if not hasattr(self, 'test_session') or not self.test_session:
             return
-        
+
         print(f"[{self.benchmark_id}] Waiting for runner to persist records...")
-        
+
         while elapsed < timeout:
             # Check if all expected records exist
             record_count = await self._get_record_count()
-            
+
             if record_count >= self.config.num_steps:
                 print(f"[{self.benchmark_id}] Records persisted ({record_count} records found)")
                 return
-            
+
             await asyncio.sleep(poll_interval)
             elapsed += poll_interval
-        
+
         # Timeout occurred - get final count for message
         record_count = await self._get_record_count()
         print(f"[{self.benchmark_id}] Warning: Timeout waiting for runner (found {record_count}/{self.config.num_steps} records)")
@@ -918,11 +920,9 @@ class AIAgentOrchestrator:
     @sync_to_async
     def _get_record_count(self):
         """Get count of records for test session."""
-        from data.models import Episode, Record
-        
         if not hasattr(self, 'test_session') or not self.test_session:
             return 0
-        
+
         try:
             episodes = Episode.objects.filter(session=self.test_session)
             return Record.objects.filter(episode__in=episodes).count()

@@ -272,7 +272,7 @@ Prerequisites:
                             }
                             for t in config_trials
                         ],
-                        "summary": multi_trial.get_summary().__dict__,
+                        "summary": multi_trial.get_summary().to_dict(),
                     })
                 print(json.dumps(output, indent=2))
             else:
@@ -353,7 +353,7 @@ Prerequisites:
                             }
                             for t in config_trials
                         ],
-                        "summary": multi_trial.get_summary().__dict__,
+                        "summary": multi_trial.get_summary().to_dict(),
                     })
                 print(json.dumps(output, indent=2))
             else:
@@ -434,7 +434,7 @@ Prerequisites:
                             }
                             for t in config_trials
                         ],
-                        "summary": multi_trial.get_summary().__dict__,
+                        "summary": multi_trial.get_summary().to_dict(),
                     })
                 print(json.dumps(output, indent=2))
             else:
@@ -514,7 +514,7 @@ Prerequisites:
                             }
                             for t in config_trials
                         ],
-                        "summary": multi_trial.get_summary().__dict__,
+                        "summary": multi_trial.get_summary().to_dict(),
                     })
                 print(json.dumps(output, indent=2))
             else:

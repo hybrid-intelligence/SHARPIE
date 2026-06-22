@@ -69,6 +69,16 @@ class TrialStatisticsSummary:
     error_rate: MetricStatistics
     avg_gameplay_duration_seconds: MetricStatistics
 
+    def to_dict(self) -> dict:
+        return {
+            "avg_fps": self.avg_fps.to_dict(),
+            "median_rtt_ms": self.median_rtt_ms.to_dict(),
+            "upload_bandwidth_mbps": self.upload_bandwidth_mbps.to_dict(),
+            "download_bandwidth_mbps": self.download_bandwidth_mbps.to_dict(),
+            "error_rate": self.error_rate.to_dict(),
+            "avg_gameplay_duration_seconds": self.avg_gameplay_duration_seconds.to_dict(),
+        }
+
 
 def compute_statistics(values: List[float]) -> MetricStatistics:
     """Compute statistics across values."""
@@ -478,7 +488,7 @@ def calculate_webserver_bytes_from_records(
             'to_participants_bytes': int,
         }
     """
-    from data.models import Session, Episode, Record
+    from sharpie.webserver.data.models import Session, Episode, Record
     
     if image_sizes_by_step is None:
         image_sizes_by_step = {}
