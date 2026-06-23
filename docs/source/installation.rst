@@ -33,7 +33,7 @@ Installing SHARPIE
 
 Install SHARPIE using pip. You can either install the latest release from PyPI:
 
-.. code-block::console
+.. code-block:: console
 
    pip install sharpie
 

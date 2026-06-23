@@ -14,8 +14,8 @@ SHARPIE comes with logging utilities, supports deployment on popular cloud platf
 
 It empowers researchers to study a wide variety of research questions related to the interaction between humans and RL agents, including those related to interactive reward specification and learning, learning from human feedback, action delegation, preference elicitation, user-modeling, and human-AI teaming. The platform is based on a generic interface for human-RL interactions that aims to standardize the field of study on RL in human contexts.
 
-Check out the :doc:`usage` section for further information, including
-the :ref:`installation` of the project.
+Check out the :ref:`getting_started_section` section for further information, including
+the :doc:`installation` of the project.
 
 .. note::
 
@@ -23,10 +23,10 @@ the :ref:`installation` of the project.
 
 Contents
 --------
+.. _getting_started_section:
 
 .. toctree::
    :maxdepth: 2
-
    :caption: Getting Started
 
    installation
@@ -47,9 +47,6 @@ Contents
    dependencies
    glossary
 
-
-
-
 .. toctree:: 
    :maxdepth: 2
    :caption: Development
@@ -60,6 +57,10 @@ Contents
    benchmark
    release_checklist
 
-api
+.. toctree::
+   :maxdepth: 2
+   :caption: API
+   
+   api
 
-Source code (GitHub) <https://github.com/hybrid-intelligence/SHARPIE>
+Source code `GitHub <https://github.com/hybrid-intelligence/SHARPIE>`_.
