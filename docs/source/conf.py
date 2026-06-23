@@ -8,8 +8,8 @@ project = 'SHARPIE'
 copyright = '2025-2026, Hybrid Intelligence Center'
 author = 'SHARPIE Development Team'
 
-release = 'rc1'
-version = '1.0.0'
+release = '1.0.0-rc1' # full release version
+version = '1.0' # short x.y version
 
 # -- General configuration
 
