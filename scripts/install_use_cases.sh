@@ -3,7 +3,6 @@ set -e
 
 # Configuration
 SHARPIE_DIR="/var/www/sharpie"
-WEBSERVER_DIR="$SHARPIE_DIR/sharpie/webserver"
 GALLERY_REPO="https://github.com/hybrid-intelligence/SHARPIE_Gallery.git"
 GALLERY_DIR="$(dirname "$SHARPIE_DIR")/SHARPIE_Gallery"
 USE_CASES_FILE="$SHARPIE_DIR/deployment/use_cases.txt"
@@ -40,7 +39,7 @@ for use_case in $USE_CASES; do
     log "Installing use-case: $use_case"
     
     set +e
-    sharpie-install "$use_case" --gallery-dir "$GALLERY_DIR" --sharpie-dir "$SHARPIE_DIR" --quiet 2>&1 | tee -a "$LOG_FILE"
+    sharpie-install "$use_case" --gallery-dir "$GALLERY_DIR" --quiet 2>&1 | tee -a "$LOG_FILE"
     EXIT_CODE=$?
     set -e
     

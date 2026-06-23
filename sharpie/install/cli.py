@@ -16,7 +16,6 @@ import sys
 from pathlib import Path
 
 from sharpie.install.installer import (
-    get_sharpie_dir_from_env,
     install_use_case,
 )
 
@@ -29,29 +28,9 @@ def parse_args():
     parser.add_argument('--check', action='store_true', help='Validate without installing')
     parser.add_argument('--gallery-dir', type=str, default='../SHARPIE_Gallery',
                         help='Path to SHARPIE_Gallery directory')
-    parser.add_argument('--sharpie-dir', type=str, default=None,
-                        help='Path to SHARPIE directory (default: auto-detect)')
-    parser.add_argument('--webserver-dir', type=str, default=None,
-                        help='Path to webserver directory (default: <sharpie-dir>/sharpie/webserver)')
     parser.add_argument('--quiet', action='store_true', help='Minimal output (errors only)')
     parser.add_argument('--verbose', action='store_true', help='Detailed output')
     return parser.parse_args()
-
-
-def get_paths(args):
-    if args.sharpie_dir:
-        sharpie_dir = Path(args.sharpie_dir)
-    else:
-        sharpie_dir = get_sharpie_dir_from_env()
-        if sharpie_dir is None:
-            sharpie_dir = Path(__file__).parent.parent.parent
-
-    if args.webserver_dir:
-        webserver_dir = Path(args.webserver_dir)
-    else:
-        webserver_dir = sharpie_dir / 'sharpie' / 'webserver'
-
-    return sharpie_dir, webserver_dir
 
 
 def get_verbosity(args):
@@ -79,8 +58,6 @@ def main():
         print(f"Error: Gallery directory not found: {gallery_dir}", file=sys.stderr)
         sys.exit(1)
 
-    _, webserver_dir = get_paths(args)
-
     if args.list:
         print("Available use cases:")
         for uc in list_use_cases(gallery_dir):
@@ -91,7 +68,7 @@ def main():
         failed = []
         for uc in list_use_cases(gallery_dir):
             try:
-                install_use_case(uc, gallery_dir, webserver_dir, check_only=args.check, verbosity=verbosity)
+                install_use_case(uc, gallery_dir, check_only=args.check, verbosity=verbosity)
             except Exception as e:
                 print(f"[FAIL] {uc} failed: {e}")
                 failed.append(uc)
@@ -101,7 +78,7 @@ def main():
             print(f"\n[FAIL] {len(failed)} use case(s) failed")
             sys.exit(1)
     elif args.use_case:
-        install_use_case(args.use_case, gallery_dir, webserver_dir, check_only=args.check, verbosity=verbosity)
+        install_use_case(args.use_case, gallery_dir, check_only=args.check, verbosity=verbosity)
     else:
         argparse.ArgumentParser(description='Install SHARPIE Gallery use cases').print_help()
 

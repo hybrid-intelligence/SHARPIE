@@ -1,7 +1,6 @@
 import os
 import sys
 import subprocess
-import importlib.metadata
 from pathlib import Path
 
 import yaml
@@ -10,14 +9,6 @@ from sharpie.install.validator import validate_single
 from sharpie.install.utils import log
 
 _django_initialized = False
-
-
-def get_sharpie_dir_from_env() -> Path | None:
-    try:
-        dist = importlib.metadata.distribution('sharpie')
-        return dist.locate_file('').resolve()
-    except importlib.metadata.PackageNotFoundError:
-        return None
 
 
 def load_config(use_case: str, gallery_dir: Path) -> dict:
@@ -60,14 +51,11 @@ def relative_to_absolute_paths(config: dict, use_case_dir: Path) -> dict:
     return config
 
 
-def setup_database(config: dict, webserver_dir: Path, verbosity: int = 1):
+def setup_database(config: dict, verbosity: int = 1):
     global _django_initialized
 
     if not _django_initialized:
         os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sharpie.webserver.server.settings')
-        webserver_dir_str = str(webserver_dir)
-        if webserver_dir_str not in sys.path:
-            sys.path.insert(0, webserver_dir_str)
         import django
         django.setup()
         _django_initialized = True
@@ -143,7 +131,7 @@ def show_installation_notes(config: dict, verbosity: int = 1):
         log(f"   {notes}\n", level=1, verbosity=verbosity)
 
 
-def install_use_case(use_case: str, gallery_dir: Path, webserver_dir: Path, check_only: bool = False, verbosity: int = 1):
+def install_use_case(use_case: str, gallery_dir: Path, check_only: bool = False, verbosity: int = 1):
     action = 'Validating' if check_only else 'Installing'
     log(f"\n{action} {use_case}...", level=1, verbosity=verbosity)
 
@@ -166,6 +154,6 @@ def install_use_case(use_case: str, gallery_dir: Path, webserver_dir: Path, chec
     config = relative_to_absolute_paths(config, use_case_dir)
 
     log("\nStep 4/4: Setting up database...", level=1, verbosity=verbosity)
-    setup_database(config, webserver_dir, verbosity)
+    setup_database(config, verbosity)
 
     log(f"\n[OK] {use_case} installed successfully!", level=1, verbosity=verbosity)
