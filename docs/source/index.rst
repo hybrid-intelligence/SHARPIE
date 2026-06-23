@@ -18,10 +18,15 @@ Contents
 --------
 
 .. toctree::
+   :maxdepth: 2
 
    overview
-   data_model
    usage
+   data_model
+   contributing
    dependencies
    faq
    glossary
+   api
+
+   Source code (GitHub) <https://github.com/hybrid-intelligence/SHARPIE>

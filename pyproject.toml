@@ -49,10 +49,13 @@ dev = [
     "build==1.5.0",
     "pygraphviz~=1.14.0",
 ]
-# should be the same as docs/requirements.txt
+
 docs = [
     "sphinx>=7.0",
     "sphinx-rtd-theme>=2.0",
+    "sphinx-copybutton>=0.5.2",
+    "sphinx-autobuild>=2025.8.25",
+    "sphinxcontrib-django>=2.5",
     "myst-parser>=3.0",
 ]
 

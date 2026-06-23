@@ -1,10 +1,10 @@
 High-level overview
-=====
+===================
 
 SHARPIE is organized around two main components: the web server and the runner.
 
 Web server
-----------------
+----------
 
 The web server is serving files to the user as well as interacting with the backend runner. Here, we will only highlight the fonctionnalities but we invite you to have a look at the Django documentation for a better understanding of how it is working. The web server is divided in 4 apps:
 
@@ -14,7 +14,7 @@ The web server is serving files to the user as well as interacting with the back
 * **Experiments**: participant-facing and backend-facing interface to run experiments.
 
 Runner
-----------------
+------
 
 The runner is responsible for managing the execution of experiments. The runner communicates with the web server to provide real-time updates and receive participant inputs. It is designed to be modular and extensible, allowing researchers to easily integrate new environments and algorithms by using simple wrappers. It is divided in several modules:
 
@@ -23,7 +23,7 @@ The runner is responsible for managing the execution of experiments. The runner 
 * **Agent (per experiment)**: agent(s) wrapper.
 
 Interaction diagram
-----------------
+-------------------
 
 The following diagram illustrates the interaction between the web server, runner and participant during an experiment.
 

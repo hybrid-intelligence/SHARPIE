@@ -57,6 +57,13 @@ def sanitize_data(data):
         return data
 
 def send_message(websocket, env, step_count, terminated, truncated, obs, actions, reward):
+    """Send a message to the webserver.
+
+    Contains:
+    - An image of the environment
+    - The current step
+    - Gymnasium data (terminated, truncated, observations, rewards, actions)
+    """
     frame = env.render()
     step_count += 1
 
@@ -137,6 +144,9 @@ def get_policy_actions(obs, policy_modules, participant_inputs=None, agents_sett
 
 
 def load_episode(websocket):
+    """Create a new episode
+
+    .. todo:: Rename to create_episode or clarify usage"""
     # Ask for settings
     websocket.send(json.dumps({'type': 'private', 'message': 'settings'}))
     # Wait for settings
@@ -158,6 +168,9 @@ def load_episode(websocket):
     return environment_settings, agents_settings, experiment_settings
 
 def load_environment(env_config):
+    """Create a new environment
+
+    .. todo:: Rename to create_environment or clarify usage"""
     spec = importlib.util.spec_from_file_location("environment", env_config['files']['environment']['path'])
     env_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(env_module)
@@ -170,6 +183,9 @@ def load_environment(env_config):
     return env
 
 def load_policies(agents_settings):
+    """Create or load policies for every RL agent
+
+    .. todo:: Rename to create_policies or clarify usage"""
     policy_modules = {}
     policy_intervals = {}
     for agent_name, agent_config in agents_settings.items():
@@ -259,6 +275,7 @@ def train_policies(policy_modules, intervals, step, s, a, r, term, trunc, settin
             update_single_agent(agent_name, policy_module, s, a, r, s_prime=r, done=done)
 
 def run_episode(websocket, environment_settings, agents_settings, experiment_settings):
+    """Step through a whole episode, potentially with learning"""
     # 1. Initialization
     env = load_environment(environment_settings)
     policy_modules, checkpoint_intervals = load_policies(agents_settings)
@@ -321,6 +338,9 @@ def run_episode(websocket, environment_settings, agents_settings, experiment_set
 
 
 def start_experiment(hostname, port, connection_key, link, room):
+    """Connect to a room and run an episode
+
+    .. todo:: Not sure"""
     try:
         with connect(f"ws://{hostname}:{port}/experiment/{link}/run/{room}", additional_headers={"authorization": f"{connection_key}"}) as websocket:
             logging.info(f"Connected to experiment {link}")
@@ -333,6 +353,8 @@ def start_experiment(hostname, port, connection_key, link, room):
 
 
 def main():
+    """Start a runner and connect to the webserver"""
+
     parser = argparse.ArgumentParser(description="Run experiment runner.")
     parser.add_argument("--hostname", type=str, default="localhost", help="Hostname of the server")
     parser.add_argument("--port", type=int, default=8000, help="Port of the server")
