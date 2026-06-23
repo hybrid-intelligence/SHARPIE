@@ -28,6 +28,7 @@ Open a new terminal in the SHARPIE root directory, and start the runner:
 .. code-block:: console
 
     git clone https://github.com/hybrid-intelligence/SHARPIE_Gallery.git
+    conda activate sharpie_env
     sharpie-install amaze --gallery-dir path/to/SHARPIE_Gallery
     sharpie-install mountain --gallery-dir path/to/SHARPIE_Gallery
     sharpie-install spread --gallery-dir path/to/SHARPIE_Gallery
