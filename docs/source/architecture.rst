@@ -4,7 +4,7 @@ Architecture
 SHARPIE is organized around three main components: participant-facing web interface, the web server and the runner.
 
 .. figure:: _static/architecture.svg
-   :alt: rchitecture diagram of the SHARPIE framework showing the SHARPIE core (runner, web server, logging) interacting with external components such as a web interface, environment simulator, RL agents, and an experiment admin panel.
+   :alt: Architecture diagram of the SHARPIE framework showing the SHARPIE core (runner, web server, logging) interacting with external components such as a web interface, environment simulator, RL agents, and an experiment admin panel.
    :align: center
    :width: 80%
 
