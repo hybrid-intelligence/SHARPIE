@@ -232,13 +232,13 @@ To manually install use-cases outside of deployment:
 
 ```bash
 # Clone Gallery
-git clone https://github.com/hybrid-intelligence/SHARPIE_Gallery.git /tmp/SHARPIE_Gallery
+git clone https://github.com/hybrid-intelligence/SHARPIE_Gallery.git /var/www/SHARPIE_Gallery
 
 # Install specific use-case
-sharpie-install <use_case> --gallery-dir /tmp/SHARPIE_Gallery --sharpie-dir /var/www/sharpie
+sharpie-install <use_case> --gallery-dir /var/www/SHARPIE_Gallery --sharpie-dir /var/www/sharpie
 
 # Install all use-cases
-sharpie-install --all --gallery-dir /tmp/SHARPIE_Gallery --sharpie-dir /var/www/sharpie
+sharpie-install --all --gallery-dir /var/www/SHARPIE_Gallery --sharpie-dir /var/www/sharpie
 
 # Or run the deployment script
 cd /var/www/sharpie
