@@ -51,7 +51,6 @@ Contents
    :maxdepth: 2
    :caption: Development
 
-   development_intro
    contributing
    engineering_principles
    benchmark
