@@ -11,6 +11,10 @@ LOG_FILE="$SHARPIE_DIR/logs/use_cases_install.log"
 # Ensure logs directory exists
 mkdir -p "$(dirname "$LOG_FILE")"
 
+# Ensure we run from the webserver directory (same CWD as sharpie-web migrate)
+# so that Django resolves db.sqlite3 to the correct path
+cd "$SHARPIE_DIR/webserver"
+
 # Function to log messages
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
