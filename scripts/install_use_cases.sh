@@ -19,7 +19,8 @@ log() {
 # Clone or update SHARPIE_Gallery
 if [ -d "$GALLERY_DIR" ]; then
     log "Updating existing SHARPIE_Gallery..."
-    git -C "$GALLERY_DIR" pull
+    git -C "$GALLERY_DIR" fetch origin
+    git -C "$GALLERY_DIR" reset --hard origin/main
 else
     log "Cloning SHARPIE_Gallery..."
     git clone --depth 1 "$GALLERY_REPO" "$GALLERY_DIR"
