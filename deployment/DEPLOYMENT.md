@@ -189,11 +189,10 @@ SHARPIE automatically installs demo use-cases from the [SHARPIE_Gallery](https:/
 
 1. **Deployment workflow** runs `scripts/install_use_cases.sh`
 2. **Script clones** the SHARPIE_Gallery repository
-3. **For each use-case** listed in `deployment/use_cases.txt`:
-   - Copies files to `runner/<use_case>/` directory
-   - Installs Python dependencies
-   - Creates database entries (Environment, Policy, Agent, Experiment)
-4. **Cleanup** removes temporary files
+3. **For each use-case** listed in `deployment/use_cases.txt`, runs `sharpie-install`:
+    - Installs Python dependencies
+    - Validates use-case files (environment.py, policy.py)
+    - Creates database entries (Environment, Policy, Agent, Experiment)
 
 ### Configuration
 
@@ -201,20 +200,16 @@ Edit `deployment/use_cases.txt` to customize which use-cases are installed:
 
 ```
 # Lightweight demo use-cases (Python >= 3.13 compatible):
-amaze
 frozen
 mountain
 spread
 tag
-
-# Resource-intensive use-cases (disabled for demo server):
-# mario (requires gym-super-mario-bros)
-# overcooked (requires Python 3.10.x)
+mario
 ```
 
 ### Available Use-Cases
 
-Run `python install.py --list` in the SHARPIE_Gallery repository to see all available use-cases.
+Run `sharpie-install --list --gallery-dir <path-to-gallery>` to see all available use-cases.
 
 **Lightweight (recommended for demo servers):**
 - **amaze** - Maze navigation with TAMER (minimal dependencies)
@@ -237,11 +232,13 @@ To manually install use-cases outside of deployment:
 
 ```bash
 # Clone Gallery
-git clone https://github.com/hybrid-intelligence/SHARPIE_Gallery.git /tmp/SHARPIE_Gallery
+git clone https://github.com/hybrid-intelligence/SHARPIE_Gallery.git /var/www/SHARPIE_Gallery
 
 # Install specific use-case
-cd /tmp/SHARPIE_Gallery
-python install.py <use_case> --sharpie-dir /var/www/sharpie
+sharpie-install <use_case> --gallery-dir /var/www/SHARPIE_Gallery --sharpie-dir /var/www/sharpie
+
+# Install all use-cases
+sharpie-install --all --gallery-dir /var/www/SHARPIE_Gallery --sharpie-dir /var/www/sharpie
 
 # Or run the deployment script
 cd /var/www/sharpie

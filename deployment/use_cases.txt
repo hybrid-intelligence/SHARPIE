@@ -1,6 +1,6 @@
 # Use-cases to install in production (demo server)
 # One use-case per line, lines starting with # are comments
-# Use 'python install.py --list' in SHARPIE_Gallery to see all available use-cases
+# Use 'sharpie-install --list --gallery-dir <path>' to see all available use-cases
 
 # Lightweight demo use-cases (Python >= 3.13 compatible):
 # amaze (disabled - requires numpy<2.0.0, incompatible with Python 3.12+)

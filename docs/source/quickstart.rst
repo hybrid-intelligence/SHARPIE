@@ -23,12 +23,11 @@ Open a new terminal in the SHARPIE root directory, and start the runner:
    conda activate sharpie_env
    sharpie-runner runserver --connection-key=my_secret
 
-| Now open a third terminal and install your experiment.
-| For example experiments, see `SHARPIE-gallery <https://github.com/hybrid-intelligence/SHARPIE_Gallery>`_.
+| Now open a third terminal and install example experiments from the Gallery.
 
 .. code-block:: console
 
-    cd /path/to/experiment/
-    python install.py --connection-key secret
+    git clone https://github.com/hybrid-intelligence/SHARPIE_Gallery.git /var/www/SHARPIE_Gallery
+    sharpie-install --all --gallery-dir /var/www/SHARPIE_Gallery
 
 Now browse to `localhost:8000 <http://localhost:8000>`_ and test your experiment.

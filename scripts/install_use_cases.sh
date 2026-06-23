@@ -1,9 +1,8 @@
 #!/bin/bash
-set -e  # Exit on error (but continue to next use-case if one fails)
+set -e
 
 # Configuration
 SHARPIE_DIR="/var/www/sharpie"
-WEBSERVER_DIR="$SHARPIE_DIR/webserver"
 GALLERY_REPO="https://github.com/hybrid-intelligence/SHARPIE_Gallery.git"
 GALLERY_DIR="$(dirname "$SHARPIE_DIR")/SHARPIE_Gallery"
 USE_CASES_FILE="$SHARPIE_DIR/deployment/use_cases.txt"
@@ -39,23 +38,10 @@ FAILED_USE_CASES=""
 for use_case in $USE_CASES; do
     log "Installing use-case: $use_case"
     
-    # Check if use-case directory exists in Gallery
-    if [ ! -d "$GALLERY_DIR/$use_case" ]; then
-        log "✗ Use-case not found: $use_case"
-        FAILED_USE_CASES="$FAILED_USE_CASES $use_case"
-        continue
-    fi
-    
-    # Install dependencies and update database
-    # Must cd into WEBSERVER_DIR so Django finds .env and db.sqlite3 via CWD
-    set +e  # Temporarily disable exit on error
-    OUTPUT=$(cd "$WEBSERVER_DIR" && python "$GALLERY_DIR/install.py" "$use_case" \
-         --sharpie-dir "$SHARPIE_DIR" \
-         --webserver-dir "$WEBSERVER_DIR" \
-         --quiet 2>&1)
+    set +e
+    sharpie-install "$use_case" --gallery-dir "$GALLERY_DIR" --quiet 2>&1 | tee -a "$LOG_FILE"
     EXIT_CODE=$?
-    set -e  # Re-enable exit on error
-    echo "$OUTPUT" | tee -a "$LOG_FILE"
+    set -e
     
     if [ $EXIT_CODE -eq 0 ]; then
         log "✓ Successfully installed: $use_case"
@@ -69,7 +55,6 @@ done
 if [ -n "$FAILED_USE_CASES" ]; then
     log "WARNING: Some use-cases failed to install:$FAILED_USE_CASES"
     log "Deployment continuing with successful installations."
-    # Don't exit with error - allow deployment to continue
 fi
 
 log "Use-case installation complete."

@@ -63,6 +63,7 @@ docs = [
 sharpie-benchmark = "sharpie.benchmark.cli:main"
 sharpie-web = "sharpie.webserver.manage:main"
 sharpie-runner = "sharpie.runner.manage:main"
+sharpie-install = "sharpie.install.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/hybrid-intelligence/SHARPIE"
