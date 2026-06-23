@@ -25,6 +25,9 @@ jobs:
           sharpie-web migrate
           sharpie-web collectstatic --noinput
           
+      - name: Stop services before database writes
+        run: supervisorctl stop sharpie-web:* sharpie-runner
+
       - name: Install use-cases from Gallery
         run: |
           cd /var/www/sharpie
@@ -32,4 +35,4 @@ jobs:
           bash scripts/install_use_cases.sh
           
       - name: Restart services
-        run: supervisorctl restart sharpie-web:* sharpie-runner
+        run: supervisorctl start sharpie-web:* sharpie-runner
