@@ -1,5 +1,5 @@
-FAQ (Frequently Asked Questions)
-================================
+Frequently Asked Questions
+==========================
 
 How long will SHARPIE be supported?
 -----------------------------------
