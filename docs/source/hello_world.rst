@@ -141,8 +141,7 @@ Leave all other fields as default and select `SAVE`.
 
 Keep all other fields in their defaults and select `SAVE`.
 
-| If you have already started your runner, stop it and reinstall gymnasium with the classic_control.
-| Then restart the runner:
+| Install gymnasium with the classic_control in your virtual environment:
 
 .. code-block:: console
    

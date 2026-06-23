@@ -18,7 +18,7 @@ Customizable & Configurable
 | However, there are still many across different researchers looking into the interaction of humans with (adaptive) sequential decision-making agents.
 | We therefore aim to build SHARPIE in a flexible way, with hooks for extending and customizing SHARPIE.
 
-New functionalities can be adopted by SHARPIE once a reasonable mass of support for that functionality is attained.
+New functionalities can be adopted by SHARPIE once a reasonable mass of support for that functionality is attained. To request/suggest a new feature, please open an issue in the issue tracker to motivate the feature, where we will follow an (informal) approval process.
 
 ++++++++++++++++++++++++
 Multi-agent, Multi-human

@@ -24,14 +24,14 @@ Development Server
 | If you are familiar with Django, you may expect to launch the development server by running ``python manage.py runserver`` from the ``sharpie/webserver/`` directory.
 | SHARPIE, however, is distributed as a package which requires dedicated paths, which is not compatible with running from the ``sharpie/webserver`` directory.
 
-| You therefore have to start the development server from any other location using the ``sharpie-web runserver`` command.
+| SHARPIE therefore provides a dedicated entry point ``sharpie-web runserver`` that works wherever for convenience.
 | This command is specified in ``pyproject.toml`` in the ``[project.scripts]`` block.
 
 Documentation
 -------------
 The documentation source files are located in ``docs/source`` and can be built using `sphinx <https://www.sphinx-doc.org/en/master/index.html>`_.
 
-To build the documentation locally, make sure you have installed the loc
+To build the documentation locally, make sure you have installed sharpie using the ``[docs]`` options.
 
 .. code-block:: console
 
@@ -47,12 +47,16 @@ To have them dynamically generated with auto-browser refresh instead use
 
     make livehtml
 
+
+Look for the URL in the terminal output, it is likely to be `127.0.0.1:8000 <http://127.0.0.1:8000>`_.
+
 Tests
 ----------
 .. warning:: Under construction
 
 Packaging and Distribution
 --------------------------
+
 To build the SHARPIE package, from the project root:
 
 .. code-block:: console

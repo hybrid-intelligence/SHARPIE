@@ -7,7 +7,7 @@ We advise to first create a fork of the latest stable release of SHARPIE, see SH
 
 Next, follow the regular installation steps and make sure to install in editable mode using ``pip install -e .`` in the SHARPIE directory.
 
-The you can run the sharpie webserver and runner as usual, any changes you make to the SHARPIE source files you installed will be reflected when using the standard SHARPIE commands.
+You can run the sharpie webserver and runner as usual, any changes you make to the SHARPIE source files you installed will be reflected when using the standard SHARPIE commands.
 
 UI elements and Templates
 -------------------------
@@ -21,7 +21,7 @@ Templates
 +++++++++
 We here give an overview of the role of different templates that you may want to choose for customization, all located in ``sharpie/webserver/``:
 
-* ``server/templates/base.html`` the root template, containing the root ``<html>`` tags.
+* ``server/templates/base.html`` the root template, containing the root ``<html>`` tags and the menu of all pages.
 * ``home/templates/home/index.html`` the landing page that by default gives an overview of all installed experiments.
 * ``experiment/templates/experiment/config.html`` participant-facing experiment configuration page, with room name and agent role selection
 * ``experiment/templates/experiment/run.html`` template for experiment, including interaction instructions, history etc. Here you can add custom input elements, additional interaction information, custom history etc.

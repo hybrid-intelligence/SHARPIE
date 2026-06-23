@@ -1,7 +1,7 @@
 Release Checklist
 =================
 
-This non-exhaustice checklist is meant to help with releasing a new version of SHARPIE:
+This non-exhaustive checklist is meant to help with releasing a new version of SHARPIE:
 
 * check whether all tests pass
 * check documentation builds

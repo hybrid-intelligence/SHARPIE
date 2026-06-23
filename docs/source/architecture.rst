@@ -18,12 +18,14 @@ Web server
 ----------
 
 | The web server serves files to the participants, interacts with the runners, and manages the data.
-| The web server is divided in 4 apps:
+| The web server is divided in several apps:
 
 * **Home**: the landing page of the platform.
 * **Admin**: managing the platform settings, users, and experiments.
 * **Accounts**: login in and registering users.
 * **Experiments**: participant-facing and backend-facing interface to run experiments.
+* **Data**: experiment logging.
+* **Runner**: manages connections to runners. Note: this is different from the runner in ``sharpie/runner``.
 
 These are implemented using Django, see its `documentation <https://docs.djangoproject.com/en/6.0/intro/tutorial01/>`_ for more details.
 
