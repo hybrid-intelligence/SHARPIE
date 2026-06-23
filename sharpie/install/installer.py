@@ -37,17 +37,12 @@ def check_dependencies(config: dict, verbosity: int = 1):
 
 
 
-def relative_to_absolute_path(path: str, use_case_dir: Path) -> str:
-    if not os.path.isabs(path):
-        return str(use_case_dir / path)
-    return path
-
-
 def relative_to_absolute_paths(config: dict, use_case_dir: Path) -> dict:
     for object_key, object_value in config.items():
         if isinstance(object_value, dict) and 'filepaths' in object_value:
             for key, value in object_value['filepaths'].items():
-                config[object_key]['filepaths'][key] = relative_to_absolute_path(value, use_case_dir)
+                # Assumes that the filepath in the YAML config is only the filename
+                config[object_key]['filepaths'][key] = str(use_case_dir / value)
     return config
 
 

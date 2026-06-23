@@ -53,7 +53,7 @@ def main():
     args = parse_args()
     verbosity = get_verbosity(args)
 
-    gallery_dir = Path(args.gallery_dir)
+    gallery_dir = Path(args.gallery_dir).resolve()
     if not gallery_dir.exists():
         print(f"Error: Gallery directory not found: {gallery_dir}", file=sys.stderr)
         sys.exit(1)
