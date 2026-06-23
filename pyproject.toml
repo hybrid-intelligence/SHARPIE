@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "SHARPIE"
-version = "1.0.0"
+version = "1.0.0-rc1"
 authors = [
     {name="Libio Gonçalves Braz",  email="l.b.goncalvesbraz@uu.nl"},
     {name="Floris den Hengst", email="f.den.hengst@vu.nl"},
