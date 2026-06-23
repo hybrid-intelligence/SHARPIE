@@ -36,13 +36,13 @@ def check_dependencies(config: dict, verbosity: int = 1):
         return
 
     for dep in deps:
-        try:
-            pkg_name = dep.split('[')[0].replace('-', '_')
-            __import__(pkg_name)
-            log(f"  [OK] {dep} already installed", level=2, verbosity=verbosity)
-        except ImportError:
-            log(f"  Installing {dep}...", level=1, verbosity=verbosity)
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', dep])
+        log(f"  Installing {dep}...", level=1, verbosity=verbosity)
+        pip_kwargs = {}
+        if verbosity < 2:
+            pip_kwargs['stdout'] = subprocess.DEVNULL
+        if verbosity < 1:
+            pip_kwargs['stderr'] = subprocess.DEVNULL
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', dep], **pip_kwargs)
 
 
 
