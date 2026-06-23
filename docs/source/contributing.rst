@@ -67,6 +67,6 @@ To distribute a new release, ensure you have completed the release checklist, ob
 
 
 Contributors Guide
------------------
+------------------
 .. include:: ../../CONTRIBUTING.md
    :parser: myst_parser.parsers.docutils_
