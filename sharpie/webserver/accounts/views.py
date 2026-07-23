@@ -1,3 +1,4 @@
+"""Views for login, registration, consent, and profile management."""
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from .decorators import consent_required
@@ -12,6 +13,7 @@ from .models import Consent, Participant
 
 
 def login_(request):
+    """Authenticate a user and redirect to the next page or profile on success."""
     # If this is a POST request we need to process the form data
     if request.method == "POST":
         # Create a form instance and populate it with data from the request:
@@ -31,6 +33,7 @@ def login_(request):
     return render(request, "registration/login.html", {'form': form, 'view': 'login'})
 
 def register_(request):
+    """Register a new user account, optionally prefilled from GET params for study invites."""
     # If registration is disabled
     if REGISTRATION_KEY == False:
         return render(request, "registration/login.html", {'form': None, 'view': 'register', 'error': None})
@@ -84,6 +87,7 @@ def register_(request):
     return render(request, "registration/login.html", {'form': form, 'view': 'register', 'error': error, 'DEMO': DEMO, 'REGISTRATION_KEY': REGISTRATION_KEY})
 
 def logout_(request):
+    """Log out the current user and redirect to the home page."""
     if request.user.is_authenticated:
         logout(request)
     
@@ -126,6 +130,7 @@ def consent_(request):
 
 @login_required
 def profile_(request):
+    """Display and update the current user's profile info and password."""
     # Get the participant, otherwise create it
     try:
         participant = Participant.objects.get(user=request.user)

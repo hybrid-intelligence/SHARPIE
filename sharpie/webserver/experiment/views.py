@@ -1,3 +1,4 @@
+"""Views for configuring and running experiment sessions."""
 import json
 import string
 import random
@@ -23,6 +24,7 @@ from django.conf import settings
 @login_required
 @consent_required
 def config_(request, link):
+    """Collect and validate a participant's session configuration for an experiment, then join or create a room."""
     # Check the experiment
     try:
         experiment = models.Experiment.objects.get(link=link)
@@ -120,6 +122,7 @@ def config_(request, link):
 @login_required
 @consent_required
 def run_(request, link, room):
+    """Render the live experiment run page for a participant's active session in the given room."""
     # Get a matching session and check if the participant is linked to it
     try:
         session = Session.objects.get(experiment__link=link, room=room, status__in=['not_ready', 'ready', 'pending', 'running'])

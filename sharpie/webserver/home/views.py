@@ -1,3 +1,4 @@
+"""View for the home page."""
 from django.shortcuts import render
 from sharpie.webserver.experiment.models import Experiment
 
@@ -5,5 +6,6 @@ from sharpie.webserver.server.settings import DEMO
 
 
 def index(request):
+    """Render the home page listing all available experiments."""
     experiments = Experiment.objects.all()
     return render(request, "home/index.html", {"experiments": experiments, "DEMO": DEMO})

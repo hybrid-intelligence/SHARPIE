@@ -1,8 +1,12 @@
+"""Tests for the experiment app."""
 from django.test import TestCase
 
 
 class ExperimentTestCase(TestCase):
+    """Tests for experiment configuration and running."""
+
     def setUp(self):
+        """Set up test fixtures (none needed yet)."""
         pass
 
     def test_config(self):

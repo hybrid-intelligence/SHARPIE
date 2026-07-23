@@ -1,8 +1,10 @@
+"""Models for research consent and participant records."""
 from django.db import models
 from django.contrib.auth.models import User
 
 
 def default_research_team():
+    """Return the default research team entry used as the Consent.research_team default."""
     return dict(main=dict(designation="Principal investigator",
                           institution="Hybrid Intelligence Centre",
                           location="The Netherlands",
@@ -18,11 +20,13 @@ class Consent(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
+        """Save a new Consent; raise if attempting to modify an existing one."""
         if self.pk:
             raise ValueError("Cannot change consent description after it has been created")
         return super().save(*args, **kwargs)
-    
+
     def delete(self, using = ..., keep_parents = ...):
+        """Prevent deletion of a Consent record once created."""
         raise ValueError("Cannot delete consent description after it has been created")
 
 

@@ -1,3 +1,4 @@
+"""URL routes for the accounts app."""
 from django.urls import path
 from sharpie.webserver.accounts import views
 

@@ -1,3 +1,4 @@
+"""Model for tracking runner registration, status, and connection state."""
 from django.db.models.functions import Now
 from django.db import models
 from django.core.exceptions import ValidationError

@@ -1,3 +1,4 @@
+"""Models for recorded experiment sessions, episodes, and per-step records."""
 from django.db.models.functions import Now
 from django.db import models
 from django.core.exceptions import ValidationError
@@ -21,8 +22,8 @@ class Session(models.Model):
     status = models.CharField(max_length=15, choices=[('not_ready', 'Not ready'), ('ready', 'Ready'), ('pending', 'Pending'), ('running', 'Running'), ('completed', 'Completed'), ('aborted', 'Aborted')], default='not_ready')
     metadata = models.JSONField(null=True, blank=True)
 
-    # Check if that session is unique for the experiment and room combination. This is used to prevent multiple sessions from being created with the same experiment and room combination.
     def validate_unique_running_session(self):
+        """Return True if no other active session exists for this Sessions' experiment/room combination."""
         return not Session.objects.filter(experiment=self.experiment, room=self.room, status__in=['ready', 'pending', 'running']).exists()
 
 class Episode(models.Model):
