@@ -33,6 +33,8 @@ The documentation source files are located in ``docs/source`` and can be built u
 
 To build the documentation locally, make sure you have installed sharpie using the ``[docs]`` options.
 
+To ensure the API documentation is updated from your source files, make sure SHARPIE is installed in editable mode ``pip install -e .[docs]``.
+
 .. code-block:: console
 
    cd docs/source
