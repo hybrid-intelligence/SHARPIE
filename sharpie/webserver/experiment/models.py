@@ -1,3 +1,4 @@
+"""Models for experiment configuration: policies, agents, environments, and experiments."""
 from django.db.models.functions import Now
 from django.db import models
 from django.core.exceptions import ValidationError
@@ -8,14 +9,17 @@ import os
 
 
 def default_policy_filepaths():
+    """Return the default filepaths dict used as the Policy.filepaths default."""
     return dict(policy='policy.py')
 
 
 def default_keyboard_inputs():
+    """Return the default keyboard_inputs dict used as the Agent.keyboard_inputs default."""
     return dict(default=0)
 
 
 def default_environment_filepaths():
+    """Return the default filepaths dict used as the Environment.filepaths default."""
     return dict(environment='environment.py')
 
 
@@ -100,6 +104,7 @@ class Agent(models.Model):
         return self.name
 
     def clean(self):
+        """Validate this Agent's configuration: keyboard_inputs and keyboard_input_display are dicts."""
         # Validate keyboard_inputs: must be a dict of strings
         if not isinstance(self.keyboard_inputs, dict):
             raise ValidationError({'keyboard_inputs': 'Keyboard inputs must be a dict.'})
@@ -206,6 +211,7 @@ class Experiment(models.Model):
     wait_for_inputs = models.BooleanField('Wait for participants\' input before moving to the next step', default=False)
     
     def save(self, *args, **kwargs):
+        """Run full model validation before saving the experiment."""
         self.full_clean()
         super().save(*args, **kwargs)
 
@@ -220,11 +226,13 @@ class ConnectionCheckerConfig(models.Model):
     test_image_size = models.IntegerField(default=100000, help_text='Test image size for bandwidth test (bytes)')
 
     def save(self, *args, **kwargs):
+        """Save the config, enforcing that only a single instance can ever exist."""
         if not self.pk and ConnectionCheckerConfig.objects.exists():
             raise ValidationError('Only one ConnectionCheckerConfig instance is allowed.')
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
+        """Prevent deletion of the singleton config instance."""
         raise ValidationError('Cannot delete ConnectionCheckerConfig.')
 
     def __str__(self):

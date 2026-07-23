@@ -1,3 +1,4 @@
+"""WebSocket consumer that runs live experiment sessions between participants and the runner."""
 import json
 
 from channels.generic.websocket import AsyncWebsocketConsumer

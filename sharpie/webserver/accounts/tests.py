@@ -1,8 +1,12 @@
+"""Tests for the accounts app."""
 from django.test import TestCase
 
 
 class AccountTestCase(TestCase):
+    """Tests for account login and registration (placeholder)."""
+
     def setUp(self):
+        """Set up test fixtures (placeholder)."""
         pass
 
     def test_login(self):

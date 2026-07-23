@@ -1,3 +1,4 @@
+"""WebSocket consumer that queues runners and assigns them pending sessions."""
 import json
 import gzip
 

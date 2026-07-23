@@ -1,3 +1,4 @@
+"""URL routes for the experiment app."""
 from django.urls import path
 from sharpie.webserver.experiment import views
 

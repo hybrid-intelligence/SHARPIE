@@ -1,3 +1,4 @@
+"""Helpers for loading and parsing Markdown task descriptions."""
 import os
 import markdown
 from django.conf import settings

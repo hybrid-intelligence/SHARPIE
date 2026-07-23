@@ -1,3 +1,4 @@
+"""Decorators for enforcing research-consent requirements on views."""
 from functools import wraps
 from django.shortcuts import redirect
 from .models import Consent, Participant
@@ -10,6 +11,7 @@ def consent_required(view_func):
     """
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
+        """Call view_func if the user has consented, else redirect to the consent page."""
         if not request.user.is_authenticated:
             # If not authenticated, login_required should handle it
             return view_func(request, *args, **kwargs)

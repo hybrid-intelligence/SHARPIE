@@ -186,6 +186,13 @@ db.sqlite3
 logs/*.log
 !logs/.gitkeep
 
+# Bench-mark results
+sharpie/benchmark/benchmark/results/*
+
 
 # Pycharm
 .idea/
+
+# Code agents
+.claude
+
