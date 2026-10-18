@@ -197,6 +197,7 @@ class Experiment(models.Model):
     name = models.CharField('Name', max_length=100)
     link = models.CharField('Link to the experiment', max_length=100, unique=True, help_text="Unique identifier (slug) for the experiment URL")
     conda_environment = models.CharField('Name of a Conda environment already installed on the runner', max_length=100, null=True, blank=True)
+    dependencies = models.JSONField('Python packages needed by the experiment', default=list, blank=True, help_text='List of pip requirements, e.g. ["gymnasium[classic_control]"].')
 
     short_description = models.TextField('To be displayed on the home page')
     long_description = models.TextField('To be displayed on the experiment page')
@@ -214,6 +215,14 @@ class Experiment(models.Model):
         """Run full model validation before saving the experiment."""
         self.full_clean()
         super().save(*args, **kwargs)
+
+    def clean(self):
+        """Validate that dependencies are a list of pip requirement strings."""
+        if not isinstance(self.dependencies, list) or not all(
+                isinstance(requirement, str) and requirement.strip()
+                for requirement in self.dependencies):
+            raise ValidationError({'dependencies': 'Dependencies must be a list of pip '
+                                                   'requirement strings.'})
 
     def __str__(self):
         return self.name

@@ -57,6 +57,7 @@ The experiment app defines the configuration for RL experiments.
     - ``agents``: Agents involved in the experiment (ManyToMany)
     - ``number_of_episodes``: Episodes to complete
     - ``target_fps`` / ``wait_for_inputs``: Timing configuration
+    - ``dependencies``: pip requirements of the experiment
 
 Data
 ----
