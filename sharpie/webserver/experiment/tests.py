@@ -278,13 +278,6 @@ class GalleryRoundTripTests(TestCase):
         Policy.objects.all().delete()
         Environment.objects.all().delete()
 
-    def round_trip_export(self, use_case):
-        """Install a use case's config, return its experiment instance and export."""
-        config = load_config(use_case, GALLERY_DIR)
-        setup_database(config, verbosity=0)
-        experiment = Experiment.objects.get(link=config['experiment']['link'])
-        return experiment, export_experiment(experiment)
-
     def test_discovery_matches_sharpie_install(self):
         """Use cases are discovered exactly like sharpie-install --list discovers them."""
         self.assertEqual(self.discover_use_cases(), list_use_cases(GALLERY_DIR))
@@ -296,12 +289,17 @@ class GalleryRoundTripTests(TestCase):
 
         for use_case in use_cases:
             with self.subTest(use_case=use_case):
+                # First pass: install the original gallery config.
                 self.wipe()
-                experiment, exported = self.round_trip_export(use_case)
+                config = load_config(use_case, GALLERY_DIR)
+                setup_database(config, verbosity=0)
+                experiment = Experiment.objects.get(link=config['experiment']['link'])
+                exported = export_experiment(experiment)
                 # The YAML text is generated before the wipe: agents are a
                 # many-to-many relation and would read back as empty after it.
                 text = export_experiment_yaml(experiment)
 
+                # Second pass: install the export on a clean database.
                 self.wipe()
                 setup_database(yaml.safe_load(text), verbosity=0)
                 reinstalled = Experiment.objects.get(link=experiment.link)
