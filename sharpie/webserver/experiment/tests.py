@@ -1,4 +1,8 @@
 """Tests for the experiment app."""
+import os
+from pathlib import Path
+from unittest import skipUnless
+
 import yaml
 from django.contrib import messages
 from django.contrib.auth.models import User
@@ -7,10 +11,16 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
 
+from sharpie.install.cli import list_use_cases
 from sharpie.install.exporter import ExportError, export_experiment, export_experiment_yaml
-from sharpie.install.installer import setup_database
+from sharpie.install.installer import load_config, setup_database
 
 from .models import Agent, Environment, Experiment, Policy
+
+# The gallery is not part of this repository. Tests using it are skipped unless
+# a clone exists next to the repository, or SHARPIE_GALLERY_DIR points to one.
+REPO_ROOT = Path(__file__).resolve().parents[3]
+GALLERY_DIR = Path(os.environ.get('SHARPIE_GALLERY_DIR', REPO_ROOT.parent / 'SHARPIE_Gallery'))
 
 
 class ExperimentTestCase(TestCase):
@@ -233,3 +243,67 @@ class ExportAsYamlActionTests(TestCase):
         self.assertNotIn('Content-Disposition', response)
         shown = [message.level for message in get_messages(response.wsgi_request)]
         self.assertEqual(shown, [messages.ERROR])
+
+
+@skipUnless(GALLERY_DIR.exists(), 'Clone the SHARPIE_Gallery repository next to this '
+                                  'repository (or set SHARPIE_GALLERY_DIR) to run these tests.')
+class GalleryRoundTripTests(TestCase):
+    """
+    Install, export, reinstall, and re-export every use case of a gallery clone.
+
+    This guards the installer <-> exporter round trip against the real gallery
+    configs, like the release checklist's "check gallery installs works" step.
+    Each use case's database is rebuilt from scratch twice: once from its
+    original config, once from that config's export, and both exports must be
+    identical. Strict equality with the original file is not asserted, because
+    the exporter writes every editable model field (e.g. null metadata) while
+    hand-written configs omit them. Top-level keys the installer never persists
+    (e.g. python_version, installation_notes) are therefore not round-tripped.
+
+    The test bypasses steps 1 and 2 of sharpie-install (pip installation and
+    code validation) and exercises only the config.yaml <-> database path, so
+    no use case needs its runtime dependencies installed. The filepaths stay
+    bare in both passes because the conversion to absolute paths is bypassed.
+    """
+
+    def discover_use_cases(self):
+        """Every gallery folder with a config.yaml, like sharpie-install --list does."""
+        return sorted(path.name for path in GALLERY_DIR.iterdir()
+                      if (path / 'config.yaml').exists())
+
+    def wipe(self):
+        """Remove gallery-linked rows so every use case installs in isolation."""
+        Experiment.objects.all().delete()
+        Agent.objects.all().delete()
+        Policy.objects.all().delete()
+        Environment.objects.all().delete()
+
+    def round_trip_export(self, use_case):
+        """Install a use case's config, return its experiment instance and export."""
+        config = load_config(use_case, GALLERY_DIR)
+        setup_database(config, verbosity=0)
+        experiment = Experiment.objects.get(link=config['experiment']['link'])
+        return experiment, export_experiment(experiment)
+
+    def test_discovery_matches_sharpie_install(self):
+        """Use cases are discovered exactly like sharpie-install --list discovers them."""
+        self.assertEqual(self.discover_use_cases(), list_use_cases(GALLERY_DIR))
+
+    def test_every_use_case_round_trips_identically(self):
+        """Reinstalling an export recreates an experiment that exports identically."""
+        use_cases = self.discover_use_cases()
+        self.assertTrue(use_cases, f'No use cases found in {GALLERY_DIR}')
+
+        for use_case in use_cases:
+            with self.subTest(use_case=use_case):
+                self.wipe()
+                experiment, exported = self.round_trip_export(use_case)
+                # The YAML text is generated before the wipe: agents are a
+                # many-to-many relation and would read back as empty after it.
+                text = export_experiment_yaml(experiment)
+
+                self.wipe()
+                setup_database(yaml.safe_load(text), verbosity=0)
+                reinstalled = Experiment.objects.get(link=experiment.link)
+
+                self.assertEqual(export_experiment(reinstalled), exported)
