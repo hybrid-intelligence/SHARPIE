@@ -9,6 +9,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Checkout SHARPIE_Gallery
+        uses: actions/checkout@v4
+        with:
+          repository: hybrid-intelligence/SHARPIE_Gallery
+          path: SHARPIE_Gallery
+
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
@@ -26,3 +32,5 @@ jobs:
         run: |
           cd sharpie/webserver
           sharpie-web test accounts experiment
+        env:
+          SHARPIE_GALLERY_DIR: ${{ github.workspace }}/SHARPIE_Gallery

@@ -108,6 +108,7 @@ def setup_database(config: dict, verbosity: int = 1):
 
     exp_data = config['experiment'].copy()
     exp_data['environment'] = env
+    exp_data['dependencies'] = config.get('dependencies') or []
     exp, created = Experiment.objects.update_or_create(
         link=exp_data['link'],
         defaults=exp_data
