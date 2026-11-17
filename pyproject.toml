@@ -50,6 +50,12 @@ dev = [
     "pygraphviz~=1.14.0",
 ]
 
+test = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pytest-django>=4.5",
+]
+
 docs = [
     "sphinx>=7.0",
     "sphinx-rtd-theme>=2.0",
