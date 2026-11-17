@@ -15,11 +15,12 @@ from sharpie.install.cli import list_use_cases
 from sharpie.install.exporter import ExportError, export_experiment, export_experiment_yaml
 from sharpie.install.installer import load_config, setup_database
 
-from .models import Agent, Environment, Experiment, Policy
+from sharpie.webserver.experiment.models import Agent, Environment, Experiment, Policy
+
 
 # The gallery is not part of this repository. Tests using it are skipped unless
 # a clone exists next to the repository, or SHARPIE_GALLERY_DIR points to one.
-REPO_ROOT = Path(__file__).resolve().parents[3]
+REPO_ROOT = Path(__file__).resolve().parents[4]
 GALLERY_DIR = Path(os.environ.get('SHARPIE_GALLERY_DIR', REPO_ROOT.parent / 'SHARPIE_Gallery'))
 
 
