@@ -40,6 +40,7 @@ To get started with SHARPIE:
 The tests use pytest. With the development installation (`pip install -e .[dev]`), run them from the repository root:
 ```bash
 pytest
+pytest --cov        # with a coverage report
 ```
 
 ## 3. Documentation
