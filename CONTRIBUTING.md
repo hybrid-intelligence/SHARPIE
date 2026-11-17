@@ -41,7 +41,9 @@ The tests use pytest. With the development installation (`pip install -e .[dev]`
 ```bash
 pytest
 pytest --cov        # with a coverage report
+pytest -m redis     # only the tests that use Redis
 ```
+The tests that use Redis start their own Redis server, so they need `redis-server` installed.
 
 ## 3. Documentation
 We also welcome documentation updates.
