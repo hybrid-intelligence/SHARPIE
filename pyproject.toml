@@ -43,6 +43,7 @@ dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
     "pytest-django>=4.5",
+    "pytest-asyncio>=1.0",
     "black>=23.0",
     "ruff>=0.1.0",
     "mypy>=1.0",
@@ -54,6 +55,7 @@ test = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
     "pytest-django>=4.5",
+    "pytest-asyncio>=1.0",
 ]
 
 docs = [
@@ -110,4 +112,6 @@ omit = ["*/tests/*", "*/migrations/*"]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "sharpie.webserver.server.settings"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 addopts = ["-ra", "--strict-markers", "--strict-config"]
