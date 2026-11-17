@@ -29,12 +29,18 @@ To get started with SHARPIE:
     ```
     and follow the development installation steps.
 1.  **Create a branch**: Use a descriptive name like `feature/adaptive-feedback` or `fix/latency-issue`. In case your fix includes a patch to a released version of python, please base your new branch on this version. All released versions come with a git tag.
-2.  **Write Tests**: If you are adding a feature, please include unit tests. We strive for 100% test coverage.
+2.  **Write Tests**: If you are adding a feature, please include unit tests. We strive for 100% test coverage. Make sure the tests pass before submitting (see Running the Tests below).
 3.  **Follow Style Guides**
 4.  **Submit a Pull Request (PR)**:
     - Reference the issue number (e.g., `Fixes #42`).
     - Provide a summary of your changes.
     - Tag a maintainer for review.
+
+### Running the Tests
+The tests use pytest. With the development installation (`pip install -e .[dev]`), run them from the repository root:
+```bash
+pytest
+```
 
 ## 3. Documentation
 We also welcome documentation updates.
