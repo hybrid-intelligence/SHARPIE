@@ -29,6 +29,6 @@ jobs:
           pip install -e ".[test]"
 
       - name: Run tests
-        run: pytest
+        run: pytest --cov
         env:
           SHARPIE_GALLERY_DIR: ${{ github.workspace }}/SHARPIE_Gallery
