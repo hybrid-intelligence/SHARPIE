@@ -44,6 +44,7 @@ dev = [
     "pytest-cov>=4.0",
     "pytest-django>=4.5",
     "pytest-asyncio>=1.0",
+    "pytest-redis>=3.0",
     "black>=23.0",
     "ruff>=0.1.0",
     "mypy>=1.0",
@@ -56,6 +57,7 @@ test = [
     "pytest-cov>=4.0",
     "pytest-django>=4.5",
     "pytest-asyncio>=1.0",
+    "pytest-redis>=3.0",
 ]
 
 docs = [
@@ -115,3 +117,6 @@ DJANGO_SETTINGS_MODULE = "sharpie.webserver.server.settings"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 addopts = ["-ra", "--strict-markers", "--strict-config"]
+markers = [
+    "redis: starts a real Redis server (needs redis-server installed)",
+]
