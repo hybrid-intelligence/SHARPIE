@@ -100,3 +100,4 @@ select = ["E", "F", "I", "N", "W"]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "sharpie.webserver.server.settings"
+addopts = ["-ra", "--strict-markers", "--strict-config"]
