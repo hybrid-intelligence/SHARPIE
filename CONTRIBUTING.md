@@ -42,8 +42,10 @@ The tests use pytest. With the development installation (`pip install -e .[dev]`
 pytest
 pytest --cov        # with a coverage report
 pytest -m redis     # only the tests that use Redis
+pytest -m daphne    # the browser tests against a real Daphne server
 ```
 The tests that use Redis start their own Redis server, so they need `redis-server` installed.
+The Daphne tests are skipped by plain `pytest` and need a browser, installed once with `playwright install chromium`.
 
 ## 3. Documentation
 We also welcome documentation updates.

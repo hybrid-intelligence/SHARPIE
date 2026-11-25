@@ -38,10 +38,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[test]"
 
+      - name: Install the browser
+        run: playwright install --with-deps chromium
+
       - name: Run tests
         run: pytest --cov
         env:
           SHARPIE_GALLERY_DIR: ${{ github.workspace }}/SHARPIE_Gallery
+
+      - name: Run the Daphne tests
+        run: pytest -m daphne
 
       - name: Coverage comment
         if: github.ref != 'refs/heads/main'

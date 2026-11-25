@@ -1,6 +1,9 @@
 """Shared pytest fixtures for SHARPIE's tests."""
+import base64
 from pathlib import Path
 
+import cv2
+import numpy as np
 import pytest
 from channels.testing import WebsocketCommunicator
 from django.contrib.auth.models import User
@@ -23,6 +26,13 @@ ROOM = 'room1'
 def in_memory_channel_layer(settings):
     """Use Channels' in-memory channel layer instead of Redis."""
     settings.CHANNEL_LAYERS = {'default': {'BACKEND': 'channels.layers.InMemoryChannelLayer'}}
+
+
+@pytest.fixture
+def jpeg_frame():
+    """A small black image, encoded the way the runner encodes frames."""
+    _, buffer = cv2.imencode('.jpg', np.zeros((8, 8, 3), dtype=np.uint8))
+    return base64.b64encode(buffer.tobytes()).decode()
 
 
 @pytest.fixture
@@ -119,3 +129,15 @@ async def room_connection(room_path):
     yield connection
     for communicator in communicators:
         await communicator.disconnect()
+
+
+@pytest.fixture(scope='session')
+def django_db_modify_db_settings(django_db_modify_db_settings_parallel_suffix, request,
+                                 tmp_path_factory):
+    """When Daphne tests run, keep the SQLite test database in a file, so Daphne's separate
+    process can open it; other runs keep the faster in-memory database."""
+    if not any(item.get_closest_marker('daphne') for item in request.session.items):
+        return
+    from django.conf import settings
+    settings.DATABASES['default'].setdefault('TEST', {})['NAME'] = str(
+        tmp_path_factory.mktemp('db') / 'test.sqlite3')
