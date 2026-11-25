@@ -3,11 +3,18 @@ name: Run Tests
 on:
   push:
 
+permissions: {}
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write  # post and update the coverage comment
+      contents: read        # check out the code
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Checkout SHARPIE_Gallery
         uses: actions/checkout@v4
@@ -26,11 +33,15 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e .
+          pip install -e ".[test]"
 
       - name: Run tests
-        run: |
-          cd sharpie/webserver
-          sharpie-web test accounts experiment
+        run: pytest --cov
         env:
           SHARPIE_GALLERY_DIR: ${{ github.workspace }}/SHARPIE_Gallery
+
+      - name: Coverage comment
+        if: github.ref != 'refs/heads/main'
+        uses: py-cov-action/python-coverage-comment-action@281cb0dcb5b15d4773037d51873558fddc5a7df8 # v4.7
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
