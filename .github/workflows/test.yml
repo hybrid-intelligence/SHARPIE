@@ -30,6 +30,9 @@ jobs:
       - name: Install graphviz
         run: sudo apt-get install -y graphviz graphviz-dev
 
+      - name: Install Redis
+        run: sudo apt-get install -y redis-server
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
