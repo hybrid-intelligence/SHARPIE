@@ -9,6 +9,11 @@ from websockets.sync.server import serve
 
 from sharpie.runner.manage import start_experiment
 
+# The WebSocket close code with which the server dies in the reconnect test: RFC 6455
+# §7.4.1 "Internal Error". websockets raises ConnectionClosedError for it, unlike the
+# graceful 1000/1001 closes, and only the error variant reconnects the runner.
+SERVER_ERROR_CLOSE_CODE = 1011
+
 
 @pytest.fixture
 def start_server():
@@ -120,7 +125,7 @@ def test_runner_reconnects_when_the_connection_drops(start_server, start_runner)
         paths.append(websocket.request.path)
         websocket.recv()
         if len(paths) == 1:
-            websocket.close(code=1011)
+            websocket.close(code=SERVER_ERROR_CLOSE_CODE)
         else:
             reconnected.set()
             websocket.send(json.dumps({'message': 'No session in the queue'}))
