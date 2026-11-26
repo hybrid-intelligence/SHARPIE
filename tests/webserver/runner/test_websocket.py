@@ -10,6 +10,9 @@ pytestmark = [pytest.mark.django_db(transaction=True),
               pytest.mark.usefixtures('in_memory_channel_layer')]
 
 RUNNER_ADDRESS = ('127.0.0.1', 50000)
+# The WebSocket close code with which the server refuses a runner connection: RFC 6455
+# §7.4.1 "Policy Violation", the conventional code for authentication failures.
+AUTH_REFUSED_CLOSE_CODE = 1008
 
 
 def waiting_room_connection(key=None):
@@ -31,7 +34,7 @@ async def test_unknown_runner_key_is_refused(runner):
     connected, close_code = await waiting_room_connection('wrong-key').connect()
 
     assert not connected
-    assert close_code == 1008
+    assert close_code == AUTH_REFUSED_CLOSE_CODE
 
 
 async def test_runner_without_a_key_is_refused():
@@ -39,7 +42,7 @@ async def test_runner_without_a_key_is_refused():
     connected, close_code = await waiting_room_connection().connect()
 
     assert not connected
-    assert close_code == 1008
+    assert close_code == AUTH_REFUSED_CLOSE_CODE
 
 
 async def test_runner_with_a_known_key_is_accepted_and_marked_idle(runner):
